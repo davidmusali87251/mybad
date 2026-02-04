@@ -53,14 +53,17 @@ create policy "Allow anonymous insert" on shared_stats for insert with check (tr
 create policy "Allow anonymous select" on shared_stats for select using (true);
 ```
 
-3. Go to **Settings → API**. Copy **Project URL** and **anon public** key.
+3. Go to **Settings → API**. Copy:
+   - **Project URL** (e.g. `https://xxxxx.supabase.co`)
+   - **anon public** key — the long JWT that starts with `eyJ...` (under "Project API keys"). Do **not** use a key that looks like `sb_publishable_...`; that is not the anon key.
 4. Open `config.js` and set:
 
 ```js
 window.MISTAKE_TRACKER_CONFIG = {
   SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
-  SUPABASE_ANON_KEY: 'your-anon-key-here'
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'  // anon public key (long JWT)
 };
 ```
 
-5. Reload the app. You’ll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
+5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
+6. Reload the app. You’ll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
