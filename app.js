@@ -593,9 +593,10 @@ async function fetchSharedStats() {
     sharedEmpty.textContent = "No shared results yet. Share yours above!";
     return;
   }
+  const limited = data.slice(0, MAX_OTHER_RESULTS);
   // Group by anonymous_id (same browser = same anonymous person)
   const byAnon = {};
-  data.forEach(row => {
+  limited.forEach(row => {
     const key = row.anonymous_id || '__anon__';
     if (!byAnon[key]) byAnon[key] = [];
     byAnon[key].push(row);
