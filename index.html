@@ -56,8 +56,20 @@
         <span class="stat-value" id="stat-avg">—</span>
         <span class="stat-label">avg per day (period)</span>
       </div>
+      <div class="stat-card stat-exploration">
+        <span class="stat-value" id="stat-exploration">—</span>
+        <span class="stat-label">exploration index</span>
+        <span class="stat-sublabel" id="stat-exploration-hint">fertile ÷ total</span>
+      </div>
     </section>
     <p class="stats-note" id="stats-note"></p>
+
+    <section class="trends-section" id="trends-section">
+      <h2>Your trends</h2>
+      <p class="section-hint">Avoidable ↓ · Fertile ↔ or ↑</p>
+      <div class="trends-chart" id="trends-chart"></div>
+      <p class="trends-empty" id="trends-empty">Log mistakes over a few days to see your curves.</p>
+    </section>
 
     <section class="history">
       <h2>Recent entries</h2>
@@ -80,6 +92,7 @@
       <p class="reflection-hint">
         This tracker is a mirror, not a judge. Use it to reduce empty mistakes and keep making mistakes that expand you.
       </p>
+      <div class="auto-reflection" id="auto-reflection"></div>
       <div class="reflection-grid">
         <div class="reflection-card">
           <h3>Avoidable errors</h3>

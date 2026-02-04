@@ -16,6 +16,12 @@ const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
 const statLabel = document.getElementById('stat-label');
 const statAvg = document.getElementById('stat-avg');
+const statExploration = document.getElementById('stat-exploration');
+const statExplorationHint = document.getElementById('stat-exploration-hint');
+const trendsSection = document.getElementById('trends-section');
+const trendsChart = document.getElementById('trends-chart');
+const trendsEmpty = document.getElementById('trends-empty');
+const autoReflectionEl = document.getElementById('auto-reflection');
 const entryList = document.getElementById('entry-list');
 const emptyState = document.getElementById('empty-state');
 const statsNote = document.getElementById('stats-note');
@@ -173,6 +179,21 @@ function renderStats() {
         fertileCount + " fertile (valuable experiments)";
     }
   }
+
+  // Exploration index: fertile / total (goal: higher = more experimentation)
+  if (statExploration) {
+    if (count === 0) {
+      statExploration.textContent = '—';
+      if (statExplorationHint) statExplorationHint.textContent = 'fertile ÷ total';
+    } else {
+      const ratio = fertileCount / count;
+      const pct = Math.round(ratio * 100);
+      statExploration.textContent = pct + '%';
+      if (statExplorationHint) statExplorationHint.textContent = fertileCount + ' fertile ÷ ' + count + ' total';
+    }
+  }
+  renderTrends();
+  renderAutoReflection();
 }
 
 function formatTime(ts) {
@@ -217,6 +238,108 @@ function renderList() {
   });
 
   if (emptyState) emptyState.classList.toggle('hidden', show.length > 0);
+}
+
+function getDayCountsLastN(n) {
+  const now = Date.now();
+  const dayMs = 86400000;
+  const result = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const dayStart = getStartOfDay(now - i * dayMs);
+    const dayEnd = dayStart + dayMs;
+    const dayEntries = entries.filter(e => e.at >= dayStart && e.at < dayEnd);
+    const avoidable = dayEntries.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+    const fertile = dayEntries.filter(e => (e.type || 'avoidable') === 'fertile').length;
+    result.push({
+      dayStart,
+      avoidable,
+      fertile,
+      total: avoidable + fertile
+    });
+  }
+  return result;
+}
+
+function renderTrends() {
+  if (!trendsChart || !trendsEmpty) return;
+  const days = getDayCountsLastN(7);
+  const maxVal = Math.max(1, ...days.map(d => Math.max(d.avoidable, d.fertile, 1)));
+  const hasAny = days.some(d => d.total > 0);
+  trendsEmpty.classList.toggle('hidden', hasAny);
+  trendsChart.classList.toggle('hidden', !hasAny);
+  if (!hasAny) {
+    trendsChart.innerHTML = '';
+    return;
+  }
+  trendsChart.innerHTML = '';
+  const dayLabels = days.map((d, i) => {
+    const date = new Date(d.dayStart);
+    return date.toLocaleDateString([], { weekday: 'short' });
+  });
+  days.forEach((d, i) => {
+    const col = document.createElement('div');
+    col.className = 'trends-day';
+    const label = document.createElement('span');
+    label.className = 'trends-day-label';
+    label.textContent = dayLabels[i];
+    col.appendChild(label);
+    const bars = document.createElement('div');
+    bars.className = 'trends-bars';
+    const avoidableH = maxVal > 0 ? (d.avoidable / maxVal) * 100 : 0;
+    const fertileH = maxVal > 0 ? (d.fertile / maxVal) * 100 : 0;
+    const barA = document.createElement('div');
+    barA.className = 'trends-bar trends-bar-avoidable';
+    barA.style.height = avoidableH + '%';
+    barA.title = d.avoidable + ' avoidable';
+    bars.appendChild(barA);
+    const barF = document.createElement('div');
+    barF.className = 'trends-bar trends-bar-fertile';
+    barF.style.height = fertileH + '%';
+    barF.title = d.fertile + ' fertile';
+    bars.appendChild(barF);
+    col.appendChild(bars);
+    const vals = document.createElement('span');
+    vals.className = 'trends-day-vals';
+    vals.textContent = (d.avoidable + d.fertile) > 0 ? d.avoidable + '↓ ' + d.fertile + '↑' : '—';
+    col.appendChild(vals);
+    trendsChart.appendChild(col);
+  });
+}
+
+function generateAutoReflection() {
+  const todayStart = getStartOfDay(Date.now());
+  const todayEnd = todayStart + 86400000;
+  const todayEntries = entries.filter(e => e.at >= todayStart && e.at < todayEnd);
+  const avoidable = todayEntries.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+  const fertile = todayEntries.filter(e => (e.type || 'avoidable') === 'fertile').length;
+  const total = avoidable + fertile;
+  if (total === 0) return '';
+  const ratio = fertile / total;
+  if (total === 1) {
+    return fertile ? "One fertile mistake today—you're stretching." : "One avoidable today—small slip, no big deal.";
+  }
+  if (ratio >= 0.6) {
+    return "Today: " + fertile + " fertile, " + avoidable + " avoidable. More experiments than slip-ups—good balance.";
+  }
+  if (ratio >= 0.4) {
+    return "Today: " + avoidable + " avoidable, " + fertile + " fertile. Mixed day—keep an eye on repeat avoidables.";
+  }
+  if (ratio > 0) {
+    return "Today: " + avoidable + " avoidable, " + fertile + " fertile. Aim to reduce the avoidable pattern and keep taking fertile risks.";
+  }
+  return "Today: " + avoidable + " avoidable. All avoidable—consider where you can add one small experiment.";
+}
+
+function renderAutoReflection() {
+  if (!autoReflectionEl) return;
+  const text = generateAutoReflection();
+  if (!text) {
+    autoReflectionEl.textContent = '';
+    autoReflectionEl.classList.add('hidden');
+    return;
+  }
+  autoReflectionEl.textContent = text;
+  autoReflectionEl.classList.remove('hidden');
 }
 
 function getSelectedType() {

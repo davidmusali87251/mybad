@@ -8,7 +8,9 @@ A simple web app to count and track mistakes by **day**, **week**, and **month**
 
 - **Add mistakes** — One tap to log; optional short note (e.g. what happened).
 - **View by period** — Switch between **Today**, **This week**, and **This month**.
-- **Stats** — See total count for the selected period and average per day.
+- **Stats** — See total count for the selected period, average per day, and **exploration index** (fertile ÷ total).
+- **Your trends** — Separate curves for avoidable (goal ↓) and fertile (goal ↔ or ↑) over the last 7 days.
+- **Automatic reflection** — A short, rule-based summary of the day’s mistakes (no AI, just your counts).
 - **Recent entries** — List of recent mistakes with time/date.
 - **Persistent** — Data is stored in your browser (localStorage).
 - **Share anonymously** — Share your current period stats so anyone can see (no account, no name).
@@ -100,6 +102,16 @@ create policy "Allow anonymous select" on shared_entries for select using (true)
 ```
 
 Then reload the app. If you get "policy already exists", you can ignore it and just run the `create table` part.
+
+### "column shared_stats.anonymous_id does not exist"
+
+Add the column in **SQL Editor** (Dashboard → SQL Editor → New query). Run once:
+
+```sql
+alter table shared_stats add column if not exists anonymous_id text;
+```
+
+Then reload the app. After this, "Others' results" will group shares by anonymous user.
 
 ### Group "Others' results" by same anonymous user
 
