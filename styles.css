@@ -434,21 +434,30 @@ body {
   margin-top: 0.5rem;
 }
 
+.section-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
 /* Share & community */
 .share-section,
-.community-section {
+.community-section,
+.community-entries-section {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
 }
 
 .share-section.hidden,
-.community-section.hidden {
+.community-section.hidden,
+.community-entries-section.hidden {
   display: none;
 }
 
 .share-section h2,
-.community-section h2 {
+.community-section h2,
+.community-entries-section h2 {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);

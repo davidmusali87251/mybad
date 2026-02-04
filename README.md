@@ -48,9 +48,20 @@ create table shared_stats (
   created_at timestamptz default now()
 );
 
+create table shared_entries (
+  id uuid default gen_random_uuid() primary key,
+  note text,
+  type text not null default 'avoidable',
+  created_at timestamptz default now()
+);
+
 alter table shared_stats enable row level security;
 create policy "Allow anonymous insert" on shared_stats for insert with check (true);
 create policy "Allow anonymous select" on shared_stats for select using (true);
+
+alter table shared_entries enable row level security;
+create policy "Allow anonymous insert" on shared_entries for insert with check (true);
+create policy "Allow anonymous select" on shared_entries for select using (true);
 ```
 
 3. Go to **Settings → API**. Copy:

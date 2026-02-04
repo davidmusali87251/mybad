@@ -26,6 +26,11 @@ const sharedEmpty = document.getElementById('shared-empty');
 const btnRefreshFeed = document.getElementById('btn-refresh-feed');
 const communityError = document.getElementById('community-error');
 const communitySection = document.getElementById('community-section');
+const communityEntriesSection = document.getElementById('community-entries-section');
+const sharedEntriesList = document.getElementById('shared-entries-list');
+const sharedEntriesEmpty = document.getElementById('shared-entries-empty');
+const sharedEntriesError = document.getElementById('shared-entries-error');
+const btnRefreshEntries = document.getElementById('btn-refresh-entries');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
@@ -222,6 +227,18 @@ function addMistake() {
   addNoteInput.value = '';
   renderStats();
   renderList();
+  if (SHARING_ENABLED) pushEntryToShared({ note, type });
+}
+
+function pushEntryToShared(entry) {
+  try {
+    getSupabase()
+      .from('shared_entries')
+      .insert({ note: entry.note || null, type: entry.type || 'avoidable' })
+      .then(({ error }) => {
+        if (!error && typeof fetchSharedEntries === 'function') fetchSharedEntries();
+      });
+  } catch (_) {}
 }
 
 function setPeriod(period) {
@@ -332,6 +349,75 @@ function showCommunitySetupMessage() {
   sharedEmpty.classList.remove('hidden');
 }
 
+function formatTimeFromISO(isoStr) {
+  if (!isoStr) return '';
+  const ts = new Date(isoStr).getTime();
+  return formatTime(ts);
+}
+
+async function fetchSharedEntries() {
+  if (!SHARING_ENABLED) {
+    if (communityEntriesSection) communityEntriesSection.classList.add('hidden');
+    return;
+  }
+  if (!sharedEntriesList || !sharedEntriesEmpty) return;
+  if (communityEntriesSection) communityEntriesSection.classList.remove('hidden');
+  if (sharedEntriesError) {
+    sharedEntriesError.classList.add('hidden');
+    sharedEntriesError.textContent = '';
+  }
+  try {
+    const client = getSupabase();
+    const { data, error } = await client
+      .from('shared_entries')
+      .select('id, note, type, created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    sharedEntriesList.innerHTML = '';
+    const list = data || [];
+    sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
+    sharedEntriesEmpty.textContent = list.length === 0 ? "No shared entries yet. Add a mistake to share yours." : "";
+    list.forEach(row => {
+      const li = document.createElement('li');
+      li.className = 'entry-item';
+      const badge = document.createElement('span');
+      const type = row.type || 'avoidable';
+      badge.className = 'badge ' + (type === 'fertile' ? 'badge-fertile' : 'badge-avoidable');
+      badge.textContent = type === 'fertile' ? 'FERTILE' : 'AVOIDABLE';
+      const note = document.createElement('span');
+      note.className = 'note' + (row.note ? '' : ' empty');
+      note.textContent = row.note || '(no note)';
+      const time = document.createElement('span');
+      time.className = 'time';
+      time.textContent = formatTimeFromISO(row.created_at);
+      li.appendChild(badge);
+      li.appendChild(note);
+      li.appendChild(time);
+      sharedEntriesList.appendChild(li);
+    });
+  } catch (err) {
+    const raw = err && (err.message || err.error_description || err.msg) || '';
+    const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
+    if (sharedEntriesError) {
+      sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
+      sharedEntriesError.classList.remove('hidden');
+    }
+    sharedEntriesList.innerHTML = '';
+    if (sharedEntriesEmpty) {
+      sharedEntriesEmpty.textContent = "Could not load everyone's entries. Check config and try again.";
+      sharedEntriesEmpty.classList.remove('hidden');
+    }
+  }
+}
+
+function showCommunityEntriesSetupMessage() {
+  if (!sharedEntriesList || !sharedEntriesEmpty) return;
+  sharedEntriesList.innerHTML = '';
+  sharedEntriesEmpty.textContent = "Set up Supabase in config.js to see everyone's entries. See README.";
+  sharedEntriesEmpty.classList.remove('hidden');
+}
+
 function initSharing() {
   if (!shareSection) return;
   shareSection.classList.remove('hidden');
@@ -339,6 +425,13 @@ function initSharing() {
   if (btnShare) btnShare.addEventListener('click', shareAnonymously);
   if (btnRefreshFeed) btnRefreshFeed.addEventListener('click', fetchSharedStats);
   fetchSharedStats();
+  if (SHARING_ENABLED && communityEntriesSection) {
+    communityEntriesSection.classList.remove('hidden');
+    if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', fetchSharedEntries);
+    fetchSharedEntries();
+  } else if (communityEntriesSection) {
+    communityEntriesSection.classList.add('hidden');
+  }
 }
 
 function initReflection() {
