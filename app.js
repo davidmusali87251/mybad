@@ -599,6 +599,10 @@ async function fetchSharedStats() {
     if (!byAnon[key]) byAnon[key] = [];
     byAnon[key].push(row);
   });
+  const MAX_SHARES_PER_PERSON = 10;
+  Object.keys(byAnon).forEach(key => {
+    byAnon[key] = byAnon[key].slice(0, MAX_SHARES_PER_PERSON);
+  });
   // Sort groups by most recent share first
   const groupKeys = Object.keys(byAnon).sort((a, b) => {
     const aMax = Math.max(...byAnon[a].map(r => new Date(r.created_at).getTime()));
