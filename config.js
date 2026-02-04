@@ -4,7 +4,6 @@
 window.MISTAKE_TRACKER_CONFIG = {
   // Your Supabase project URL
   SUPABASE_URL: 'https://nbztqlbfcsctkxkbkcin.supabase.co',
-  // Paste your anon public key here (from Supabase Settings → API)
-  // Note: process.env.SUPABASE_KEY is for server/node; in the browser you must paste the string.
-  SUPABASE_ANON_KEY: '' // e.g. 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  // Your public anon/publishable key (safe to use in browser)
+  SUPABASE_ANON_KEY: 'sb_publishable_HDTEKY-bC9Of3p7ejZ1-MA_oZH-NZqY-'
 };
