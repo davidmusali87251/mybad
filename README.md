@@ -66,4 +66,13 @@ window.MISTAKE_TRACKER_CONFIG = {
 ```
 
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
-6. Reload the app. You’ll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
+6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
+
+### "Failed: Unregistered API key"
+
+This means Supabase doesn't recognize the key you're using. Fix it by:
+
+- **Use the anon key, not the service role.** In the browser you must use the **anon public** key. Never put `service_role` or a secret key in `config.js`.
+- **Get the key from the right place.** In the dashboard go to **Settings → API**. Use the **anon** key from the **Legacy API Keys** tab (the long JWT starting with `eyJ...`). If you use a Publishable key (`sb_publishable_...`) and see this error, switch to the legacy anon key.
+- **Same project.** The key must belong to the project whose URL you set. Check that `SUPABASE_URL` matches the project where you copied the key.
+- **Exact value.** Paste the key with no extra spaces, newlines, or quotes. Don't rotate or revoke the key in the dashboard without updating `config.js`. You’ll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
