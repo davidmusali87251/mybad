@@ -233,7 +233,12 @@ function setPeriod(period) {
 
 // --- Anonymous sharing (Supabase) ---
 function getSupabase() {
-  if (!SHARING_ENABLED || typeof supabase === 'undefined') return null;
+  if (!SHARING_ENABLED) {
+    throw new Error('Sharing is not enabled (missing Supabase config).');
+  }
+  if (typeof supabase === 'undefined') {
+    throw new Error('Supabase client library did not load.');
+  }
   return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
@@ -254,23 +259,28 @@ async function shareAnonymously() {
   shareStatus.textContent = 'Sharing…';
   shareStatus.className = 'share-status';
   btnShare.disabled = true;
-  const stats = getCurrentStatsForShare();
-  const client = getSupabase();
-  const { error } = await client.from('shared_stats').insert({
-    period: stats.period,
-    count: stats.count,
-    avg_per_day: stats.avg_per_day
-  });
-  btnShare.disabled = false;
-  if (error) {
-    shareStatus.textContent = 'Failed: ' + (error.message || 'Unknown error');
+  try {
+    const stats = getCurrentStatsForShare();
+    const client = getSupabase();
+    const { error } = await client.from('shared_stats').insert({
+      period: stats.period,
+      count: stats.count,
+      avg_per_day: stats.avg_per_day
+    });
+    if (error) {
+      throw error;
+    }
+    shareStatus.textContent = 'Shared anonymously.';
+    shareStatus.className = 'share-status success';
+    setTimeout(() => { shareStatus.textContent = ''; }, 3000);
+    fetchSharedStats();
+  } catch (err) {
+    const msg = err && err.message ? err.message : 'Unknown error';
+    shareStatus.textContent = 'Failed: ' + msg;
     shareStatus.className = 'share-status error';
-    return;
+  } finally {
+    btnShare.disabled = false;
   }
-  shareStatus.textContent = 'Shared anonymously.';
-  shareStatus.className = 'share-status success';
-  setTimeout(() => { shareStatus.textContent = ''; }, 3000);
-  fetchSharedStats();
 }
 
 async function fetchSharedStats() {
