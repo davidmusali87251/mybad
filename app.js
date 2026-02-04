@@ -572,11 +572,12 @@ async function fetchSharedStats() {
   communityError.classList.add('hidden');
   communityError.textContent = '';
   const client = getSupabase();
+  const MAX_OTHER_RESULTS = 10;
   const { data, error } = await client
     .from('shared_stats')
     .select('id, period, count, avg_per_day, created_at, anonymous_id')
     .order('created_at', { ascending: false })
-    .limit(100);
+    .limit(MAX_OTHER_RESULTS);
   if (error) {
     const raw = error.message || error.error_description || error.msg || '';
     const isUnregisteredKey = /unregistered\s*api\s*key/i.test(raw);
@@ -598,10 +599,6 @@ async function fetchSharedStats() {
     const key = row.anonymous_id || '__anon__';
     if (!byAnon[key]) byAnon[key] = [];
     byAnon[key].push(row);
-  });
-  const MAX_SHARES_PER_PERSON = 10;
-  Object.keys(byAnon).forEach(key => {
-    byAnon[key] = byAnon[key].slice(0, MAX_SHARES_PER_PERSON);
   });
   // Sort groups by most recent share first
   const groupKeys = Object.keys(byAnon).sort((a, b) => {
