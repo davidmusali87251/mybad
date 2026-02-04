@@ -275,8 +275,10 @@ async function shareAnonymously() {
     setTimeout(() => { shareStatus.textContent = ''; }, 3000);
     fetchSharedStats();
   } catch (err) {
-    const msg = err && err.message ? err.message : 'Unknown error';
-    shareStatus.textContent = 'Failed: ' + msg;
+    const raw = (err && (err.message || err.error_description || err.msg)) || (typeof err === 'string' ? err : '');
+    const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
+    const isUnregisteredKey = /unregistered\s*api\s*key/i.test(msg);
+    shareStatus.textContent = 'Failed: ' + (isUnregisteredKey ? 'Unregistered API key' : msg);
     shareStatus.className = 'share-status error';
   } finally {
     btnShare.disabled = false;
@@ -297,7 +299,9 @@ async function fetchSharedStats() {
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) {
-    communityError.textContent = 'Could not load: ' + (error.message || 'Unknown error');
+    const raw = error.message || error.error_description || error.msg || '';
+    const isUnregisteredKey = /unregistered\s*api\s*key/i.test(raw);
+    communityError.textContent = 'Could not load: ' + (isUnregisteredKey ? 'Unregistered API key' : (raw || 'Unknown error'));
     communityError.classList.remove('hidden');
     sharedList.innerHTML = '';
     sharedEmpty.classList.remove('hidden');
