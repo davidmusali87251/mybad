@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'mistake-tracker-entries';
+const ANON_ID_KEY = 'mistake-tracker-anon-id';
 
 let entries = [];
 let currentPeriod = 'day';
@@ -249,6 +250,19 @@ function setPeriod(period) {
 }
 
 // --- Anonymous sharing (Supabase) ---
+function getOrCreateAnonId() {
+  let id = localStorage.getItem(ANON_ID_KEY);
+  if (!id || id.length < 10) {
+    id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+    localStorage.setItem(ANON_ID_KEY, id);
+  }
+  return id;
+}
+
 function getSupabase() {
   if (!SHARING_ENABLED) {
     throw new Error('Sharing is not enabled (missing Supabase config).');
@@ -282,7 +296,8 @@ async function shareAnonymously() {
     const { error } = await client.from('shared_stats').insert({
       period: stats.period,
       count: stats.count,
-      avg_per_day: stats.avg_per_day
+      avg_per_day: stats.avg_per_day,
+      anonymous_id: getOrCreateAnonId()
     });
     if (error) {
       throw error;
@@ -312,9 +327,9 @@ async function fetchSharedStats() {
   const client = getSupabase();
   const { data, error } = await client
     .from('shared_stats')
-    .select('id, period, count, avg_per_day, created_at')
+    .select('id, period, count, avg_per_day, created_at, anonymous_id')
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(100);
   if (error) {
     const raw = error.message || error.error_description || error.msg || '';
     const isUnregisteredKey = /unregistered\s*api\s*key/i.test(raw);
@@ -330,15 +345,30 @@ async function fetchSharedStats() {
     sharedEmpty.textContent = "No shared results yet. Share yours above!";
     return;
   }
-  sharedList.innerHTML = '';
+  // Group by anonymous_id (same browser = same anonymous person)
+  const byAnon = {};
   data.forEach(row => {
-    const li = document.createElement('li');
-    li.className = 'shared-item';
-    const periodLabel = getPeriodLabel(row.period);
-    const timeStr = row.created_at ? new Date(row.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
-    const avgStr = row.avg_per_day != null ? row.avg_per_day : '—';
-    li.innerHTML = '<span class="shared-stat"><strong>' + row.count + '</strong> ' + periodLabel + '</span><span class="shared-meta">avg ' + avgStr + '/day · ' + timeStr + '</span>';
-    sharedList.appendChild(li);
+    const key = row.anonymous_id || '__anon__';
+    if (!byAnon[key]) byAnon[key] = [];
+    byAnon[key].push(row);
+  });
+  sharedList.innerHTML = '';
+  Object.keys(byAnon).forEach(anonKey => {
+    const rows = byAnon[anonKey];
+    const groupLabel = document.createElement('li');
+    groupLabel.className = 'shared-group-label';
+    const shareCount = rows.length;
+    groupLabel.textContent = shareCount === 1 ? "Someone's share" : "Someone's shares (" + shareCount + ")";
+    sharedList.appendChild(groupLabel);
+    rows.forEach(row => {
+      const li = document.createElement('li');
+      li.className = 'shared-item';
+      const periodLabel = getPeriodLabel(row.period);
+      const timeStr = row.created_at ? new Date(row.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
+      const avgStr = row.avg_per_day != null ? row.avg_per_day : '—';
+      li.innerHTML = '<span class="shared-stat"><strong>' + row.count + '</strong> ' + periodLabel + '</span><span class="shared-meta">avg ' + avgStr + '/day · ' + timeStr + '</span>';
+      sharedList.appendChild(li);
+    });
   });
 }
 

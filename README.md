@@ -45,7 +45,8 @@ create table shared_stats (
   period text not null,
   count int not null,
   avg_per_day float,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  anonymous_id text
 );
 
 create table shared_entries (
@@ -78,6 +79,35 @@ window.MISTAKE_TRACKER_CONFIG = {
 
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
+
+### "Could not find the table 'public.shared_entries' in the schema cache"
+
+The **Everyone's recent entries** feature needs a `shared_entries` table. If you set up Supabase before this was added, run this in **SQL Editor** (Dashboard → SQL Editor → New query):
+
+```sql
+create table if not exists shared_entries (
+  id uuid default gen_random_uuid() primary key,
+  note text,
+  type text not null default 'avoidable',
+  created_at timestamptz default now()
+);
+
+alter table shared_entries enable row level security;
+create policy "Allow anonymous insert" on shared_entries for insert with check (true);
+create policy "Allow anonymous select" on shared_entries for select using (true);
+```
+
+Then reload the app. If you get "policy already exists", you can ignore it and just run the `create table` part.
+
+### Group "Others' results" by same anonymous user
+
+To group shared stats by anonymous user (one row per person, still no names), add the column and run once in **SQL Editor**:
+
+```sql
+alter table shared_stats add column if not exists anonymous_id text;
+```
+
+The app will then send a per-browser anonymous ID when sharing and group results by it in the UI.
 
 ### "Failed: Unregistered API key"
 
