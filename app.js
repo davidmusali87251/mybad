@@ -48,7 +48,11 @@ function loadEntries() {
 }
 
 function saveEntries() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch (e) {
+    console.warn('Mistake Tracker: could not save to localStorage', e);
+  }
 }
 
 function getTodayKey() {
@@ -156,9 +160,9 @@ function renderStats() {
   const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
   const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
 
-  statCount.textContent = count;
-  statLabel.textContent = getPeriodLabel(currentPeriod);
-  statAvg.textContent = avg;
+  if (statCount) statCount.textContent = count;
+  if (statLabel) statLabel.textContent = getPeriodLabel(currentPeriod);
+  if (statAvg) statAvg.textContent = avg;
 
   if (statsNote) {
     if (count === 0) {
@@ -186,6 +190,7 @@ function formatTime(ts) {
 }
 
 function renderList() {
+  if (!entryList) return;
   const filtered = filterByPeriod(currentPeriod);
   entryList.innerHTML = '';
 
@@ -211,7 +216,7 @@ function renderList() {
     entryList.appendChild(li);
   });
 
-  emptyState.classList.toggle('hidden', show.length > 0);
+  if (emptyState) emptyState.classList.toggle('hidden', show.length > 0);
 }
 
 function getSelectedType() {
@@ -352,9 +357,15 @@ async function fetchSharedStats() {
     if (!byAnon[key]) byAnon[key] = [];
     byAnon[key].push(row);
   });
+  // Sort groups by most recent share first
+  const groupKeys = Object.keys(byAnon).sort((a, b) => {
+    const aMax = Math.max(...byAnon[a].map(r => new Date(r.created_at).getTime()));
+    const bMax = Math.max(...byAnon[b].map(r => new Date(r.created_at).getTime()));
+    return bMax - aMax;
+  });
   sharedList.innerHTML = '';
-  Object.keys(byAnon).forEach(anonKey => {
-    const rows = byAnon[anonKey];
+  groupKeys.forEach(anonKey => {
+    const rows = byAnon[anonKey] || [];
     const groupLabel = document.createElement('li');
     groupLabel.className = 'shared-group-label';
     const shareCount = rows.length;
@@ -475,13 +486,13 @@ function initReflection() {
   });
 }
 
-addBtn.addEventListener('click', addMistake);
-addNoteInput.addEventListener('keydown', e => {
+if (addBtn) addBtn.addEventListener('click', addMistake);
+if (addNoteInput) addNoteInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') addMistake();
 });
 
 periodTabs.forEach(tab => {
-  tab.addEventListener('click', () => setPeriod(tab.dataset.period));
+  if (tab) tab.addEventListener('click', () => setPeriod(tab.dataset.period));
 });
 
 loadEntries();
