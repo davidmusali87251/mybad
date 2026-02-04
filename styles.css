@@ -89,6 +89,74 @@ body {
   margin-bottom: 0.75rem;
 }
 
+.type-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.type-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.type-options {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.type-pill {
+  flex: 1;
+  position: relative;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.type-pill input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pill-main {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pill-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.type-pill input:checked + .pill-main,
+.type-pill input:checked + .pill-main + .pill-sub {
+  color: var(--accent);
+}
+
+.type-pill input:checked ~ .pill-main {
+  color: var(--accent);
+}
+
+.type-pill input:checked ~ .pill-sub {
+  color: var(--text-muted);
+}
+
+.type-pill:hover {
+  background: var(--surface-hover);
+}
+
 .add-card input::placeholder {
   color: var(--text-muted);
 }
@@ -158,6 +226,13 @@ body {
   margin-bottom: 2rem;
 }
 
+.stats-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: -1rem;
+  margin-bottom: 1.5rem;
+}
+
 .stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -217,6 +292,27 @@ body {
   border-radius: 8px;
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
+}
+
+.entry-item .badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.badge-avoidable {
+  color: var(--danger);
+  border-color: var(--danger-dim);
+}
+
+.badge-fertile {
+  color: #4a9c6d;
+  border-color: #2d6844;
 }
 
 .entry-item .note {

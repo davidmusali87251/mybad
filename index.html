@@ -20,6 +20,23 @@
       <div class="add-card">
         <label for="mistake-note">What happened? (optional)</label>
         <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="120">
+
+        <div class="type-row">
+          <span class="type-label">Type</span>
+          <div class="type-options">
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="avoidable" checked>
+              <span class="pill-main">Avoidable</span>
+              <span class="pill-sub">Careless / repetitive</span>
+            </label>
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="fertile">
+              <span class="pill-main">Fertile</span>
+              <span class="pill-sub">Experiment / growth</span>
+            </label>
+          </div>
+        </div>
+
         <button type="button" id="add-mistake" class="btn-add">+ Add mistake</button>
       </div>
     </section>
@@ -40,6 +57,7 @@
         <span class="stat-label">avg per day (period)</span>
       </div>
     </section>
+    <p class="stats-note" id="stats-note"></p>
 
     <section class="history">
       <h2>Recent entries</h2>

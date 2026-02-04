@@ -10,12 +10,14 @@ const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 
 const addNoteInput = document.getElementById('mistake-note');
 const addBtn = document.getElementById('add-mistake');
+const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
 const statLabel = document.getElementById('stat-label');
 const statAvg = document.getElementById('stat-avg');
 const entryList = document.getElementById('entry-list');
 const emptyState = document.getElementById('empty-state');
+const statsNote = document.getElementById('stats-note');
 const shareSection = document.getElementById('share-section');
 const btnShare = document.getElementById('btn-share');
 const shareStatus = document.getElementById('share-status');
@@ -90,9 +92,22 @@ function renderStats() {
   const days = getDaysInPeriod(currentPeriod);
   const avg = days > 0 ? (count / days).toFixed(1) : '—';
 
+  const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+  const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
+
   statCount.textContent = count;
   statLabel.textContent = getPeriodLabel(currentPeriod);
   statAvg.textContent = avg;
+
+  if (statsNote) {
+    if (count === 0) {
+      statsNote.textContent = "No mistakes logged this period. That's okay—just check that you're still exploring and learning.";
+    } else {
+      statsNote.textContent =
+        avoidableCount + " avoidable (aim to reduce) · " +
+        fertileCount + " fertile (valuable experiments)";
+    }
+  }
 }
 
 function formatTime(ts) {
@@ -119,12 +134,17 @@ function renderList() {
   show.forEach(entry => {
     const li = document.createElement('li');
     li.className = 'entry-item';
+    const badge = document.createElement('span');
+    const type = entry.type || 'avoidable';
+    badge.className = 'badge ' + (type === 'fertile' ? 'badge-fertile' : 'badge-avoidable');
+    badge.textContent = type === 'fertile' ? 'FERTILE' : 'AVOIDABLE';
     const note = document.createElement('span');
     note.className = 'note' + (entry.note ? '' : ' empty');
     note.textContent = entry.note || '(no note)';
     const time = document.createElement('span');
     time.className = 'time';
     time.textContent = formatTime(entry.at);
+    li.appendChild(badge);
     li.appendChild(note);
     li.appendChild(time);
     entryList.appendChild(li);
@@ -133,9 +153,16 @@ function renderList() {
   emptyState.classList.toggle('hidden', show.length > 0);
 }
 
+function getSelectedType() {
+  if (!typeInputs || typeInputs.length === 0) return 'avoidable';
+  const checked = Array.from(typeInputs).find(i => i.checked);
+  return (checked && checked.value) || 'avoidable';
+}
+
 function addMistake() {
   const note = (addNoteInput.value || '').trim();
-  entries.push({ at: Date.now(), note });
+  const type = getSelectedType();
+  entries.push({ at: Date.now(), note, type });
   saveEntries();
   addNoteInput.value = '';
   renderStats();
