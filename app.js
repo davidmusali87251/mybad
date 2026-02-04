@@ -26,6 +26,11 @@ const sharedEmpty = document.getElementById('shared-empty');
 const btnRefreshFeed = document.getElementById('btn-refresh-feed');
 const communityError = document.getElementById('community-error');
 const communitySection = document.getElementById('community-section');
+const reflectionAvoidable = document.getElementById('reflection-avoidable');
+const reflectionFertile = document.getElementById('reflection-fertile');
+const reflectionNote = document.getElementById('reflection-note');
+
+const REFLECTIONS_KEY = 'mistake-tracker-reflections';
 
 function loadEntries() {
   try {
@@ -38,6 +43,56 @@ function loadEntries() {
 
 function saveEntries() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function getTodayKey() {
+  return String(getStartOfDay(Date.now()));
+}
+
+function loadReflections() {
+  try {
+    const raw = localStorage.getItem(REFLECTIONS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveReflections(reflections) {
+  localStorage.setItem(REFLECTIONS_KEY, JSON.stringify(reflections));
+}
+
+function renderReflection() {
+  if (!reflectionAvoidable || !reflectionFertile) return;
+  const key = getTodayKey();
+  const all = loadReflections();
+  const today = all[key] || { avoidable: '', fertile: '' };
+  reflectionAvoidable.value = today.avoidable || '';
+  reflectionFertile.value = today.fertile || '';
+
+  if (reflectionNote) {
+    if (!today.avoidable && !today.fertile) {
+      reflectionNote.textContent = 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
+    } else {
+      reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
+    }
+  }
+}
+
+function updateReflection(field, value) {
+  const key = getTodayKey();
+  const all = loadReflections();
+  const today = all[key] || { avoidable: '', fertile: '' };
+  today[field] = value;
+  all[key] = today;
+  saveReflections(all);
+  if (reflectionNote) {
+    if (!today.avoidable && !today.fertile) {
+      reflectionNote.textContent = 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
+    } else {
+      reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
+    }
+  }
 }
 
 function getStartOfDay(d) {
@@ -272,6 +327,17 @@ function initSharing() {
   fetchSharedStats();
 }
 
+function initReflection() {
+  if (!reflectionAvoidable || !reflectionFertile) return;
+  renderReflection();
+  reflectionAvoidable.addEventListener('blur', () => {
+    updateReflection('avoidable', reflectionAvoidable.value.trim());
+  });
+  reflectionFertile.addEventListener('blur', () => {
+    updateReflection('fertile', reflectionFertile.value.trim());
+  });
+}
+
 addBtn.addEventListener('click', addMistake);
 addNoteInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') addMistake();
@@ -285,3 +351,4 @@ loadEntries();
 renderStats();
 renderList();
 initSharing();
+initReflection();

@@ -353,6 +353,87 @@ body {
   display: none;
 }
 
+.reflection-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.reflection-section h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.reflection-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.reflection-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .reflection-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.reflection-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 0.9rem 1rem;
+}
+
+.reflection-card h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.reflection-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.reflection-card textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 3.5rem;
+  max-height: 10rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+}
+
+.reflection-card textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.reflection-card textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.reflection-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
 /* Share & community */
 .share-section,
 .community-section {
