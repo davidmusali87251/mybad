@@ -18,6 +18,10 @@ const statLabel = document.getElementById('stat-label');
 const statAvg = document.getElementById('stat-avg');
 const statExploration = document.getElementById('stat-exploration');
 const statExplorationHint = document.getElementById('stat-exploration-hint');
+const statExplorationSoWhat = document.getElementById('stat-exploration-so-what');
+const progressSection = document.getElementById('progress-section');
+const progressCards = document.getElementById('progress-cards');
+const progressEmpty = document.getElementById('progress-empty');
 const trendsSection = document.getElementById('trends-section');
 const trendsChart = document.getElementById('trends-chart');
 const trendsEmpty = document.getElementById('trends-empty');
@@ -185,15 +189,27 @@ function renderStats() {
     if (count === 0) {
       statExploration.textContent = '—';
       if (statExplorationHint) statExplorationHint.textContent = 'fertile ÷ total';
+      if (statExplorationSoWhat) statExplorationSoWhat.textContent = '';
     } else {
       const ratio = fertileCount / count;
       const pct = Math.round(ratio * 100);
       statExploration.textContent = pct + '%';
       if (statExplorationHint) statExplorationHint.textContent = fertileCount + ' fertile ÷ ' + count + ' total';
+      if (statExplorationSoWhat) statExplorationSoWhat.textContent = getExplorationSoWhat(pct);
     }
   }
   renderTrends();
+  renderProgress();
   renderAutoReflection();
+}
+
+function getExplorationSoWhat(pct) {
+  if (pct >= 70) return 'Lots of experimenting.';
+  if (pct >= 50) return 'Good mix of risk and care.';
+  if (pct >= 30) return 'Room to add more experiments.';
+  if (pct >= 10) return 'Aim for more fertile mistakes.';
+  if (pct > 0) return 'One small experiment can help.';
+  return 'Try one stretch today.';
 }
 
 function formatTime(ts) {
@@ -238,6 +254,79 @@ function renderList() {
   });
 
   if (emptyState) emptyState.classList.toggle('hidden', show.length > 0);
+}
+
+function getWeekBounds(weeksAgo) {
+  const now = Date.now();
+  const dayMs = 86400000;
+  const thisWeekStart = getStartOfWeek(now);
+  const weekStart = thisWeekStart - weeksAgo * 7 * dayMs;
+  return { start: weekStart, end: weekStart + 7 * dayMs };
+}
+
+function getThisWeekAndLastWeek() {
+  const thisWeek = getWeekBounds(0);
+  const lastWeek = getWeekBounds(1);
+  const inThisWeek = entries.filter(e => e.at >= thisWeek.start && e.at < thisWeek.end);
+  const inLastWeek = entries.filter(e => e.at >= lastWeek.start && e.at < lastWeek.end);
+  const toStats = (list) => {
+    const total = list.length;
+    const fertile = list.filter(e => (e.type || 'avoidable') === 'fertile').length;
+    const exploration = total > 0 ? Math.round((fertile / total) * 100) : null;
+    return { total, fertile, avoidable: total - fertile, exploration };
+  };
+  return { thisWeek: toStats(inThisWeek), lastWeek: toStats(inLastWeek) };
+}
+
+function renderProgress() {
+  if (!progressCards || !progressEmpty) return;
+  const { thisWeek, lastWeek } = getThisWeekAndLastWeek();
+  const hasData = thisWeek.total > 0 || lastWeek.total > 0;
+  progressEmpty.classList.toggle('hidden', hasData);
+  progressCards.classList.toggle('hidden', !hasData);
+  if (!hasData) {
+    progressCards.innerHTML = '';
+    return;
+  }
+  progressCards.innerHTML = '';
+  const renderWeekCard = (label, stats, isThisWeek) => {
+    const card = document.createElement('div');
+    card.className = 'progress-card' + (isThisWeek ? ' progress-card-current' : '');
+    const title = document.createElement('span');
+    title.className = 'progress-card-title';
+    title.textContent = label;
+    card.appendChild(title);
+    const totalEl = document.createElement('span');
+    totalEl.className = 'progress-card-total';
+    totalEl.textContent = stats.total + ' mistakes';
+    card.appendChild(totalEl);
+    const explEl = document.createElement('span');
+    explEl.className = 'progress-card-exploration';
+    explEl.textContent = stats.exploration != null ? stats.exploration + '% exploration' : '—';
+    card.appendChild(explEl);
+    return card;
+  };
+  progressCards.appendChild(renderWeekCard('This week', thisWeek, true));
+  progressCards.appendChild(renderWeekCard('Last week', lastWeek, false));
+  const diff = document.createElement('div');
+  diff.className = 'progress-diff';
+  const totalDiff = thisWeek.total - lastWeek.total;
+  const explDiff = (thisWeek.exploration != null && lastWeek.exploration != null)
+    ? thisWeek.exploration - lastWeek.exploration
+    : null;
+  let diffText = '';
+  if (lastWeek.total === 0 && thisWeek.total > 0) diffText = 'You\'ve started logging this week.';
+  else if (thisWeek.total === 0 && lastWeek.total > 0) diffText = 'No mistakes logged this week yet.';
+  else if (totalDiff !== 0 || (explDiff !== null && explDiff !== 0)) {
+    const parts = [];
+    if (totalDiff < 0) parts.push('Fewer mistakes than last week.');
+    else if (totalDiff > 0) parts.push('More mistakes than last week.');
+    if (explDiff !== null && explDiff > 0) parts.push('Higher exploration—more fertile.');
+    else if (explDiff !== null && explDiff < 0) parts.push('Lower exploration than last week.');
+    diffText = parts.join(' ') || 'Similar to last week.';
+  } else diffText = 'Similar to last week.';
+  diff.textContent = diffText;
+  progressCards.appendChild(diff);
 }
 
 function getDayCountsLastN(n) {
@@ -306,6 +395,41 @@ function renderTrends() {
   });
 }
 
+const AUTO_REFLECTION_PHRASES = {
+  oneFertile: [
+    "One fertile mistake today—you're stretching.",
+    "One experiment logged. That's the kind of mistake that pays off."
+  ],
+  oneAvoidable: [
+    "One avoidable today—small slip, no big deal.",
+    "A single avoidable. Notice the trigger so it doesn't become a pattern."
+  ],
+  highFertile: [
+    "Today: {f} fertile, {a} avoidable. More experiments than slip-ups—good balance.",
+    "Today: {f} fertile, {a} avoidable. You're leaning into the right kind of risk.",
+    "{f} fertile and {a} avoidable today. The ratio is moving in a good direction."
+  ],
+  mixed: [
+    "Today: {a} avoidable, {f} fertile. Mixed day—keep an eye on repeat avoidables.",
+    "Today: {a} avoidable, {f} fertile. One less avoidable tomorrow would be a win.",
+    "{a} avoidable and {f} fertile. Which avoidable could you eliminate tomorrow?"
+  ],
+  lowFertile: [
+    "Today: {a} avoidable, {f} fertile. Aim to reduce the avoidable pattern and keep taking fertile risks.",
+    "{a} avoidable, {f} fertile. Consider one small experiment you've been putting off.",
+    "More avoidable than fertile today. Tomorrow: same care, plus one deliberate stretch."
+  ],
+  allAvoidable: [
+    "Today: {a} avoidable. All avoidable—consider where you can add one small experiment.",
+    "{a} avoidable today, zero fertile. What's one thing you could try that might fail in a useful way?",
+    "No fertile mistakes today. A single stretch or experiment would balance the ledger."
+  ]
+};
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function generateAutoReflection() {
   const todayStart = getStartOfDay(Date.now());
   const todayEnd = todayStart + 86400000;
@@ -315,19 +439,14 @@ function generateAutoReflection() {
   const total = avoidable + fertile;
   if (total === 0) return '';
   const ratio = fertile / total;
+  const a = avoidable, f = fertile;
   if (total === 1) {
-    return fertile ? "One fertile mistake today—you're stretching." : "One avoidable today—small slip, no big deal.";
+    return fertile ? pick(AUTO_REFLECTION_PHRASES.oneFertile) : pick(AUTO_REFLECTION_PHRASES.oneAvoidable);
   }
-  if (ratio >= 0.6) {
-    return "Today: " + fertile + " fertile, " + avoidable + " avoidable. More experiments than slip-ups—good balance.";
-  }
-  if (ratio >= 0.4) {
-    return "Today: " + avoidable + " avoidable, " + fertile + " fertile. Mixed day—keep an eye on repeat avoidables.";
-  }
-  if (ratio > 0) {
-    return "Today: " + avoidable + " avoidable, " + fertile + " fertile. Aim to reduce the avoidable pattern and keep taking fertile risks.";
-  }
-  return "Today: " + avoidable + " avoidable. All avoidable—consider where you can add one small experiment.";
+  if (ratio >= 0.6) return pick(AUTO_REFLECTION_PHRASES.highFertile).replace(/\{f\}/g, f).replace(/\{a\}/g, a);
+  if (ratio >= 0.4) return pick(AUTO_REFLECTION_PHRASES.mixed).replace(/\{a\}/g, a).replace(/\{f\}/g, f);
+  if (ratio > 0) return pick(AUTO_REFLECTION_PHRASES.lowFertile).replace(/\{a\}/g, a).replace(/\{f\}/g, f);
+  return pick(AUTO_REFLECTION_PHRASES.allAvoidable).replace(/\{a\}/g, a);
 }
 
 function renderAutoReflection() {
