@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mistake Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Mistake Tracker</h1>
+      <p class="tagline">Count & reflect by day, week, month</p>
+    </header>
+
+    <section class="add-section">
+      <div class="add-card">
+        <label for="mistake-note">What happened? (optional)</label>
+        <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="120">
+        <button type="button" id="add-mistake" class="btn-add">+ Add mistake</button>
+      </div>
+    </section>
+
+    <section class="period-tabs">
+      <button type="button" class="tab active" data-period="day">Today</button>
+      <button type="button" class="tab" data-period="week">This week</button>
+      <button type="button" class="tab" data-period="month">This month</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-count">0</span>
+        <span class="stat-label" id="stat-label">mistakes today</span>
+      </div>
+      <div class="stat-card secondary">
+        <span class="stat-value" id="stat-avg">—</span>
+        <span class="stat-label">avg per day (period)</span>
+      </div>
+    </section>
+
+    <section class="history">
+      <h2>Recent entries</h2>
+      <ul class="entry-list" id="entry-list"></ul>
+      <p class="empty-state" id="empty-state">No mistakes logged yet. Add one above.</p>
+    </section>
+
+    <section class="share-section" id="share-section">
+      <h2>Share anonymously</h2>
+      <p class="share-hint">Share your current period stats so others can see (no account, no name).</p>
+      <button type="button" id="btn-share" class="btn-share">Share my result</button>
+      <p class="share-status" id="share-status"></p>
+    </section>
+
+    <section class="community-section" id="community-section">
+      <h2>Others' results</h2>
+      <p class="community-hint">Recent anonymous shares from everyone.</p>
+      <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
+      <ul class="shared-list" id="shared-list"></ul>
+      <p class="empty-state" id="shared-empty">No shared results yet. Share yours above!</p>
+      <p class="community-error hidden" id="community-error"></p>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
