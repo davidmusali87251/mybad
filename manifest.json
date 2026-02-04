@@ -1,0 +1,25 @@
+{
+  "name": "Mistake Tracker",
+  "short_name": "MyBad",
+  "description": "Count & reflect on mistakes by day, week, month. Track avoidable vs fertile errors.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f0f12",
+  "background_color": "#0f0f12",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

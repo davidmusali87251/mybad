@@ -4,6 +4,8 @@ A simple web app to count and track mistakes by **day**, **week**, and **month**
 
 **Live demo:** [https://davidmusali87251.github.io/mybad/](https://davidmusali87251.github.io/mybad/)
 
+Design and constraints are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Features
 
 - **Add mistakes** — One tap to log; optional short note (e.g. what happened).
@@ -33,6 +35,16 @@ npx serve .
 Then go to `http://localhost:8080` (or the port shown).
 
 No install required for local use. For **sharing** and **viewing others' results**, set up Supabase once (free) below.
+
+### Install as app (PWA)
+
+When the app is served over **HTTPS** (e.g. on GitHub Pages), you can install it like an app:
+
+- **Desktop (Chrome/Edge):** Open the app → menu (⋮) → “Install Mistake Tracker” / “Install MyBad”.
+- **Mobile (Android):** Open in Chrome → menu → “Add to Home screen” or “Install app”.
+- **iOS (Safari):** Share → “Add to Home Screen”.
+
+The app includes a `manifest.json` and a service worker (`sw.js`) so it can be installed and works better offline.
 
 ---
 
