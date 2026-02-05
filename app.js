@@ -16,8 +16,11 @@ const addNoteInput = document.getElementById('mistake-note');
 const addBtn = document.getElementById('add-mistake');
 const quickAvoidableBtn = document.getElementById('btn-quick-avoidable');
 const quickFertileBtn = document.getElementById('btn-quick-fertile');
+const quickObservedBtn = document.getElementById('btn-quick-observed');
 const repeatLastBtn = document.getElementById('btn-repeat-last');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
+const observedHint = document.getElementById('observed-hint');
+const communityComparison = document.getElementById('community-comparison');
 const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
 const statLabel = document.getElementById('stat-label');
@@ -880,19 +883,31 @@ async function fetchSharedEntries() {
     sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
     sharedEntriesEmpty.textContent = list.length === 0 ? "No shared entries yet. Add a mistake to share yours." : "";
 
+    let avoidable = 0;
+    let fertile = 0;
+    let observed = 0;
+    list.forEach(row => {
+      const t = row.type || 'avoidable';
+      if (t === 'fertile') fertile += 1;
+      else if (t === 'observed') observed += 1;
+      else avoidable += 1;
+    });
+    const primaryTotal = avoidable + fertile;
+    const sharedFertilePct = primaryTotal > 0 ? Math.round((fertile / primaryTotal) * 100) : null;
+    const myStats = getThisWeekAndLastWeek();
+    const myPct = myStats.thisWeek.exploration;
+
+    if (communityComparison) {
+      const parts = [];
+      if (myPct != null) parts.push('Your exploration this week: ' + myPct + '%.');
+      if (sharedFertilePct != null) parts.push('Recent shared entries: ' + sharedFertilePct + '% fertile.');
+      communityComparison.textContent = parts.length ? parts.join(' ') : '';
+    }
+
     if (communityEntriesTrend) {
       if (!list.length) {
         communityEntriesTrend.textContent = '';
       } else {
-        let avoidable = 0;
-        let fertile = 0;
-        let observed = 0;
-        list.forEach(row => {
-          const t = row.type || 'avoidable';
-          if (t === 'fertile') fertile += 1;
-          else if (t === 'observed') observed += 1;
-          else avoidable += 1;
-        });
         communityEntriesTrend.textContent =
           'Last ' + list.length + ' shared entries: ' +
           avoidable + ' avoidable · ' +
@@ -986,7 +1001,21 @@ if (addNoteInput) addNoteInput.addEventListener('keydown', e => {
 
 if (quickAvoidableBtn) quickAvoidableBtn.addEventListener('click', () => quickAdd('avoidable'));
 if (quickFertileBtn) quickFertileBtn.addEventListener('click', () => quickAdd('fertile'));
+if (quickObservedBtn) quickObservedBtn.addEventListener('click', () => quickAdd('observed'));
 if (repeatLastBtn) repeatLastBtn.addEventListener('click', repeatLastNote);
+
+function updateObservedHint() {
+  if (!observedHint) return;
+  const type = getSelectedType();
+  observedHint.classList.toggle('hidden', type !== 'observed');
+}
+
+if (typeInputs && typeInputs.length) {
+  typeInputs.forEach(input => {
+    if (input) input.addEventListener('change', updateObservedHint);
+  });
+}
+if (observedHint) updateObservedHint();
 
 if (historyFilters) {
   historyFilters.addEventListener('click', e => {
