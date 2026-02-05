@@ -483,6 +483,12 @@ body {
   filter: brightness(1.1);
 }
 
+.btn-unlock-after-pay:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: none;
+}
+
 .btn-premium-placeholder {
   padding: 0.4rem 0.75rem;
   background: var(--surface);

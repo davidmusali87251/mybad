@@ -13,6 +13,7 @@ const SUPABASE_ANON_KEY = (CONFIG.SUPABASE_ANON_KEY || '').trim();
 const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 const FREE_ENTRY_LIMIT = 10;
 const UNLOCKED_KEY = 'mistake-tracker-unlocked';
+const PAYMENT_LINK_CLICKED_KEY = 'mistake-tracker-payment-link-clicked';
 const PAYMENT_URL = (CONFIG.PAYMENT_URL || '').trim();
 const PAYPAL_CLIENT_ID = (CONFIG.PAYPAL_CLIENT_ID || '').trim();
 const PAYPAL_HOSTED_BUTTON_ID = (CONFIG.PAYPAL_HOSTED_BUTTON_ID || '').trim();
@@ -107,6 +108,20 @@ function isAtLimit() {
   return !isUnlocked() && entries.length >= FREE_ENTRY_LIMIT;
 }
 
+function hasClickedPaymentLink() {
+  try {
+    return sessionStorage.getItem(PAYMENT_LINK_CLICKED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function setPaymentLinkClicked() {
+  try {
+    sessionStorage.setItem(PAYMENT_LINK_CLICKED_KEY, 'true');
+  } catch (_) {}
+}
+
 function updateUpgradeUI() {
   const unlocked = isUnlocked();
   if (unlockedBadge) unlockedBadge.classList.toggle('hidden', !unlocked);
@@ -137,6 +152,9 @@ function updateUpgradeUI() {
     } else {
       btnBuyUnlocked.classList.add('hidden');
     }
+  }
+  if (btnUnlockAfterPay) {
+    btnUnlockAfterPay.disabled = !hasClickedPaymentLink();
   }
 }
 
@@ -1200,9 +1218,19 @@ if (btnBuy && PAYMENT_URL) {
 } else if (btnBuy) {
   btnBuy.classList.add('hidden');
 }
-btnBuy.addEventListener('click', function(e) {
-  if (!PAYMENT_URL) e.preventDefault();
-});
+if (btnBuy) {
+  btnBuy.addEventListener('click', function(e) {
+    if (!PAYMENT_URL) e.preventDefault();
+    else setPaymentLinkClicked();
+    if (PAYMENT_URL) setTimeout(updateUpgradeUI, 0);
+  });
+}
+if (btnBuyUnlocked) {
+  btnBuyUnlocked.addEventListener('click', function() {
+    setPaymentLinkClicked();
+    setTimeout(updateUpgradeUI, 0);
+  });
+}
 
 if (btnUnlockAfterPay) {
   btnUnlockAfterPay.addEventListener('click', function() {
