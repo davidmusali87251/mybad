@@ -14,6 +14,9 @@ const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 const FREE_ENTRY_LIMIT = 10;
 const UNLOCKED_KEY = 'mistake-tracker-unlocked';
 const PAYMENT_URL = (CONFIG.PAYMENT_URL || '').trim();
+const PAYPAL_CLIENT_ID = (CONFIG.PAYPAL_CLIENT_ID || '').trim();
+const PAYPAL_HOSTED_BUTTON_ID = (CONFIG.PAYPAL_HOSTED_BUTTON_ID || '').trim();
+const PAYPAL_ENABLED = PAYPAL_CLIENT_ID && PAYPAL_HOSTED_BUTTON_ID;
 
 const addNoteInput = document.getElementById('mistake-note');
 const addBtn = document.getElementById('add-mistake');
@@ -84,8 +87,10 @@ const unlockedBadge = document.getElementById('unlocked-badge');
 const btnBuy = document.getElementById('btn-buy');
 const licenseKeyInput = document.getElementById('license-key');
 const btnUnlock = document.getElementById('btn-unlock');
+const paypalButtonContainer = document.getElementById('paypal-button-container');
 
 const REFLECTIONS_KEY = 'mistake-tracker-reflections';
+let paypalButtonRendered = false;
 
 function isUnlocked() {
   return localStorage.getItem(UNLOCKED_KEY) === 'true';
@@ -111,12 +116,45 @@ function updateUpgradeUI() {
   [quickAvoidableBtn, quickFertileBtn, quickObservedBtn, repeatLastBtn].forEach(btn => {
     if (btn) btn.disabled = atLimit;
   });
-  if (btnBuy && PAYMENT_URL) {
-    btnBuy.href = PAYMENT_URL;
-    btnBuy.classList.remove('hidden');
-  } else if (btnBuy) {
-    btnBuy.classList.add('hidden');
+  if (PAYPAL_ENABLED && paypalButtonContainer) {
+    paypalButtonContainer.classList.remove('hidden');
+    loadPayPalButton();
+  } else if (paypalButtonContainer) {
+    paypalButtonContainer.classList.add('hidden');
   }
+  if (btnBuy) {
+    if (PAYMENT_URL && !PAYPAL_ENABLED) {
+      btnBuy.href = PAYMENT_URL;
+      btnBuy.classList.remove('hidden');
+    } else {
+      btnBuy.classList.add('hidden');
+    }
+  }
+}
+
+function loadPayPalButton() {
+  if (paypalButtonRendered || !PAYPAL_ENABLED || !paypalButtonContainer) return;
+  if (window.paypal && window.paypal.HostedButtons) {
+    window.paypal.HostedButtons({
+      hostedButtonId: PAYPAL_HOSTED_BUTTON_ID
+    }).render('#paypal-button-container').then(function() {
+      paypalButtonRendered = true;
+    }).catch(function() {});
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(PAYPAL_CLIENT_ID) + '&components=hosted-buttons&disable-funding=venmo&currency=USD';
+  script.async = true;
+  script.onload = function() {
+    if (window.paypal && window.paypal.HostedButtons && !paypalButtonRendered) {
+      window.paypal.HostedButtons({
+        hostedButtonId: PAYPAL_HOSTED_BUTTON_ID
+      }).render('#paypal-button-container').then(function() {
+        paypalButtonRendered = true;
+      }).catch(function() {});
+    }
+  };
+  document.head.appendChild(script);
 }
 
 function updateAddButtonState() {
