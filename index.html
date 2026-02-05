@@ -18,7 +18,7 @@
       <p class="tagline">Count & reflect by day, week, month</p>
     </header>
 
-    <p class="phase-label">Phase 1 – Personal</p>
+    <p class="phase-label">1 – Personal</p>
     <section class="add-section">
       <div class="add-card">
         <label for="mistake-note">What happened? (optional)</label>
@@ -44,7 +44,7 @@
             </label>
           </div>
         </div>
-        <p class="type-hint hidden" id="observed-hint">For learning, not blaming. What did I see? What lesson applies to me?</p>
+        <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
 
         <button type="button" id="add-mistake" class="btn-add">+ Add mistake</button>
         <div class="quick-add-row">
@@ -113,7 +113,7 @@
       <p class="empty-state" id="empty-state">No mistakes logged yet. Add one above.</p>
     </section>
 
-    <p class="phase-label" id="phase-2-label">Phase 2 – Social</p>
+    <p class="phase-label" id="phase-2-label">2 – Social</p>
     <section class="community-entries-section" id="community-entries-section">
       <h2>Everyone's recent entries</h2>
       <p class="section-hint">Anonymous entries from all users. Add a mistake above to contribute.</p>
@@ -167,6 +167,7 @@
     </section>
   </div>
 
+  <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
   <script src="config.js"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>

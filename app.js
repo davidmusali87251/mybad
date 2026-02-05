@@ -676,19 +676,25 @@ function getCurrentStatsForShare() {
 
 async function shareAnonymously() {
   if (!SHARING_ENABLED) {
-    shareStatus.textContent = 'Set SUPABASE_URL and SUPABASE_ANON_KEY in config.js to enable sharing.';
-    shareStatus.className = 'share-status error';
+    if (shareStatus) {
+      shareStatus.textContent = 'Set SUPABASE_URL and SUPABASE_ANON_KEY in config.js to enable sharing.';
+      shareStatus.className = 'share-status error';
+    }
     return;
   }
   const now = Date.now();
   if (now - lastShareAt < 15000) {
-    shareStatus.textContent = 'Please wait a few seconds between shares.';
-    shareStatus.className = 'share-status error';
+    if (shareStatus) {
+      shareStatus.textContent = 'Please wait a few seconds between shares.';
+      shareStatus.className = 'share-status error';
+    }
     return;
   }
-  shareStatus.textContent = 'Sharing…';
-  shareStatus.className = 'share-status';
-  btnShare.disabled = true;
+  if (shareStatus) {
+    shareStatus.textContent = 'Sharing…';
+    shareStatus.className = 'share-status';
+  }
+  if (btnShare) btnShare.disabled = true;
   try {
     const stats = getCurrentStatsForShare();
     const client = getSupabase();
@@ -702,18 +708,22 @@ async function shareAnonymously() {
       throw error;
     }
     lastShareAt = Date.now();
-    shareStatus.textContent = 'Shared anonymously.';
-    shareStatus.className = 'share-status success';
-    setTimeout(() => { shareStatus.textContent = ''; }, 3000);
+    if (shareStatus) {
+      shareStatus.textContent = 'Shared anonymously.';
+      shareStatus.className = 'share-status success';
+      setTimeout(() => { shareStatus.textContent = ''; }, 3000);
+    }
     fetchSharedStats();
   } catch (err) {
     const raw = (err && (err.message || err.error_description || err.msg)) || (typeof err === 'string' ? err : '');
     const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
     const isUnregisteredKey = /unregistered\s*api\s*key/i.test(msg);
-    shareStatus.textContent = 'Failed: ' + (isUnregisteredKey ? 'Unregistered API key' : msg);
-    shareStatus.className = 'share-status error';
+    if (shareStatus) {
+      shareStatus.textContent = 'Failed: ' + (isUnregisteredKey ? 'Unregistered API key' : msg);
+      shareStatus.className = 'share-status error';
+    }
   } finally {
-    btnShare.disabled = false;
+    if (btnShare) btnShare.disabled = false;
   }
 }
 
@@ -769,8 +779,10 @@ async function fetchSharedStats() {
     showCommunitySetupMessage();
     return;
   }
-  communityError.classList.add('hidden');
-  communityError.textContent = '';
+  if (communityError) {
+    communityError.classList.add('hidden');
+    communityError.textContent = '';
+  }
   const client = getSupabase();
   const MAX_OTHER_RESULTS = 10;
   const { data, error } = await client
@@ -781,8 +793,11 @@ async function fetchSharedStats() {
   if (error) {
     const raw = error.message || error.error_description || error.msg || '';
     const isUnregisteredKey = /unregistered\s*api\s*key/i.test(raw);
-    communityError.textContent = 'Could not load: ' + (isUnregisteredKey ? 'Unregistered API key' : (raw || 'Unknown error'));
-    communityError.classList.remove('hidden');
+    if (communityError) {
+      communityError.textContent = 'Could not load: ' + (isUnregisteredKey ? 'Unregistered API key' : (raw || 'Unknown error'));
+      communityError.classList.remove('hidden');
+    }
+    if (communityMetrics) communityMetrics.textContent = '';
     sharedList.innerHTML = '';
     sharedEmpty.classList.remove('hidden');
     return;
@@ -791,6 +806,7 @@ async function fetchSharedStats() {
   if (!data || data.length === 0) {
     sharedList.innerHTML = '';
     sharedEmpty.textContent = "No shared results yet. Share yours above!";
+    if (communityMetrics) communityMetrics.textContent = '';
     return;
   }
   const limited = data.slice(0, MAX_OTHER_RESULTS);
@@ -957,6 +973,8 @@ async function fetchSharedEntries() {
   } catch (err) {
     const raw = err && (err.message || err.error_description || err.msg) || '';
     const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
+    if (communityComparison) communityComparison.textContent = '';
+    if (communityEntriesTrend) communityEntriesTrend.textContent = '';
     if (sharedEntriesError) {
       sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
       sharedEntriesError.classList.remove('hidden');

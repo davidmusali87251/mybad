@@ -92,7 +92,9 @@ create policy "Allow anonymous select" on shared_entries for select using (true)
 3. Go to **Settings → API**. Copy:
    - **Project URL** (e.g. `https://xxxxx.supabase.co`)
    - **anon public** key — the long JWT that starts with `eyJ...` (under "Project API keys"). Do **not** use a key that looks like `sb_publishable_...`; that is not the anon key.
-4. Open `config.js` and set:
+4. Create your local config (so your keys are not committed):
+   - Copy `config.example.js` to `config.js`.
+   - Open `config.js` and set your URL and anon key:
 
 ```js
 window.MISTAKE_TRACKER_CONFIG = {
@@ -100,6 +102,10 @@ window.MISTAKE_TRACKER_CONFIG = {
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'  // anon public key (long JWT)
 };
 ```
+
+   `config.js` is in `.gitignore`, so it stays local and your keys are not pushed to the repo.
+
+   **Deploying (e.g. GitHub Pages):** If you want the live site to use sharing, add a `config.js` with your Supabase URL and anon key to the deployed branch. The anon key is intended to be public; keeping it out of the repo is for cleanliness and so forks use their own project.
 
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
