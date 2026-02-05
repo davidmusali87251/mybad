@@ -247,6 +247,11 @@ body {
   transform: scale(0.98);
 }
 
+.btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .period-tabs {
   display: flex;
   gap: 0.5rem;

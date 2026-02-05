@@ -612,16 +612,23 @@ function getSelectedType() {
 
 function addMistake() {
   const note = (addNoteInput.value || '').trim();
+  if (!note) return;
   const type = getSelectedType();
   const entry = { at: Date.now(), note, type };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
   addNoteInput.value = '';
+  updateAddButtonState();
   if (addNoteInput) addNoteInput.focus();
   renderStats();
   renderList();
   if (SHARING_ENABLED) pushEntryToShared({ note, type });
+}
+
+function updateAddButtonState() {
+  if (!addBtn || !addNoteInput) return;
+  addBtn.disabled = !(addNoteInput.value || '').trim();
 }
 
 function pushEntryToShared(entry) {
@@ -1024,9 +1031,14 @@ function initReflection() {
 }
 
 if (addBtn) addBtn.addEventListener('click', addMistake);
-if (addNoteInput) addNoteInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') addMistake();
-});
+if (addNoteInput) {
+  addNoteInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') addMistake();
+  });
+  addNoteInput.addEventListener('input', updateAddButtonState);
+  addNoteInput.addEventListener('paste', () => setTimeout(updateAddButtonState, 0));
+}
+updateAddButtonState();
 
 if (quickAvoidableBtn) quickAvoidableBtn.addEventListener('click', () => quickAdd('avoidable'));
 if (quickFertileBtn) quickFertileBtn.addEventListener('click', () => quickAdd('fertile'));
