@@ -418,6 +418,21 @@ body {
   margin-bottom: 0.75rem;
 }
 
+.roadmap-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+}
+
+.roadmap-note a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.roadmap-note a:hover {
+  text-decoration: underline;
+}
+
 .premium-cards {
   display: flex;
   flex-direction: column;
