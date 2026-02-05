@@ -455,6 +455,11 @@ body {
   display: none;
 }
 
+#unlocked-badge .btn-buy {
+  display: inline-block;
+  margin-top: 0.75rem;
+}
+
 .unlock-after-pay {
   font-size: 0.85rem;
   color: var(--text-muted);

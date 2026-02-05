@@ -87,6 +87,7 @@ const unlockedBadge = document.getElementById('unlocked-badge');
 const btnBuy = document.getElementById('btn-buy');
 const paypalButtonContainer = document.getElementById('paypal-button-container');
 const btnUnlockAfterPay = document.getElementById('btn-unlock-after-pay');
+const btnBuyUnlocked = document.getElementById('btn-buy-unlocked');
 
 const REFLECTIONS_KEY = 'mistake-tracker-reflections';
 let paypalButtonRendered = false;
@@ -122,11 +123,19 @@ function updateUpgradeUI() {
     paypalButtonContainer.classList.add('hidden');
   }
   if (btnBuy) {
-    if (PAYMENT_URL && !PAYPAL_ENABLED) {
+    if (PAYMENT_URL) {
       btnBuy.href = PAYMENT_URL;
       btnBuy.classList.remove('hidden');
     } else {
       btnBuy.classList.add('hidden');
+    }
+  }
+  if (btnBuyUnlocked) {
+    if (unlocked && PAYMENT_URL) {
+      btnBuyUnlocked.href = PAYMENT_URL;
+      btnBuyUnlocked.classList.remove('hidden');
+    } else {
+      btnBuyUnlocked.classList.add('hidden');
     }
   }
 }
