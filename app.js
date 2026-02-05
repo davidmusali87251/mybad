@@ -85,9 +85,8 @@ const limitMessage = document.getElementById('limit-message');
 const upgradeCards = document.getElementById('upgrade-cards');
 const unlockedBadge = document.getElementById('unlocked-badge');
 const btnBuy = document.getElementById('btn-buy');
-const licenseKeyInput = document.getElementById('license-key');
-const btnUnlock = document.getElementById('btn-unlock');
 const paypalButtonContainer = document.getElementById('paypal-button-container');
+const btnUnlockAfterPay = document.getElementById('btn-unlock-after-pay');
 
 const REFLECTIONS_KEY = 'mistake-tracker-reflections';
 let paypalButtonRendered = false;
@@ -1196,15 +1195,8 @@ btnBuy.addEventListener('click', function(e) {
   if (!PAYMENT_URL) e.preventDefault();
 });
 
-if (btnUnlock && licenseKeyInput) {
-  btnUnlock.addEventListener('click', function() {
-    const key = (licenseKeyInput.value || '').trim();
-    if (key) {
-      setUnlocked();
-      licenseKeyInput.value = '';
-    }
-  });
-  licenseKeyInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') btnUnlock.click();
+if (btnUnlockAfterPay) {
+  btnUnlockAfterPay.addEventListener('click', function() {
+    setUnlocked();
   });
 }
