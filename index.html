@@ -40,6 +40,11 @@
         </div>
 
         <button type="button" id="add-mistake" class="btn-add">+ Add mistake</button>
+        <div class="quick-add-row">
+          <button type="button" id="btn-quick-avoidable" class="btn-quick">+1 avoidable</button>
+          <button type="button" id="btn-quick-fertile" class="btn-quick">+1 fertile</button>
+          <button type="button" id="btn-repeat-last" class="btn-quick secondary">Repeat last note</button>
+        </div>
       </div>
     </section>
 
@@ -66,6 +71,8 @@
       </div>
     </section>
     <p class="stats-note" id="stats-note"></p>
+    <p class="stats-breakdown" id="stats-breakdown"></p>
+    <p class="streak-note" id="streak-note"></p>
 
     <section class="progress-section" id="progress-section">
       <h2>This week vs last week</h2>
@@ -79,11 +86,20 @@
       <p class="section-hint">Avoidable ↓ · Fertile ↔ or ↑</p>
       <div class="trends-chart" id="trends-chart"></div>
       <p class="trends-empty" id="trends-empty">Log mistakes over a few days to see your curves.</p>
+      <p class="trends-highlight" id="trends-highlight"></p>
     </section>
 
     <section class="history">
       <h2>Recent entries</h2>
       <p class="section-hint">Your entries (saved on this device).</p>
+      <div class="history-controls">
+        <div class="history-filters" id="history-filters">
+          <button type="button" class="history-filter active" data-type="all">All</button>
+          <button type="button" class="history-filter" data-type="avoidable">Avoidable</button>
+          <button type="button" class="history-filter" data-type="fertile">Fertile</button>
+        </div>
+        <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
+      </div>
       <ul class="entry-list" id="entry-list"></ul>
       <p class="empty-state" id="empty-state">No mistakes logged yet. Add one above.</p>
     </section>
@@ -108,14 +124,17 @@
           <h3>Avoidable errors</h3>
           <p class="reflection-subtitle">Where was I careless or on autopilot? How can I reduce repeats?</p>
           <textarea id="reflection-avoidable" rows="3" placeholder="e.g. Checked messages mid-task, rushed merges without review..."></textarea>
+          <p class="char-counter" id="reflection-avoidable-counter"></p>
         </div>
         <div class="reflection-card">
           <h3>Fertile errors</h3>
           <p class="reflection-subtitle">Where did I stretch, experiment, or try something new?</p>
           <textarea id="reflection-fertile" rows="3" placeholder="e.g. Tried a new API, experimented with a different workflow..."></textarea>
+          <p class="char-counter" id="reflection-fertile-counter"></p>
         </div>
       </div>
       <p class="reflection-note" id="reflection-note"></p>
+      <div class="yesterday-reflection" id="yesterday-reflection"></div>
     </section>
 
     <section class="share-section" id="share-section">
@@ -129,6 +148,7 @@
       <h2>Others' results</h2>
       <p class="community-hint">Recent anonymous shares from everyone.</p>
       <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
+      <p class="community-metrics" id="community-metrics"></p>
       <ul class="shared-list" id="shared-list"></ul>
       <p class="empty-state" id="shared-empty">No shared results yet. Share yours above!</p>
       <p class="community-error hidden" id="community-error"></p>

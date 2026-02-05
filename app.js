@@ -3,6 +3,9 @@ const ANON_ID_KEY = 'mistake-tracker-anon-id';
 
 let entries = [];
 let currentPeriod = 'day';
+let currentTypeFilter = 'all';
+let lastEntry = null;
+let lastShareAt = 0;
 
 const CONFIG = (typeof window !== 'undefined' && window.MISTAKE_TRACKER_CONFIG) || {};
 const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim();
@@ -11,6 +14,9 @@ const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 
 const addNoteInput = document.getElementById('mistake-note');
 const addBtn = document.getElementById('add-mistake');
+const quickAvoidableBtn = document.getElementById('btn-quick-avoidable');
+const quickFertileBtn = document.getElementById('btn-quick-fertile');
+const repeatLastBtn = document.getElementById('btn-repeat-last');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
@@ -19,16 +25,21 @@ const statAvg = document.getElementById('stat-avg');
 const statExploration = document.getElementById('stat-exploration');
 const statExplorationHint = document.getElementById('stat-exploration-hint');
 const statExplorationSoWhat = document.getElementById('stat-exploration-so-what');
+const statsBreakdown = document.getElementById('stats-breakdown');
+const streakNote = document.getElementById('streak-note');
 const progressSection = document.getElementById('progress-section');
 const progressCards = document.getElementById('progress-cards');
 const progressEmpty = document.getElementById('progress-empty');
 const trendsSection = document.getElementById('trends-section');
 const trendsChart = document.getElementById('trends-chart');
 const trendsEmpty = document.getElementById('trends-empty');
+const trendsHighlight = document.getElementById('trends-highlight');
 const autoReflectionEl = document.getElementById('auto-reflection');
 const entryList = document.getElementById('entry-list');
 const emptyState = document.getElementById('empty-state');
 const statsNote = document.getElementById('stats-note');
+const historyFilters = document.getElementById('history-filters');
+const exportCsvBtn = document.getElementById('btn-export-csv');
 const shareSection = document.getElementById('share-section');
 const btnShare = document.getElementById('btn-share');
 const shareStatus = document.getElementById('share-status');
@@ -45,6 +56,10 @@ const btnRefreshEntries = document.getElementById('btn-refresh-entries');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
+const reflectionAvoidableCounter = document.getElementById('reflection-avoidable-counter');
+const reflectionFertileCounter = document.getElementById('reflection-fertile-counter');
+const yesterdayReflection = document.getElementById('yesterday-reflection');
+const communityMetrics = document.getElementById('community-metrics');
 
 const REFLECTIONS_KEY = 'mistake-tracker-reflections';
 
@@ -97,6 +112,9 @@ function renderReflection() {
       reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
     }
   }
+
+  updateReflectionCounters();
+  renderYesterdayReflection();
 }
 
 function updateReflection(field, value) {
@@ -112,6 +130,38 @@ function updateReflection(field, value) {
     } else {
       reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
     }
+  }
+}
+
+function renderYesterdayReflection() {
+  if (!yesterdayReflection) return;
+  const all = loadReflections();
+  const dayMs = 86400000;
+  const yesterdayKey = String(getStartOfDay(Date.now() - dayMs));
+  const y = all[yesterdayKey];
+  if (!y || (!y.avoidable && !y.fertile)) {
+    yesterdayReflection.textContent = '';
+    return;
+  }
+  let text = 'Yesterday — ';
+  if (y.avoidable) {
+    text += 'Avoidable: ' + y.avoidable;
+  }
+  if (y.fertile) {
+    if (y.avoidable) text += ' · ';
+    text += 'Fertile: ' + y.fertile;
+  }
+  yesterdayReflection.textContent = text;
+}
+
+function updateReflectionCounters() {
+  if (reflectionAvoidableCounter && reflectionAvoidable) {
+    const len = (reflectionAvoidable.value || '').length;
+    reflectionAvoidableCounter.textContent = len + ' character' + (len === 1 ? '' : 's');
+  }
+  if (reflectionFertileCounter && reflectionFertile) {
+    const len = (reflectionFertile.value || '').length;
+    reflectionFertileCounter.textContent = len + ' character' + (len === 1 ? '' : 's');
   }
 }
 
@@ -174,6 +224,15 @@ function renderStats() {
   if (statLabel) statLabel.textContent = getPeriodLabel(currentPeriod);
   if (statAvg) statAvg.textContent = avg;
 
+  if (statsBreakdown) {
+    if (count === 0) {
+      statsBreakdown.textContent = '';
+    } else {
+      statsBreakdown.textContent =
+        'Avoidable: ' + avoidableCount + ' · Fertile: ' + fertileCount;
+    }
+  }
+
   if (statsNote) {
     if (count === 0) {
       statsNote.textContent = "No mistakes logged this period. That's okay—just check that you're still exploring and learning.";
@@ -181,6 +240,17 @@ function renderStats() {
       statsNote.textContent =
         avoidableCount + " avoidable (aim to reduce) · " +
         fertileCount + " fertile (valuable experiments)";
+    }
+  }
+
+  if (streakNote) {
+    const streak = getCurrentStreak();
+    if (streak <= 0) {
+      streakNote.textContent = '';
+    } else if (streak === 1) {
+      streakNote.textContent = 'You have a 1-day logging streak.';
+    } else {
+      streakNote.textContent = 'You have a ' + streak + '-day logging streak.';
     }
   }
 
@@ -228,7 +298,10 @@ function formatTime(ts) {
 
 function renderList() {
   if (!entryList) return;
-  const filtered = filterByPeriod(currentPeriod);
+  const filtered = filterByPeriod(currentPeriod).filter(e => {
+    if (currentTypeFilter === 'all') return true;
+    return (e.type || 'avoidable') === currentTypeFilter;
+  });
   entryList.innerHTML = '';
 
   const sorted = [...filtered].sort((a, b) => b.at - a.at);
@@ -358,6 +431,7 @@ function renderTrends() {
   trendsChart.classList.toggle('hidden', !hasAny);
   if (!hasAny) {
     trendsChart.innerHTML = '';
+    if (trendsHighlight) trendsHighlight.textContent = '';
     return;
   }
   trendsChart.innerHTML = '';
@@ -393,6 +467,25 @@ function renderTrends() {
     col.appendChild(vals);
     trendsChart.appendChild(col);
   });
+  if (trendsHighlight) {
+    let best = null;
+    days.forEach(d => {
+      if (d.total <= 0) return;
+      const ratio = d.fertile / d.total;
+      if (!best || ratio > best.ratio) {
+        best = { ratio, dayStart: d.dayStart };
+      }
+    });
+    if (!best) {
+      trendsHighlight.textContent = '';
+    } else {
+      const date = new Date(best.dayStart);
+      const label = date.toLocaleDateString([], { weekday: 'short' });
+      const pct = Math.round(best.ratio * 100);
+      trendsHighlight.textContent =
+        'Best exploration day (last 7): ' + label + ' at ' + pct + '%.';
+    }
+  }
 }
 
 const AUTO_REFLECTION_PHRASES = {
@@ -461,6 +554,21 @@ function renderAutoReflection() {
   autoReflectionEl.classList.remove('hidden');
 }
 
+function getCurrentStreak() {
+  if (!entries || entries.length === 0) return 0;
+  const dayMs = 86400000;
+  const daysWithEntries = new Set(
+    entries.map(e => String(getStartOfDay(e.at)))
+  );
+  let streak = 0;
+  let cursor = getStartOfDay(Date.now());
+  while (daysWithEntries.has(String(cursor))) {
+    streak += 1;
+    cursor -= dayMs;
+  }
+  return streak;
+}
+
 function getSelectedType() {
   if (!typeInputs || typeInputs.length === 0) return 'avoidable';
   const checked = Array.from(typeInputs).find(i => i.checked);
@@ -470,9 +578,12 @@ function getSelectedType() {
 function addMistake() {
   const note = (addNoteInput.value || '').trim();
   const type = getSelectedType();
-  entries.push({ at: Date.now(), note, type });
+  const entry = { at: Date.now(), note, type };
+  entries.push(entry);
+  lastEntry = entry;
   saveEntries();
   addNoteInput.value = '';
+  if (addNoteInput) addNoteInput.focus();
   renderStats();
   renderList();
   if (SHARING_ENABLED) pushEntryToShared({ note, type });
@@ -534,6 +645,12 @@ async function shareAnonymously() {
     shareStatus.className = 'share-status error';
     return;
   }
+  const now = Date.now();
+  if (now - lastShareAt < 15000) {
+    shareStatus.textContent = 'Please wait a few seconds between shares.';
+    shareStatus.className = 'share-status error';
+    return;
+  }
   shareStatus.textContent = 'Sharing…';
   shareStatus.className = 'share-status';
   btnShare.disabled = true;
@@ -549,6 +666,7 @@ async function shareAnonymously() {
     if (error) {
       throw error;
     }
+    lastShareAt = Date.now();
     shareStatus.textContent = 'Shared anonymously.';
     shareStatus.className = 'share-status success';
     setTimeout(() => { shareStatus.textContent = ''; }, 3000);
@@ -562,6 +680,53 @@ async function shareAnonymously() {
   } finally {
     btnShare.disabled = false;
   }
+}
+
+function quickAdd(type) {
+  const entry = { at: Date.now(), note: '', type };
+  entries.push(entry);
+  lastEntry = entry;
+  saveEntries();
+  renderStats();
+  renderList();
+  if (SHARING_ENABLED) pushEntryToShared({ note: '', type });
+}
+
+function repeatLastNote() {
+  if (!lastEntry && entries.length === 0) return;
+  const base = lastEntry || entries[entries.length - 1];
+  const entry = {
+    at: Date.now(),
+    note: base.note || '',
+    type: base.type || 'avoidable'
+  };
+  entries.push(entry);
+  lastEntry = entry;
+  saveEntries();
+  renderStats();
+  renderList();
+  if (SHARING_ENABLED) pushEntryToShared({ note: entry.note, type: entry.type });
+}
+
+function exportCsv() {
+  const rows = [];
+  rows.push(['timestamp_iso', 'type', 'note']);
+  entries.forEach(e => {
+    const ts = new Date(e.at).toISOString();
+    const type = e.type || 'avoidable';
+    const note = (e.note || '').replace(/"/g, '""');
+    rows.push([ts, type, `"${note}"`]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mistakes.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function fetchSharedStats() {
@@ -625,6 +790,36 @@ async function fetchSharedStats() {
       sharedList.appendChild(li);
     });
   });
+  if (communityMetrics) {
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 86400000;
+    const recentRows = limited.filter(row => {
+      if (!row.created_at) return false;
+      const ts = new Date(row.created_at).getTime();
+      return ts >= sevenDaysAgo;
+    });
+    const uniquePeople = {};
+    recentRows.forEach(row => {
+      const key = row.anonymous_id || '__anon__';
+      uniquePeople[key] = true;
+    });
+    const shareCount = recentRows.length;
+    const peopleCount = Object.keys(uniquePeople).length;
+    if (shareCount === 0) {
+      communityMetrics.textContent = '';
+    } else {
+      communityMetrics.textContent =
+        'Last 7 days: ' +
+        shareCount +
+        ' share' +
+        (shareCount === 1 ? '' : 's') +
+        ' from ' +
+        peopleCount +
+        ' person' +
+        (peopleCount === 1 ? '' : 's') +
+        ' (approximate).';
+    }
+  }
 }
 
 function showCommunitySetupMessage() {
@@ -728,12 +923,37 @@ function initReflection() {
   reflectionFertile.addEventListener('blur', () => {
     updateReflection('fertile', reflectionFertile.value.trim());
   });
+  reflectionAvoidable.addEventListener('input', updateReflectionCounters);
+  reflectionFertile.addEventListener('input', updateReflectionCounters);
 }
 
 if (addBtn) addBtn.addEventListener('click', addMistake);
 if (addNoteInput) addNoteInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') addMistake();
 });
+
+if (quickAvoidableBtn) quickAvoidableBtn.addEventListener('click', () => quickAdd('avoidable'));
+if (quickFertileBtn) quickFertileBtn.addEventListener('click', () => quickAdd('fertile'));
+if (repeatLastBtn) repeatLastBtn.addEventListener('click', repeatLastNote);
+
+if (historyFilters) {
+  historyFilters.addEventListener('click', e => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (!target.classList.contains('history-filter')) return;
+    const type = target.dataset.type || 'all';
+    currentTypeFilter = type;
+    const buttons = historyFilters.querySelectorAll('.history-filter');
+    buttons.forEach(btn => {
+      btn.classList.toggle('active', btn === target);
+    });
+    renderList();
+  });
+}
+
+if (exportCsvBtn) {
+  exportCsvBtn.addEventListener('click', exportCsv);
+}
 
 periodTabs.forEach(tab => {
   if (tab) tab.addEventListener('click', () => setPeriod(tab.dataset.period));
