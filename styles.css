@@ -56,6 +56,21 @@ body {
   margin-top: 0.35rem;
 }
 
+.phase-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+#phase-2-label {
+  margin-top: 2rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
 .add-section {
   margin-bottom: 1.5rem;
 }
@@ -155,6 +170,18 @@ body {
 
 .type-pill:hover {
   background: var(--surface-hover);
+}
+
+.type-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: -0.35rem;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+}
+
+.type-hint.hidden {
+  display: none;
 }
 
 .add-card input::placeholder {
@@ -934,6 +961,12 @@ body {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
+}
+
+.community-comparison {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
 }
 
 .community-trend {

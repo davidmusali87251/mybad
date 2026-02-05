@@ -6,6 +6,14 @@ A simple web app to count and track mistakes by **day**, **week**, and **month**
 
 Design and constraints are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
+## Product roadmap
+
+- **Phase 1 – Personal** ✓  
+  Error log, classification (Avoidable / Fertile / Observed), automatic reflection, simple statistics (counts, exploration index, streaks, trends, week-over-week).
+
+- **Phase 2 – Social** (in progress)  
+  View anonymous entries and shared stats from others, category “Observed” (patterns in others/the system), collective comparison (your exploration vs recent shares), social trend summary.
+
 ## Features
 
 - **Add mistakes** — One tap to log; optional short note (e.g. what happened).
