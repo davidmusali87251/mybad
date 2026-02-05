@@ -219,6 +219,7 @@ function renderStats() {
 
   const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
   const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
+  const observedCount = filtered.filter(e => e.type === 'observed').length;
 
   if (statCount) statCount.textContent = count;
   if (statLabel) statLabel.textContent = getPeriodLabel(currentPeriod);
@@ -229,7 +230,9 @@ function renderStats() {
       statsBreakdown.textContent = '';
     } else {
       statsBreakdown.textContent =
-        'Avoidable: ' + avoidableCount + ' · Fertile: ' + fertileCount;
+        'Avoidable: ' + avoidableCount +
+        ' · Fertile: ' + fertileCount +
+        ' · Observed: ' + observedCount;
     }
   }
 
@@ -254,17 +257,18 @@ function renderStats() {
     }
   }
 
-  // Exploration index: fertile / total (goal: higher = more experimentation)
+  // Exploration index: fertile ÷ (avoidable + fertile)
   if (statExploration) {
-    if (count === 0) {
+    const primaryTotal = avoidableCount + fertileCount;
+    if (primaryTotal === 0) {
       statExploration.textContent = '—';
-      if (statExplorationHint) statExplorationHint.textContent = 'fertile ÷ total';
+      if (statExplorationHint) statExplorationHint.textContent = 'fertile ÷ (avoidable + fertile)';
       if (statExplorationSoWhat) statExplorationSoWhat.textContent = '';
     } else {
-      const ratio = fertileCount / count;
+      const ratio = fertileCount / primaryTotal;
       const pct = Math.round(ratio * 100);
       statExploration.textContent = pct + '%';
-      if (statExplorationHint) statExplorationHint.textContent = fertileCount + ' fertile ÷ ' + count + ' total';
+      if (statExplorationHint) statExplorationHint.textContent = fertileCount + ' fertile ÷ ' + primaryTotal + ' (avoidable + fertile)';
       if (statExplorationSoWhat) statExplorationSoWhat.textContent = getExplorationSoWhat(pct);
     }
   }
@@ -312,8 +316,17 @@ function renderList() {
     li.className = 'entry-item';
     const badge = document.createElement('span');
     const type = entry.type || 'avoidable';
-    badge.className = 'badge ' + (type === 'fertile' ? 'badge-fertile' : 'badge-avoidable');
-    badge.textContent = type === 'fertile' ? 'FERTILE' : 'AVOIDABLE';
+    let badgeClass = 'badge-avoidable';
+    let label = 'AVOIDABLE';
+    if (type === 'fertile') {
+      badgeClass = 'badge-fertile';
+      label = 'FERTILE';
+    } else if (type === 'observed') {
+      badgeClass = 'badge-observed';
+      label = 'OBSERVED';
+    }
+    badge.className = 'badge ' + badgeClass;
+    badge.textContent = label;
     const note = document.createElement('span');
     note.className = 'note' + (entry.note ? '' : ' empty');
     note.textContent = entry.note || '(no note)';
@@ -343,10 +356,17 @@ function getThisWeekAndLastWeek() {
   const inThisWeek = entries.filter(e => e.at >= thisWeek.start && e.at < thisWeek.end);
   const inLastWeek = entries.filter(e => e.at >= lastWeek.start && e.at < lastWeek.end);
   const toStats = (list) => {
-    const total = list.length;
-    const fertile = list.filter(e => (e.type || 'avoidable') === 'fertile').length;
-    const exploration = total > 0 ? Math.round((fertile / total) * 100) : null;
-    return { total, fertile, avoidable: total - fertile, exploration };
+    let avoidable = 0;
+    let fertile = 0;
+    list.forEach(e => {
+      const t = e.type || 'avoidable';
+      if (t === 'fertile') fertile += 1;
+      else if (t === 'avoidable') avoidable += 1;
+    });
+    const totalPrimary = avoidable + fertile;
+    const observed = list.length - totalPrimary;
+    const exploration = totalPrimary > 0 ? Math.round((fertile / totalPrimary) * 100) : null;
+    return { total: totalPrimary, fertile, avoidable, observed, exploration };
   };
   return { thisWeek: toStats(inThisWeek), lastWeek: toStats(inLastWeek) };
 }
@@ -852,7 +872,7 @@ async function fetchSharedEntries() {
       .from('shared_entries')
       .select('id, note, type, created_at')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(10);
     if (error) throw error;
     sharedEntriesList.innerHTML = '';
     const list = data || [];
@@ -863,8 +883,17 @@ async function fetchSharedEntries() {
       li.className = 'entry-item';
       const badge = document.createElement('span');
       const type = row.type || 'avoidable';
-      badge.className = 'badge ' + (type === 'fertile' ? 'badge-fertile' : 'badge-avoidable');
-      badge.textContent = type === 'fertile' ? 'FERTILE' : 'AVOIDABLE';
+      let badgeClass = 'badge-avoidable';
+      let label = 'AVOIDABLE';
+      if (type === 'fertile') {
+        badgeClass = 'badge-fertile';
+        label = 'FERTILE';
+      } else if (type === 'observed') {
+        badgeClass = 'badge-observed';
+        label = 'OBSERVED';
+      }
+      badge.className = 'badge ' + badgeClass;
+      badge.textContent = label;
       const note = document.createElement('span');
       note.className = 'note' + (row.note ? '' : ' empty');
       note.textContent = row.note || '(no note)';

@@ -36,6 +36,11 @@
               <span class="pill-main">Fertile</span>
               <span class="pill-sub">Experiment / growth</span>
             </label>
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="observed">
+              <span class="pill-main">Observed</span>
+              <span class="pill-sub">Patterns I notice around me</span>
+            </label>
           </div>
         </div>
 
@@ -66,7 +71,7 @@
       <div class="stat-card stat-exploration">
         <span class="stat-value" id="stat-exploration">—</span>
         <span class="stat-label">exploration index</span>
-        <span class="stat-sublabel" id="stat-exploration-hint">fertile ÷ total</span>
+        <span class="stat-sublabel" id="stat-exploration-hint">fertile ÷ (avoidable + fertile)</span>
         <span class="stat-so-what" id="stat-exploration-so-what"></span>
       </div>
     </section>
@@ -97,6 +102,7 @@
           <button type="button" class="history-filter active" data-type="all">All</button>
           <button type="button" class="history-filter" data-type="avoidable">Avoidable</button>
           <button type="button" class="history-filter" data-type="fertile">Fertile</button>
+          <button type="button" class="history-filter" data-type="observed">Observed</button>
         </div>
         <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
       </div>

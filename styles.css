@@ -640,6 +640,11 @@ body {
   border-color: #2d6844;
 }
 
+.badge-observed {
+  color: #5a8ed6;
+  border-color: #325a99;
+}
+
 .entry-item .note {
   color: var(--text);
   flex: 1;
