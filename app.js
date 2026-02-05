@@ -13,6 +13,8 @@ const SUPABASE_ANON_KEY = (CONFIG.SUPABASE_ANON_KEY || '').trim();
 const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 
 const addNoteInput = document.getElementById('mistake-note');
+const DEFAULT_NOTE_PLACEHOLDER = 'e.g. Forgot to save, spoke harshly…';
+const OBSERVED_NOTE_PLACEHOLDER = 'What did I see? What lesson applies to me?';
 const addBtn = document.getElementById('add-mistake');
 const quickAvoidableBtn = document.getElementById('btn-quick-avoidable');
 const quickFertileBtn = document.getElementById('btn-quick-fertile');
@@ -1005,9 +1007,10 @@ if (quickObservedBtn) quickObservedBtn.addEventListener('click', () => quickAdd(
 if (repeatLastBtn) repeatLastBtn.addEventListener('click', repeatLastNote);
 
 function updateObservedHint() {
-  if (!observedHint) return;
   const type = getSelectedType();
-  observedHint.classList.toggle('hidden', type !== 'observed');
+  const isObserved = type === 'observed';
+  if (observedHint) observedHint.classList.toggle('hidden', !isObserved);
+  if (addNoteInput) addNoteInput.placeholder = isObserved ? OBSERVED_NOTE_PLACEHOLDER : DEFAULT_NOTE_PLACEHOLDER;
 }
 
 if (typeInputs && typeInputs.length) {
