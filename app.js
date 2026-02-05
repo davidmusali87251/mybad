@@ -53,6 +53,7 @@ const sharedEntriesList = document.getElementById('shared-entries-list');
 const sharedEntriesEmpty = document.getElementById('shared-entries-empty');
 const sharedEntriesError = document.getElementById('shared-entries-error');
 const btnRefreshEntries = document.getElementById('btn-refresh-entries');
+const communityEntriesTrend = document.getElementById('community-entries-trend');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
@@ -878,6 +879,28 @@ async function fetchSharedEntries() {
     const list = data || [];
     sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
     sharedEntriesEmpty.textContent = list.length === 0 ? "No shared entries yet. Add a mistake to share yours." : "";
+
+    if (communityEntriesTrend) {
+      if (!list.length) {
+        communityEntriesTrend.textContent = '';
+      } else {
+        let avoidable = 0;
+        let fertile = 0;
+        let observed = 0;
+        list.forEach(row => {
+          const t = row.type || 'avoidable';
+          if (t === 'fertile') fertile += 1;
+          else if (t === 'observed') observed += 1;
+          else avoidable += 1;
+        });
+        communityEntriesTrend.textContent =
+          'Last ' + list.length + ' shared entries: ' +
+          avoidable + ' avoidable · ' +
+          fertile + ' fertile · ' +
+          observed + ' observed.';
+      }
+    }
+
     list.forEach(row => {
       const li = document.createElement('li');
       li.className = 'entry-item';
