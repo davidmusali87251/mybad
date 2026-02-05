@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f0f12">
   <title>Mistake Tracker</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -53,6 +53,7 @@
           <button type="button" id="btn-quick-observed" class="btn-quick">+1 observed</button>
           <button type="button" id="btn-repeat-last" class="btn-quick secondary">Repeat last note</button>
         </div>
+        <p class="limit-message hidden" id="limit-message">Free version: 10 entries. Unlock full version for $5.</p>
       </div>
     </section>
 
@@ -81,6 +82,26 @@
     <p class="stats-note" id="stats-note"></p>
     <p class="stats-breakdown" id="stats-breakdown"></p>
     <p class="streak-note" id="streak-note"></p>
+
+    <section class="premium-section" id="premium-section">
+      <h2>Unlock full version</h2>
+      <p class="section-hint">Free version: 10 entries. Full version: unlimited entries, one-time $5.</p>
+      <div class="premium-cards" id="upgrade-cards">
+        <div class="premium-card premium-card-upgrade" id="upgrade-card">
+          <h3>Full version — $5</h3>
+          <p>Unlimited entries. One-time purchase, no subscription.</p>
+          <a href="#" id="btn-buy" class="btn-buy" target="_blank" rel="noopener">Purchase for $5</a>
+          <p class="license-row">
+            <label for="license-key">Already purchased?</label>
+            <input type="text" id="license-key" placeholder="Enter license key" maxlength="64" class="license-input">
+            <button type="button" id="btn-unlock" class="btn-unlock">Unlock</button>
+          </p>
+        </div>
+      </div>
+      <div class="premium-cards hidden" id="unlocked-badge">
+        <p class="unlocked-text">Full version active. Unlimited entries.</p>
+      </div>
+    </section>
 
     <section class="progress-section" id="progress-section">
       <h2>This week vs last week</h2>
@@ -171,7 +192,7 @@
   <script src="config.js"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});

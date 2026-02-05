@@ -11,6 +11,9 @@ const CONFIG = (typeof window !== 'undefined' && window.MISTAKE_TRACKER_CONFIG) 
 const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim();
 const SUPABASE_ANON_KEY = (CONFIG.SUPABASE_ANON_KEY || '').trim();
 const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
+const FREE_ENTRY_LIMIT = 10;
+const UNLOCKED_KEY = 'mistake-tracker-unlocked';
+const PAYMENT_URL = (CONFIG.PAYMENT_URL || '').trim();
 
 const addNoteInput = document.getElementById('mistake-note');
 const addBtn = document.getElementById('add-mistake');
@@ -75,13 +78,65 @@ const reflectionAvoidableCounter = document.getElementById('reflection-avoidable
 const reflectionFertileCounter = document.getElementById('reflection-fertile-counter');
 const yesterdayReflection = document.getElementById('yesterday-reflection');
 const communityMetrics = document.getElementById('community-metrics');
+const limitMessage = document.getElementById('limit-message');
+const upgradeCards = document.getElementById('upgrade-cards');
+const unlockedBadge = document.getElementById('unlocked-badge');
+const btnBuy = document.getElementById('btn-buy');
+const licenseKeyInput = document.getElementById('license-key');
+const btnUnlock = document.getElementById('btn-unlock');
 
 const REFLECTIONS_KEY = 'mistake-tracker-reflections';
+
+function isUnlocked() {
+  return localStorage.getItem(UNLOCKED_KEY) === 'true';
+}
+
+function setUnlocked() {
+  localStorage.setItem(UNLOCKED_KEY, 'true');
+  updateUpgradeUI();
+  renderStats();
+  updateAddButtonState();
+}
+
+function isAtLimit() {
+  return !isUnlocked() && entries.length >= FREE_ENTRY_LIMIT;
+}
+
+function updateUpgradeUI() {
+  const unlocked = isUnlocked();
+  if (unlockedBadge) unlockedBadge.classList.toggle('hidden', !unlocked);
+  if (upgradeCards) upgradeCards.classList.toggle('hidden', unlocked);
+  if (limitMessage) limitMessage.classList.toggle('hidden', !isAtLimit());
+  const atLimit = isAtLimit();
+  [quickAvoidableBtn, quickFertileBtn, quickObservedBtn, repeatLastBtn].forEach(btn => {
+    if (btn) btn.disabled = atLimit;
+  });
+  if (btnBuy && PAYMENT_URL) {
+    btnBuy.href = PAYMENT_URL;
+    btnBuy.classList.remove('hidden');
+  } else if (btnBuy) {
+    btnBuy.classList.add('hidden');
+  }
+}
+
+function updateAddButtonState() {
+  if (!addBtn || !addNoteInput) return;
+  const hasText = (addNoteInput.value || '').trim().length > 0;
+  const atLimit = isAtLimit();
+  addBtn.disabled = !hasText || atLimit;
+}
+
+// Optional scope for future team/context: "personal" | "observed" | "team". Default "personal".
+function normalizeScope(entry) {
+  const s = entry.scope;
+  return s === 'observed' || s === 'team' ? s : 'personal';
+}
 
 function loadEntries() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    entries = raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    entries = Array.isArray(parsed) ? parsed.map(e => ({ ...e, scope: normalizeScope(e) })) : [];
   } catch {
     entries = [];
   }
@@ -611,24 +666,22 @@ function getSelectedType() {
 }
 
 function addMistake() {
+  if (isAtLimit()) return;
   const note = (addNoteInput.value || '').trim();
   if (!note) return;
   const type = getSelectedType();
-  const entry = { at: Date.now(), note, type };
+  const scope = type === 'observed' ? 'observed' : 'personal';
+  const entry = { at: Date.now(), note, type, scope };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
   addNoteInput.value = '';
   updateAddButtonState();
+  updateUpgradeUI();
   if (addNoteInput) addNoteInput.focus();
   renderStats();
   renderList();
   if (SHARING_ENABLED) pushEntryToShared({ note, type });
-}
-
-function updateAddButtonState() {
-  if (!addBtn || !addNoteInput) return;
-  addBtn.disabled = !(addNoteInput.value || '').trim();
 }
 
 function pushEntryToShared(entry) {
@@ -735,26 +788,31 @@ async function shareAnonymously() {
 }
 
 function quickAdd(type) {
-  const entry = { at: Date.now(), note: '', type };
+  if (isAtLimit()) return;
+  const scope = type === 'observed' ? 'observed' : 'personal';
+  const entry = { at: Date.now(), note: '', type, scope };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
+  updateUpgradeUI();
   renderStats();
   renderList();
   if (SHARING_ENABLED) pushEntryToShared({ note: '', type });
 }
 
 function repeatLastNote() {
-  if (!lastEntry && entries.length === 0) return;
+  if (isAtLimit() || (!lastEntry && entries.length === 0)) return;
   const base = lastEntry || entries[entries.length - 1];
   const entry = {
     at: Date.now(),
     note: base.note || '',
-    type: base.type || 'avoidable'
+    type: base.type || 'avoidable',
+    scope: normalizeScope(base)
   };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
+  updateUpgradeUI();
   renderStats();
   renderList();
   if (SHARING_ENABLED) pushEntryToShared({ note: entry.note, type: entry.type });
@@ -1084,7 +1142,31 @@ periodTabs.forEach(tab => {
 });
 
 loadEntries();
+updateUpgradeUI();
 renderStats();
 renderList();
 initSharing();
 initReflection();
+
+if (btnBuy && PAYMENT_URL) {
+  btnBuy.href = PAYMENT_URL;
+  btnBuy.classList.remove('hidden');
+} else if (btnBuy) {
+  btnBuy.classList.add('hidden');
+}
+btnBuy.addEventListener('click', function(e) {
+  if (!PAYMENT_URL) e.preventDefault();
+});
+
+if (btnUnlock && licenseKeyInput) {
+  btnUnlock.addEventListener('click', function() {
+    const key = (licenseKeyInput.value || '').trim();
+    if (key) {
+      setUnlocked();
+      licenseKeyInput.value = '';
+    }
+  });
+  licenseKeyInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') btnUnlock.click();
+  });
+}
