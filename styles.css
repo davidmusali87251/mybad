@@ -56,6 +56,26 @@ body {
   margin-top: 0.35rem;
 }
 
+.tagline-sub {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.header-about {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.header-about:hover {
+  color: var(--accent);
+}
+
 .phase-label {
   font-size: 0.7rem;
   font-weight: 600;
