@@ -451,13 +451,13 @@ function renderList() {
     const badge = document.createElement('span');
     const type = entry.type || 'avoidable';
     let badgeClass = 'badge-avoidable';
-    let label = 'AVOIDABLE';
+    let label = '⚠ AVOIDABLE';
     if (type === 'fertile') {
       badgeClass = 'badge-fertile';
-      label = 'FERTILE';
+      label = '✶ FERTILE';
     } else if (type === 'observed') {
       badgeClass = 'badge-observed';
-      label = 'OBSERVED';
+      label = '👁 OBSERVED';
     }
     badge.className = 'badge ' + badgeClass;
     badge.textContent = label;
@@ -1078,13 +1078,13 @@ async function fetchSharedEntries() {
       const badge = document.createElement('span');
       const type = row.type || 'avoidable';
       let badgeClass = 'badge-avoidable';
-      let label = 'AVOIDABLE';
+      let label = '⚠ AVOIDABLE';
       if (type === 'fertile') {
         badgeClass = 'badge-fertile';
-        label = 'FERTILE';
+        label = '✶ FERTILE';
       } else if (type === 'observed') {
         badgeClass = 'badge-observed';
-        label = 'OBSERVED';
+        label = '👁 OBSERVED';
       }
       badge.className = 'badge ' + badgeClass;
       badge.textContent = label;
