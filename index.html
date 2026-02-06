@@ -89,13 +89,26 @@
     <p class="stats-breakdown" id="stats-breakdown"></p>
     <p class="streak-note" id="streak-note"></p>
 
-    <section class="progress-section" id="insights-section">
-      <h2>More insight</h2>
-      <p class="section-hint" id="day-vs-average"></p>
-      <p class="section-hint" id="time-of-day"></p>
-      <p class="section-hint" id="top-patterns-title"></p>
-      <ul class="entry-list" id="top-patterns"></ul>
-      <div id="more-patterns"></div>
+    <section class="insights-section" id="insights-section">
+      <h2>What we noticed</h2>
+      <p class="insights-intro">A few highlights from your data.</p>
+      <div class="insight-block">
+        <span class="insight-label">Today</span>
+        <p class="insight-text" id="day-vs-average"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">When you log</span>
+        <p class="insight-text" id="time-of-day"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">Repeating notes</span>
+        <p class="insight-subtitle" id="top-patterns-title"></p>
+        <ul class="entry-list insight-list" id="top-patterns"></ul>
+      </div>
+      <div class="insight-block insight-patterns">
+        <span class="insight-label">More patterns</span>
+        <div class="insight-chips" id="more-patterns"></div>
+      </div>
     </section>
 
     <section class="premium-section" id="premium-section">

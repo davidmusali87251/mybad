@@ -819,22 +819,27 @@ function renderAdditionalInsights(filteredForCurrentPeriod) {
     const dayCounts = getDayCountsLastN(7);
     const totalLast7 = dayCounts.reduce((sum, d) => sum + d.total, 0);
     const avgLast7 = (totalLast7 / 7).toFixed(1);
+    const block = dayVsAverageEl.closest('.insight-block');
     if (todayCount === 0 && totalLast7 === 0) {
       dayVsAverageEl.textContent = '';
+      if (block) block.classList.add('hidden');
     } else {
+      if (block) block.classList.remove('hidden');
       const noun = MODE === 'inside' ? 'moments' : 'mistakes';
-      let text = 'Today: ' + todayCount + ' ' + noun + ' · 7-day average: ' + avgLast7 + ' per day.';
-      if (todayCount > avgLast7) text += ' A bit above your recent normal.';
-      else if (todayCount < avgLast7) text += ' A bit below your recent normal.';
-      else text += ' Very close to your recent normal.';
+      let text = todayCount + ' ' + noun + ' today · avg ' + avgLast7 + '/day this week.';
+      if (todayCount > avgLast7) text += ' Slightly busier than usual.';
+      else if (todayCount < avgLast7) text += ' Lighter than your usual.';
+      else text += ' Right in line with your week.';
       dayVsAverageEl.textContent = text;
     }
   }
 
   // 2) Time-of-day profile for current period
   if (timeOfDayEl) {
+    const block = timeOfDayEl.closest('.insight-block');
     if (!filteredForCurrentPeriod || !filteredForCurrentPeriod.length) {
       timeOfDayEl.textContent = '';
+      if (block) block.classList.add('hidden');
     } else {
       const bands = { morning: 0, afternoon: 0, night: 0 };
       filteredForCurrentPeriod.forEach(e => {
@@ -847,24 +852,26 @@ function renderAdditionalInsights(filteredForCurrentPeriod) {
       const noun = MODE === 'inside' ? 'moments' : 'mistakes';
       if (max === 0) {
         timeOfDayEl.textContent = '';
+        if (block) block.classList.add('hidden');
       } else {
+        if (block) block.classList.remove('hidden');
         let strongest = '';
         if (bands.morning === max) strongest = 'morning';
         else if (bands.afternoon === max) strongest = 'afternoon';
         else strongest = 'night';
         timeOfDayEl.textContent =
-          'This ' + (currentPeriod === 'day' ? 'day' : currentPeriod) + ': most ' + noun +
-          ' show up in the ' + strongest + ' (morning ' + bands.morning +
-          ', afternoon ' + bands.afternoon + ', night ' + bands.night + ').';
+          'Most ' + noun + ' this period: ' + strongest + ' (' + bands.morning + ' am · ' + bands.afternoon + ' noon · ' + bands.night + ' pm).';
       }
     }
   }
 
   // 3) Top repeating patterns for current period (notes that repeat)
   if (topPatternsEl && topPatternsTitleEl) {
+    const block = topPatternsEl.closest('.insight-block');
     topPatternsEl.innerHTML = '';
     if (!filteredForCurrentPeriod || !filteredForCurrentPeriod.length) {
       topPatternsTitleEl.textContent = '';
+      if (block) block.classList.add('hidden');
     } else {
       const counts = new Map();
       filteredForCurrentPeriod.forEach(e => {
@@ -881,9 +888,10 @@ function renderAdditionalInsights(filteredForCurrentPeriod) {
         .slice(0, 3);
       if (!patterns.length) {
         topPatternsTitleEl.textContent = '';
+        if (block) block.classList.add('hidden');
       } else {
-        const noun = MODE === 'inside' ? 'moment' : 'pattern';
-        topPatternsTitleEl.textContent = 'Most repeated ' + noun + 's in this ' + (currentPeriod === 'day' ? 'day' : currentPeriod) + ':';
+        if (block) block.classList.remove('hidden');
+        topPatternsTitleEl.textContent = 'Notes you\'ve logged more than once:';
         patterns.forEach(p => {
           const li = document.createElement('li');
           li.className = 'entry-item';
@@ -901,17 +909,19 @@ function renderAdditionalInsights(filteredForCurrentPeriod) {
     }
   }
 
-  // 4) Ten extra pattern lines
+  // 4) Ten extra pattern lines as chips
   if (morePatternsEl) {
+    const block = morePatternsEl.closest('.insight-block');
     morePatternsEl.innerHTML = '';
     const lines = getMorePatternLines(filteredForCurrentPeriod);
     lines.forEach(function(text) {
       if (!text) return;
-      const p = document.createElement('p');
-      p.className = 'section-hint';
-      p.textContent = text;
-      morePatternsEl.appendChild(p);
+      const chip = document.createElement('span');
+      chip.className = 'insight-chip';
+      chip.textContent = text;
+      morePatternsEl.appendChild(chip);
     });
+    if (block) block.classList.toggle('hidden', lines.length === 0);
   }
 }
 
@@ -941,7 +951,7 @@ function getMorePatternLines(filteredForCurrentPeriod) {
     if (max > 0) {
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const idx = byWeekday.indexOf(max);
-      lines.push('Last 30 days: most ' + avoidableLabel + ' on ' + days[idx] + ' (' + max + ').');
+      lines.push('Most ' + avoidableLabel + ' on ' + days[idx] + ' (' + max + ')');
     }
   }
 
@@ -959,7 +969,7 @@ function getMorePatternLines(filteredForCurrentPeriod) {
     }
     const weekendAvg = weekendDays ? (weekend / weekendDays).toFixed(1) : '0';
     const weekdayAvg = weekdayDays ? (weekday / weekdayDays).toFixed(1) : '0';
-    lines.push('Last 30 days: weekend avg ' + weekendAvg + ' ' + noun + '/day, weekday ' + weekdayAvg + '.');
+    lines.push('Weekend ' + weekendAvg + '/day · weekday ' + weekdayAvg + '/day');
   }
 
   // 3) Peak hour in current period
@@ -973,7 +983,7 @@ function getMorePatternLines(filteredForCurrentPeriod) {
     if (maxH > 0) {
       const peakHour = byHour.indexOf(maxH);
       const hourStr = peakHour === 12 ? '12pm' : peakHour === 0 ? '12am' : peakHour < 12 ? peakHour + 'am' : (peakHour - 12) + 'pm';
-      lines.push('This period: peak at ' + hourStr + ' (' + maxH + ' ' + noun + ').');
+      lines.push('Peak time: ' + hourStr + ' (' + maxH + ')');
     }
   }
 
@@ -990,7 +1000,7 @@ function getMorePatternLines(filteredForCurrentPeriod) {
       else if (d.fertile > 0) dayLabels.push(label + ':' + fertileLabel);
       else dayLabels.push(label + ':—');
     });
-    lines.push('Last 7 days (dominant type): ' + dayLabels.join(', ') + '.');
+    lines.push('This week: ' + dayLabels.join(' · '));
   }
 
   // 5) Longest streak of days with at least 1 avoidable (last 30)
@@ -1004,7 +1014,7 @@ function getMorePatternLines(filteredForCurrentPeriod) {
       if (hasAvoidable) { streak++; maxStreak = Math.max(maxStreak, streak); }
       else streak = 0;
     }
-    if (maxStreak > 0) lines.push('Longest run of days with at least one ' + avoidableLabel + ' (last 30): ' + maxStreak + ' days.');
+    if (maxStreak > 0) lines.push(maxStreak + ' days in a row with ' + avoidableLabel);
   }
 
   // 6) Improvement streak: consecutive days (from today back) where avoidable ≤ previous day (last 7)
@@ -1014,15 +1024,15 @@ function getMorePatternLines(filteredForCurrentPeriod) {
       if (last7Days[i].avoidable <= last7Days[i - 1].avoidable) streakDays++;
       else break;
     }
-    if (streakDays > 1) lines.push('Improvement streak: ' + streakDays + ' day(s) in a row with same or fewer ' + avoidableLabel + ' than the day before.');
+    if (streakDays > 1) lines.push(streakDays + ' days improving (' + avoidableLabel + ' ↓)');
   }
 
   // 7) Empty note rate % in period
   if (filteredForCurrentPeriod && filteredForCurrentPeriod.length > 0) {
     const withNote = filteredForCurrentPeriod.filter(function(e) { return (e.note || '').trim().length > 0; });
     const pct = Math.round((1 - withNote.length / filteredForCurrentPeriod.length) * 100);
-    if (pct > 0) lines.push('This period: ' + pct + '% of entries have no note (quick +1).');
-    else lines.push('This period: every entry has a note.');
+    if (pct > 0) lines.push(pct + '% quick logs (no note)');
+    else lines.push('Every entry has a note');
   }
 
   // 8) Average note length by type (avoidable vs fertile) in period
@@ -1037,7 +1047,7 @@ function getMorePatternLines(filteredForCurrentPeriod) {
     if (avoidableN > 0 && fertileN > 0) {
       const aAvg = Math.round(avoidableLen / avoidableN);
       const fAvg = Math.round(fertileLen / fertileN);
-      lines.push('Avg note length: ' + avoidableLabel + ' ' + aAvg + ' chars, ' + fertileLabel + ' ' + fAvg + ' chars.');
+      lines.push('Note length: ' + avoidableLabel + ' ' + aAvg + ' · ' + fertileLabel + ' ' + fAvg + ' chars');
     }
   }
 
@@ -1051,9 +1061,9 @@ function getMorePatternLines(filteredForCurrentPeriod) {
     const prevTotal = prev7.length;
     const diff = thisTotal - prevTotal;
     let msg = 'Last 7 days: ' + thisTotal + ' ' + noun + '. Previous 7: ' + prevTotal + '.';
-    if (diff > 0) msg += ' Up from prior week.';
-    else if (diff < 0) msg += ' Down from prior week.';
-    else msg += ' Same as prior week.';
+    if (diff > 0) msg += ' ↑ vs last week';
+    else if (diff < 0) msg += ' ↓ vs last week';
+    else msg += ' (same as last week)';
     lines.push(msg);
   }
 
@@ -1061,7 +1071,7 @@ function getMorePatternLines(filteredForCurrentPeriod) {
   if (filteredForCurrentPeriod && filteredForCurrentPeriod.length > 0) {
     const observed = filteredForCurrentPeriod.filter(function(e) { return e.type === 'observed'; }).length;
     const pct = Math.round((observed / filteredForCurrentPeriod.length) * 100);
-    lines.push('This period: ' + pct + '% ' + observedLabel + ' (noticed in others/system).');
+    lines.push(pct + '% ' + observedLabel);
   }
 
   return lines;
@@ -1338,7 +1348,7 @@ async function fetchSharedStats() {
     communityError.textContent = '';
   }
   const client = getSupabase();
-  const MAX_OTHER_RESULTS = 10;
+  const MAX_OTHER_RESULTS = 5;
   const { data, error } = await client
     .from(STATS_TABLE)
     .select('id, period, count, avg_per_day, created_at, anonymous_id')
