@@ -63,7 +63,7 @@ The app includes a `manifest.json` and a service worker (`sw.js`) so it can be i
 Sharing lets you **publish your current stats** and **see everyone else's shared results** (all anonymous).
 
 1. Create a free account at [supabase.com](https://supabase.com) and create a new project.
-2. In the Supabase dashboard: **SQL Editor** → run this:
+2. In the Supabase dashboard: **SQL Editor** → run this for the main SlipUp app (personal mode):
 
 ```sql
 create table shared_stats (
@@ -89,6 +89,34 @@ create policy "Allow anonymous select" on shared_stats for select using (true);
 alter table shared_entries enable row level security;
 create policy "Allow anonymous insert" on shared_entries for insert with check (true);
 create policy "Allow anonymous select" on shared_entries for select using (true);
+```
+
+If you also use **SlipUp Inside** (`inside.html`, group mode), create a second pair of tables so group data stays separate:
+
+```sql
+create table shared_stats_inside (
+  id uuid default gen_random_uuid() primary key,
+  period text not null,
+  count int not null,
+  avg_per_day float,
+  created_at timestamptz default now(),
+  anonymous_id text
+);
+
+create table shared_entries_inside (
+  id uuid default gen_random_uuid() primary key,
+  note text,
+  type text not null default 'avoidable',
+  created_at timestamptz default now()
+);
+
+alter table shared_stats_inside enable row level security;
+create policy "Allow anonymous insert" on shared_stats_inside for insert with check (true);
+create policy "Allow anonymous select" on shared_stats_inside for select using (true);
+
+alter table shared_entries_inside enable row level security;
+create policy "Allow anonymous insert" on shared_entries_inside for insert with check (true);
+create policy "Allow anonymous select" on shared_entries_inside for select using (true);
 ```
 
 3. Go to **Settings → API**. Copy:

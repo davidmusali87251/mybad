@@ -4,6 +4,10 @@ const ANON_ID_KEY = 'mistake-tracker-anon-id';
 // Mode: "personal" (default SlipUp) or "inside" (group / in-custody)
 const MODE = (typeof window !== 'undefined' && window.SLIPUP_MODE) || 'personal';
 
+// Supabase table names (separate per app)
+const STATS_TABLE = MODE === 'inside' ? 'shared_stats_inside' : 'shared_stats';
+const ENTRIES_TABLE = MODE === 'inside' ? 'shared_entries_inside' : 'shared_entries';
+
 let entries = [];
 let currentPeriod = 'day';
 let currentTypeFilter = 'all';
@@ -912,7 +916,7 @@ function addMistake() {
 function pushEntryToShared(entry) {
   try {
     getSupabase()
-      .from('shared_entries')
+      .from(ENTRIES_TABLE)
       .insert({ note: entry.note || null, type: entry.type || 'avoidable' })
       .then(({ error }) => {
         if (!error && typeof fetchSharedEntries === 'function') fetchSharedEntries();
@@ -983,7 +987,7 @@ async function shareAnonymously() {
   try {
     const stats = getCurrentStatsForShare();
     const client = getSupabase();
-    const { error } = await client.from('shared_stats').insert({
+    const { error } = await client.from(STATS_TABLE).insert({
       period: stats.period,
       count: stats.count,
       avg_per_day: stats.avg_per_day,
@@ -1076,7 +1080,7 @@ async function fetchSharedStats() {
   const client = getSupabase();
   const MAX_OTHER_RESULTS = 10;
   const { data, error } = await client
-    .from('shared_stats')
+    .from(STATS_TABLE)
     .select('id, period, count, avg_per_day, created_at, anonymous_id')
     .order('created_at', { ascending: false })
     .limit(MAX_OTHER_RESULTS);
@@ -1190,7 +1194,7 @@ async function fetchSharedEntries() {
   try {
     const client = getSupabase();
     const { data, error } = await client
-      .from('shared_entries')
+      .from(ENTRIES_TABLE)
       .select('id, note, type, created_at')
       .order('created_at', { ascending: false })
       .limit(10);
