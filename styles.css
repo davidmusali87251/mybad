@@ -1,14 +1,17 @@
 :root {
-  --bg: #0f0f12;
-  --surface: #18181d;
-  --surface-hover: #1f1f26;
-  --border: #2a2a32;
-  --text: #e8e8ed;
-  --text-muted: #8a8a96;
-  --accent: #c9a227;
-  --accent-dim: #a68520;
-  --danger: #c94a4a;
-  --danger-dim: #8a3535;
+  /* Soft, safe dark theme */
+  --bg: #0b1013;             /* very dark blue-gray */
+  --surface: #151b20;        /* card background */
+  --surface-hover: #1e262d;  /* hover state */
+  --border: #28333d;
+  --text: #eef3f7;
+  --text-muted: #8f9ba7;
+  /* Calm accent: teal/green = growth, reflection */
+  --accent: #3fb6a8;
+  --accent-dim: #349a8e;
+  /* Gentle danger: softer red for avoidable mistakes */
+  --danger: #e06b6b;
+  --danger-dim: #a94a4a;
   --radius: 12px;
   --font-sans: "DM Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
