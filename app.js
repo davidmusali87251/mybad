@@ -1,6 +1,9 @@
 const STORAGE_KEY = 'mistake-tracker-entries';
 const ANON_ID_KEY = 'mistake-tracker-anon-id';
 
+// Mode: "personal" (default SlipUp) or "inside" (group / in-custody)
+const MODE = (typeof window !== 'undefined' && window.SLIPUP_MODE) || 'personal';
+
 let entries = [];
 let currentPeriod = 'day';
 let currentTypeFilter = 'all';
@@ -29,16 +32,41 @@ const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const typeHint = document.getElementById('type-hint');
 const communityComparison = document.getElementById('community-comparison');
 
-const TYPE_PHRASES = {
-  avoidable: 'Notice the trigger. How can I reduce repeats?',
-  fertile: 'What did I try? What did I learn?',
-  observed: 'For learning, not blaming. What did I see? What lesson applies to me?'
-};
-const TYPE_PLACEHOLDERS = {
-  avoidable: 'e.g. Forgot to save, spoke harshly…',
-  fertile: 'e.g. Tried a new approach, missed the mark…',
-  observed: 'What did I see? What lesson applies to me?'
-};
+const TYPE_PHRASES = MODE === 'inside'
+  ? {
+      avoidable: 'Heat — what raised the temperature? What could cool it next time?',
+      fertile: 'Shift — where did you choose differently than usual?',
+      observed: 'Support — where did you give, get, or see support?'
+    }
+  : {
+      avoidable: 'Notice the trigger. How can I reduce repeats?',
+      fertile: 'What did I try? What did I learn?',
+      observed: 'For learning, not blaming. What did I see? What lesson applies to me?'
+    };
+
+const TYPE_PLACEHOLDERS = MODE === 'inside'
+  ? {
+      avoidable: 'e.g. Argument, close call, words that stuck with me…',
+      fertile: 'e.g. Walked away instead of snapping, took a breath first…',
+      observed: 'e.g. Someone checked in on me, I helped cool things down…'
+    }
+  : {
+      avoidable: 'e.g. Forgot to save, spoke harshly…',
+      fertile: 'e.g. Tried a new approach, missed the mark…',
+      observed: 'What did I see? What lesson applies to me?'
+    };
+
+function getTypeLabel(type) {
+  const t = type || 'avoidable';
+  if (MODE === 'inside') {
+    if (t === 'fertile') return '✶ SHIFT';
+    if (t === 'observed') return '👁 SUPPORT';
+    return '⚠ HEAT';
+  }
+  if (t === 'fertile') return '✶ FERTILE';
+  if (t === 'observed') return '👁 OBSERVED';
+  return '⚠ AVOIDABLE';
+}
 const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
 const statLabel = document.getElementById('stat-label');
@@ -363,16 +391,30 @@ function renderStats() {
     if (count === 0) {
       statsBreakdown.textContent = '';
     } else {
-      statsBreakdown.textContent =
-        'Avoidable: ' + avoidableCount +
-        ' · Fertile: ' + fertileCount +
-        ' · Observed: ' + observedCount;
+      if (MODE === 'inside') {
+        statsBreakdown.textContent =
+          'Heat: ' + avoidableCount +
+          ' · Shift: ' + fertileCount +
+          ' · Support: ' + observedCount;
+      } else {
+        statsBreakdown.textContent =
+          'Avoidable: ' + avoidableCount +
+          ' · Fertile: ' + fertileCount +
+          ' · Observed: ' + observedCount;
+      }
     }
   }
 
   if (statsNote) {
     if (count === 0) {
-      statsNote.textContent = "No mistakes logged this period. That's okay—just check that you're still exploring and learning.";
+      statsNote.textContent = MODE === 'inside'
+        ? "No moments logged this period. It’s okay to start small—one heat, shift, or support moment is enough."
+        : "No mistakes logged this period. That's okay—just check that you're still exploring and learning.";
+    } else if (MODE === 'inside') {
+      statsNote.textContent =
+        avoidableCount + " heat (watch for patterns) · " +
+        fertileCount + " shifts (different choices) · " +
+        observedCount + " support (given, received, or seen)";
     } else {
       statsNote.textContent =
         avoidableCount + " avoidable (aim to reduce) · " +
@@ -391,18 +433,28 @@ function renderStats() {
     }
   }
 
-  // Exploration index: fertile ÷ (avoidable + fertile)
+  // Exploration / shift index: fertile ÷ (avoidable + fertile)
   if (statExploration) {
     const primaryTotal = avoidableCount + fertileCount;
     if (primaryTotal === 0) {
       statExploration.textContent = '—';
-      if (statExplorationHint) statExplorationHint.textContent = 'fertile ÷ (avoidable + fertile)';
+      if (statExplorationHint) {
+        statExplorationHint.textContent = MODE === 'inside'
+          ? 'shift ÷ (heat + shift)'
+          : 'fertile ÷ (avoidable + fertile)';
+      }
       if (statExplorationSoWhat) statExplorationSoWhat.textContent = '';
     } else {
       const ratio = fertileCount / primaryTotal;
       const pct = Math.round(ratio * 100);
       statExploration.textContent = pct + '%';
-      if (statExplorationHint) statExplorationHint.textContent = fertileCount + ' fertile ÷ ' + primaryTotal + ' (avoidable + fertile)';
+      if (statExplorationHint) {
+        if (MODE === 'inside') {
+          statExplorationHint.textContent = fertileCount + ' shift ÷ ' + primaryTotal + ' (heat + shift)';
+        } else {
+          statExplorationHint.textContent = fertileCount + ' fertile ÷ ' + primaryTotal + ' (avoidable + fertile)';
+        }
+      }
       if (statExplorationSoWhat) statExplorationSoWhat.textContent = getExplorationSoWhat(pct);
     }
   }
@@ -412,12 +464,21 @@ function renderStats() {
 }
 
 function getExplorationSoWhat(pct) {
-  if (pct >= 70) return 'Lots of experimenting.';
-  if (pct >= 50) return 'Good mix of risk and care.';
-  if (pct >= 30) return 'Room to add more experiments.';
-  if (pct >= 10) return 'Aim for more fertile mistakes.';
-  if (pct > 0) return 'One small experiment can help.';
-  return 'Try one stretch today.';
+  if (MODE === 'inside') {
+    if (pct >= 70) return 'Most of what you’re logging is shift — lots of different choices.';
+    if (pct >= 50) return 'Good mix of heat and shift. Notice what helps you choose differently.';
+    if (pct >= 30) return 'Some shifts showing up. You can build on those.';
+    if (pct >= 10) return 'A few shifts. Even one small different choice matters.';
+    if (pct > 0) return 'One shift is better than none. Name what helped.';
+    return 'Look for one small shift today — it can be very simple.';
+  } else {
+    if (pct >= 70) return 'Lots of experimenting.';
+    if (pct >= 50) return 'Good mix of risk and care.';
+    if (pct >= 30) return 'Room to add more experiments.';
+    if (pct >= 10) return 'Aim for more fertile mistakes.';
+    if (pct > 0) return 'One small experiment can help.';
+    return 'Try one stretch today.';
+  }
 }
 
 function formatTime(ts) {
@@ -451,16 +512,10 @@ function renderList() {
     const badge = document.createElement('span');
     const type = entry.type || 'avoidable';
     let badgeClass = 'badge-avoidable';
-    let label = '⚠ AVOIDABLE';
-    if (type === 'fertile') {
-      badgeClass = 'badge-fertile';
-      label = '✶ FERTILE';
-    } else if (type === 'observed') {
-      badgeClass = 'badge-observed';
-      label = '👁 OBSERVED';
-    }
+    if (type === 'fertile') badgeClass = 'badge-fertile';
+    else if (type === 'observed') badgeClass = 'badge-observed';
     badge.className = 'badge ' + badgeClass;
-    badge.textContent = label;
+    badge.textContent = getTypeLabel(type);
     const note = document.createElement('span');
     note.className = 'note' + (entry.note ? '' : ' empty');
     note.textContent = entry.note || '(no note)';
@@ -1078,16 +1133,10 @@ async function fetchSharedEntries() {
       const badge = document.createElement('span');
       const type = row.type || 'avoidable';
       let badgeClass = 'badge-avoidable';
-      let label = '⚠ AVOIDABLE';
-      if (type === 'fertile') {
-        badgeClass = 'badge-fertile';
-        label = '✶ FERTILE';
-      } else if (type === 'observed') {
-        badgeClass = 'badge-observed';
-        label = '👁 OBSERVED';
-      }
+      if (type === 'fertile') badgeClass = 'badge-fertile';
+      else if (type === 'observed') badgeClass = 'badge-observed';
       badge.className = 'badge ' + badgeClass;
-      badge.textContent = label;
+      badge.textContent = getTypeLabel(type);
       const note = document.createElement('span');
       note.className = 'note' + (row.note ? '' : ' empty');
       note.textContent = row.note || '(no note)';
