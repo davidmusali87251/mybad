@@ -87,6 +87,10 @@ const autoReflectionEl = document.getElementById('auto-reflection');
 const entryList = document.getElementById('entry-list');
 const emptyState = document.getElementById('empty-state');
 const statsNote = document.getElementById('stats-note');
+const dayVsAverageEl = document.getElementById('day-vs-average');
+const timeOfDayEl = document.getElementById('time-of-day');
+const topPatternsTitleEl = document.getElementById('top-patterns-title');
+const topPatternsEl = document.getElementById('top-patterns');
 const historyFilters = document.getElementById('history-filters');
 const exportCsvBtn = document.getElementById('btn-export-csv');
 const shareSection = document.getElementById('share-section');
@@ -349,6 +353,15 @@ function getStartOfMonth(d) {
   return x.getTime();
 }
 
+function getMonthBounds(offsetMonths) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + offsetMonths, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + offsetMonths + 1, 1);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  return { start: start.getTime(), end: end.getTime() };
+}
+
 function filterByPeriod(period) {
   const now = Date.now();
   let start;
@@ -368,9 +381,10 @@ function getDaysInPeriod(period) {
 }
 
 function getPeriodLabel(period) {
-  if (period === 'day') return 'mistakes today';
-  if (period === 'week') return 'mistakes this week';
-  return 'mistakes this month';
+  const noun = MODE === 'inside' ? 'moments' : 'mistakes';
+  if (period === 'day') return noun + ' today';
+  if (period === 'week') return noun + ' this week';
+  return noun + ' this month';
 }
 
 function renderStats() {
@@ -460,6 +474,7 @@ function renderStats() {
   }
   renderTrends();
   renderProgress();
+  renderAdditionalInsights(filtered);
   renderAutoReflection();
 }
 
@@ -693,6 +708,97 @@ function renderTrends() {
       const pct = Math.round(best.ratio * 100);
       trendsHighlight.textContent =
         'Best exploration day (last 7): ' + label + ' at ' + pct + '%.';
+    }
+  }
+}
+
+function renderAdditionalInsights(filteredForCurrentPeriod) {
+  // 1) Today vs recent average (7-day window)
+  if (dayVsAverageEl) {
+    const todayList = entries.filter(e => e.at >= getStartOfDay(Date.now()) && e.at < getStartOfDay(Date.now()) + 86400000);
+    const todayCount = todayList.length;
+    const dayCounts = getDayCountsLastN(7);
+    const totalLast7 = dayCounts.reduce((sum, d) => sum + d.total, 0);
+    const avgLast7 = (totalLast7 / 7).toFixed(1);
+    if (todayCount === 0 && totalLast7 === 0) {
+      dayVsAverageEl.textContent = '';
+    } else {
+      const noun = MODE === 'inside' ? 'moments' : 'mistakes';
+      let text = 'Today: ' + todayCount + ' ' + noun + ' · 7-day average: ' + avgLast7 + ' per day.';
+      if (todayCount > avgLast7) text += ' A bit above your recent normal.';
+      else if (todayCount < avgLast7) text += ' A bit below your recent normal.';
+      else text += ' Very close to your recent normal.';
+      dayVsAverageEl.textContent = text;
+    }
+  }
+
+  // 2) Time-of-day profile for current period
+  if (timeOfDayEl) {
+    if (!filteredForCurrentPeriod || !filteredForCurrentPeriod.length) {
+      timeOfDayEl.textContent = '';
+    } else {
+      const bands = { morning: 0, afternoon: 0, night: 0 };
+      filteredForCurrentPeriod.forEach(e => {
+        const h = new Date(e.at).getHours();
+        if (h >= 5 && h < 12) bands.morning += 1;
+        else if (h >= 12 && h < 18) bands.afternoon += 1;
+        else bands.night += 1;
+      });
+      const max = Math.max(bands.morning, bands.afternoon, bands.night);
+      const noun = MODE === 'inside' ? 'moments' : 'mistakes';
+      if (max === 0) {
+        timeOfDayEl.textContent = '';
+      } else {
+        let strongest = '';
+        if (bands.morning === max) strongest = 'morning';
+        else if (bands.afternoon === max) strongest = 'afternoon';
+        else strongest = 'night';
+        timeOfDayEl.textContent =
+          'This ' + (currentPeriod === 'day' ? 'day' : currentPeriod) + ': most ' + noun +
+          ' show up in the ' + strongest + ' (morning ' + bands.morning +
+          ', afternoon ' + bands.afternoon + ', night ' + bands.night + ').';
+      }
+    }
+  }
+
+  // 3) Top repeating patterns for current period (notes that repeat)
+  if (topPatternsEl && topPatternsTitleEl) {
+    topPatternsEl.innerHTML = '';
+    if (!filteredForCurrentPeriod || !filteredForCurrentPeriod.length) {
+      topPatternsTitleEl.textContent = '';
+    } else {
+      const counts = new Map();
+      filteredForCurrentPeriod.forEach(e => {
+        const note = (e.note || '').trim();
+        if (!note) return;
+        const key = note.toLowerCase();
+        const existing = counts.get(key) || { count: 0, sample: note };
+        existing.count += 1;
+        counts.set(key, existing);
+      });
+      const patterns = Array.from(counts.values())
+        .filter(p => p.count >= 2)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+      if (!patterns.length) {
+        topPatternsTitleEl.textContent = '';
+      } else {
+        const noun = MODE === 'inside' ? 'moment' : 'pattern';
+        topPatternsTitleEl.textContent = 'Most repeated ' + noun + 's in this ' + (currentPeriod === 'day' ? 'day' : currentPeriod) + ':';
+        patterns.forEach(p => {
+          const li = document.createElement('li');
+          li.className = 'entry-item';
+          const noteSpan = document.createElement('span');
+          noteSpan.className = 'note';
+          noteSpan.textContent = '“' + p.sample + '”';
+          const countSpan = document.createElement('span');
+          countSpan.className = 'time';
+          countSpan.textContent = p.count + '×';
+          li.appendChild(noteSpan);
+          li.appendChild(countSpan);
+          topPatternsEl.appendChild(li);
+        });
+      }
     }
   }
 }
