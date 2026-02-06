@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mistake-tracker-v3';
+const CACHE_NAME = 'slip-track-v1';
 
 const STATIC_ASSETS = [
   './',

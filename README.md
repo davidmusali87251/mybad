@@ -1,4 +1,4 @@
-# Mistake Tracker
+# SlipUp
 
 © 2025. All rights reserved.
 
@@ -50,7 +50,7 @@ No install required for local use. For **sharing** and **viewing others' results
 
 When the app is served over **HTTPS** (e.g. on GitHub Pages), you can install it like an app:
 
-- **Desktop (Chrome/Edge):** Open the app → menu (⋮) → “Install Mistake Tracker” / “Install MyBad”.
+- **Desktop (Chrome/Edge):** Open the app → menu (⋮) → “Install SlipUp”.
 - **Mobile (Android):** Open in Chrome → menu → “Add to Home screen” or “Install app”.
 - **iOS (Safari):** Share → “Add to Home Screen”.
 

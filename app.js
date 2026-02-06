@@ -210,7 +210,7 @@ function saveEntries() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
   } catch (e) {
-    console.warn('Mistake Tracker: could not save to localStorage', e);
+    console.warn('SlipUp: could not save to localStorage', e);
   }
 }
 
