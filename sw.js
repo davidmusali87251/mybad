@@ -3,9 +3,9 @@ const CACHE_NAME = 'mistake-tracker-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
+  './landing.html',
   './styles.css',
   './app.js',
-  './config.js',
   './manifest.json',
   './icon.svg',
   './icon-maskable.svg'

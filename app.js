@@ -927,14 +927,14 @@ async function fetchSharedStats() {
       communityError.classList.remove('hidden');
     }
     if (communityMetrics) communityMetrics.textContent = '';
-    sharedList.innerHTML = '';
-    sharedEmpty.classList.remove('hidden');
+    if (sharedList) sharedList.innerHTML = '';
+    if (sharedEmpty) sharedEmpty.classList.remove('hidden');
     return;
   }
-  sharedEmpty.classList.toggle('hidden', (data && data.length) > 0);
+  if (sharedEmpty) sharedEmpty.classList.toggle('hidden', (data && data.length) > 0);
   if (!data || data.length === 0) {
-    sharedList.innerHTML = '';
-    sharedEmpty.textContent = "No shared results yet. Share yours above!";
+    if (sharedList) sharedList.innerHTML = '';
+    if (sharedEmpty) sharedEmpty.textContent = "No shared results yet. Share yours above!";
     if (communityMetrics) communityMetrics.textContent = '';
     return;
   }
@@ -952,14 +952,14 @@ async function fetchSharedStats() {
     const bMax = Math.max(...byAnon[b].map(r => new Date(r.created_at).getTime()));
     return bMax - aMax;
   });
-  sharedList.innerHTML = '';
+  if (sharedList) sharedList.innerHTML = '';
   groupKeys.forEach(anonKey => {
     const rows = byAnon[anonKey] || [];
     const groupLabel = document.createElement('li');
     groupLabel.className = 'shared-group-label';
     const shareCount = rows.length;
     groupLabel.textContent = shareCount === 1 ? "Someone's share" : "Someone's shares (" + shareCount + ")";
-    sharedList.appendChild(groupLabel);
+    if (sharedList) sharedList.appendChild(groupLabel);
     rows.forEach(row => {
       const li = document.createElement('li');
       li.className = 'shared-item';
@@ -967,7 +967,7 @@ async function fetchSharedStats() {
       const timeStr = row.created_at ? new Date(row.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
       const avgStr = row.avg_per_day != null ? row.avg_per_day : '—';
       li.innerHTML = '<span class="shared-stat"><strong>' + row.count + '</strong> ' + periodLabel + '</span><span class="shared-meta">avg ' + avgStr + '/day · ' + timeStr + '</span>';
-      sharedList.appendChild(li);
+      if (sharedList) sharedList.appendChild(li);
     });
   });
   if (communityMetrics) {
