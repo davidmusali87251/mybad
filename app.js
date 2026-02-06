@@ -806,7 +806,19 @@ function renderStatsTableAndLineChart() {
     });
 
     if (lineChartLegend) {
-      lineChartLegend.textContent = '— ' + col1 + '  — ' + col2 + '  — ' + col3 + '  — Total';
+      const items = [
+        { label: col1, color: 'var(--danger-dim, #a94a4a)' },
+        { label: col2, color: 'var(--accent-dim, #2c7a7b)' },
+        { label: col3, color: 'var(--text-muted, #718096)' },
+        { label: 'Total', color: 'var(--text, #e2e8f0)' }
+      ];
+      lineChartLegend.innerHTML = '';
+      items.forEach(function(item) {
+        const span = document.createElement('span');
+        span.className = 'legend-item';
+        span.innerHTML = '<span class="legend-swatch" style="background:' + item.color + '"></span><span class="legend-label">' + item.label + '</span>';
+        lineChartLegend.appendChild(span);
+      });
     }
   }
 }

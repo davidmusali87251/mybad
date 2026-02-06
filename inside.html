@@ -12,6 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
+  <header class="top-bar">
+    <a href="index.html" class="top-bar-brand">SlipUp</a>
+    <a href="index.html" class="top-bar-home">Home</a>
+  </header>
   <div class="app">
     <header class="header">
       <h1>SlipUp Inside</h1>
@@ -144,14 +148,14 @@
       <p class="trends-highlight" id="trends-highlight"></p>
     </section>
 
-    <section class="stats-table-section" id="stats-table-section">
-      <h2>Stats chart</h2>
-      <p class="section-hint">Last 14 days — all patterns. SlipUp Inside (groups).</p>
+    <section class="chart-section" id="stats-table-section">
+      <h2 class="chart-section-title">Your last 2 weeks</h2>
+      <p class="chart-section-intro">See how heat, shift, and support stack up day by day.</p>
       <div class="line-chart-wrap" id="line-chart-wrap">
-        <svg class="line-chart-svg" id="line-chart-svg" viewBox="0 0 400 180" preserveAspectRatio="xMidYMid meet"></svg>
-        <p class="line-chart-legend" id="line-chart-legend"></p>
+        <div class="line-chart-legend" id="line-chart-legend"></div>
+        <svg class="line-chart-svg" id="line-chart-svg" viewBox="0 0 400 180" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
       </div>
-      <p class="line-chart-empty" id="line-chart-empty">Log moments over a few days to see the chart.</p>
+      <p class="line-chart-empty" id="line-chart-empty">Add a few moments over the next days to see your chart here.</p>
     </section>
 
     <section class="history">
