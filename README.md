@@ -1,5 +1,7 @@
 # Mistake Tracker
 
+© 2025. All rights reserved.
+
 A simple web app to count and track mistakes by **day**, **week**, and **month**.
 
 **Live demo:** [https://davidmusali87251.github.io/mybad/](https://davidmusali87251.github.io/mybad/)

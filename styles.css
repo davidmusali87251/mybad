@@ -76,6 +76,13 @@ body {
   color: var(--accent);
 }
 
+.header-sep {
+  margin: 0 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+
 .phase-label {
   font-size: 0.7rem;
   font-weight: 600;
