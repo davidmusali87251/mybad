@@ -95,6 +95,13 @@ const dayVsAverageEl = document.getElementById('day-vs-average');
 const timeOfDayEl = document.getElementById('time-of-day');
 const topPatternsTitleEl = document.getElementById('top-patterns-title');
 const topPatternsEl = document.getElementById('top-patterns');
+const morePatternsEl = document.getElementById('more-patterns');
+const statsTableHead = document.getElementById('stats-table-head');
+const statsTableBody = document.getElementById('stats-table-body');
+const lineChartWrap = document.getElementById('line-chart-wrap');
+const lineChartSvg = document.getElementById('line-chart-svg');
+const lineChartLegend = document.getElementById('line-chart-legend');
+const lineChartEmpty = document.getElementById('line-chart-empty');
 const historyFilters = document.getElementById('history-filters');
 const exportCsvBtn = document.getElementById('btn-export-csv');
 const shareSection = document.getElementById('share-section');
@@ -477,6 +484,7 @@ function renderStats() {
     }
   }
   renderTrends();
+  renderStatsTableAndLineChart();
   renderProgress();
   renderAdditionalInsights(filtered);
   renderAutoReflection();
@@ -650,6 +658,33 @@ function getDayCountsLastN(n) {
   return result;
 }
 
+/** Day stats including observed, for table and line chart (last n days). */
+function getDayCountsLastNFull(n) {
+  const now = Date.now();
+  const dayMs = 86400000;
+  const result = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const dayStart = getStartOfDay(now - i * dayMs);
+    const dayEnd = dayStart + dayMs;
+    const dayEntries = entries.filter(e => e.at >= dayStart && e.at < dayEnd);
+    const avoidable = dayEntries.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+    const fertile = dayEntries.filter(e => (e.type || 'avoidable') === 'fertile').length;
+    const observed = dayEntries.filter(e => e.type === 'observed').length;
+    const total = avoidable + fertile + observed;
+    const primary = avoidable + fertile;
+    const exploration = primary > 0 ? Math.round((fertile / primary) * 100) : 0;
+    result.push({
+      dayStart,
+      avoidable,
+      fertile,
+      observed,
+      total,
+      exploration
+    });
+  }
+  return result;
+}
+
 function renderTrends() {
   if (!trendsChart || !trendsEmpty) return;
   const days = getDayCountsLastN(7);
@@ -712,6 +747,93 @@ function renderTrends() {
       const pct = Math.round(best.ratio * 100);
       trendsHighlight.textContent =
         'Best exploration day (last 7): ' + label + ' at ' + pct + '%.';
+    }
+  }
+}
+
+function renderStatsTableAndLineChart() {
+  const col1 = MODE === 'inside' ? 'Heat' : 'Avoidable';
+  const col2 = MODE === 'inside' ? 'Shift' : 'Fertile';
+  const col3 = MODE === 'inside' ? 'Support' : 'Observed';
+  const days = getDayCountsLastNFull(14);
+  const hasAny = days.some(d => d.total > 0);
+
+  // Table
+  if (statsTableHead && statsTableBody) {
+    statsTableHead.innerHTML = '';
+    statsTableBody.innerHTML = '';
+    const tr = document.createElement('tr');
+    ['Date', col1, col2, col3, 'Total', 'Exploration %'].forEach(function(label) {
+      const th = document.createElement('th');
+      th.textContent = label;
+      tr.appendChild(th);
+    });
+    statsTableHead.appendChild(tr);
+    days.forEach(function(d) {
+      const row = document.createElement('tr');
+      const date = new Date(d.dayStart);
+      const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+      [dateStr, d.avoidable, d.fertile, d.observed, d.total, d.exploration + '%'].forEach(function(val) {
+        const td = document.createElement('td');
+        td.textContent = val;
+        row.appendChild(td);
+      });
+      statsTableBody.appendChild(row);
+    });
+  }
+
+  // Line chart
+  if (lineChartWrap && lineChartSvg) {
+    lineChartWrap.classList.toggle('hidden', !hasAny);
+    if (lineChartEmpty) lineChartEmpty.classList.toggle('hidden', hasAny);
+    if (!hasAny) {
+      lineChartSvg.innerHTML = '';
+      if (lineChartLegend) lineChartLegend.textContent = '';
+      return;
+    }
+    const maxVal = Math.max(1, ...days.map(d => d.total));
+    const pad = { top: 10, right: 10, bottom: 24, left: 28 };
+    const w = 400;
+    const h = 180;
+    const chartW = w - pad.left - pad.right;
+    const chartH = h - pad.top - pad.bottom;
+    const n = days.length;
+    const x = i => pad.left + (i / Math.max(1, n - 1)) * chartW;
+    const y = v => pad.top + chartH - (v / maxVal) * chartH;
+
+    lineChartSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    lineChartSvg.innerHTML = '';
+
+    const toPath = function(getVal) {
+      return days.map(function(d, i) { return getVal(d); }).reduce(function(acc, v, i) {
+        return acc + (i === 0 ? 'M' : 'L') + x(i).toFixed(1) + ',' + y(v).toFixed(1);
+      }, '');
+    };
+
+    const colors = {
+      avoidable: 'var(--danger-dim, #c53030)',
+      fertile: 'var(--accent-dim, #2c7a7b)',
+      observed: 'var(--text-muted, #718096)',
+      total: 'var(--text, #e2e8f0)'
+    };
+    [
+      { key: 'avoidable', getVal: d => d.avoidable },
+      { key: 'fertile', getVal: d => d.fertile },
+      { key: 'observed', getVal: d => d.observed },
+      { key: 'total', getVal: d => d.total }
+    ].forEach(function(serie) {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', toPath(serie.getVal));
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', colors[serie.key]);
+      path.setAttribute('stroke-width', serie.key === 'total' ? 2 : 1.5);
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      lineChartSvg.appendChild(path);
+    });
+
+    if (lineChartLegend) {
+      lineChartLegend.textContent = '— ' + col1 + '  — ' + col2 + '  — ' + col3 + '  — Total';
     }
   }
 }
@@ -805,6 +927,171 @@ function renderAdditionalInsights(filteredForCurrentPeriod) {
       }
     }
   }
+
+  // 4) Ten extra pattern lines
+  if (morePatternsEl) {
+    morePatternsEl.innerHTML = '';
+    const lines = getMorePatternLines(filteredForCurrentPeriod);
+    lines.forEach(function(text) {
+      if (!text) return;
+      const p = document.createElement('p');
+      p.className = 'section-hint';
+      p.textContent = text;
+      morePatternsEl.appendChild(p);
+    });
+  }
+}
+
+function getMorePatternLines(filteredForCurrentPeriod) {
+  const noun = MODE === 'inside' ? 'moments' : 'mistakes';
+  const avoidableLabel = MODE === 'inside' ? 'heat' : 'avoidable';
+  const fertileLabel = MODE === 'inside' ? 'shift' : 'fertile';
+  const observedLabel = MODE === 'inside' ? 'support' : 'observed';
+  const dayMs = 86400000;
+  const now = Date.now();
+  const lines = [];
+
+  // Last 30 days of entries for weekday/streak stats
+  const last30Start = getStartOfDay(now - 29 * dayMs);
+  const last30 = entries.filter(function(e) { return e.at >= last30Start; });
+
+  // 1) Weekday with most avoidable (last 30 days)
+  if (last30.length >= 3) {
+    const byWeekday = [0, 0, 0, 0, 0, 0, 0];
+    last30.forEach(function(e) {
+      if ((e.type || 'avoidable') === 'avoidable') {
+        const d = new Date(e.at);
+        byWeekday[d.getDay()]++;
+      }
+    });
+    const max = Math.max.apply(null, byWeekday);
+    if (max > 0) {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const idx = byWeekday.indexOf(max);
+      lines.push('Last 30 days: most ' + avoidableLabel + ' on ' + days[idx] + ' (' + max + ').');
+    }
+  }
+
+  // 2) Weekend vs weekday average (last 30 days)
+  if (last30.length >= 5) {
+    let weekend = 0, weekendDays = 0, weekday = 0, weekdayDays = 0;
+    for (let i = 0; i < 30; i++) {
+      const dayStart = getStartOfDay(now - i * dayMs);
+      const dayEnd = dayStart + dayMs;
+      const dayEntries = last30.filter(function(e) { return e.at >= dayStart && e.at < dayEnd; });
+      const d = new Date(dayStart);
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      if (isWeekend) { weekend += dayEntries.length; weekendDays++; }
+      else { weekday += dayEntries.length; weekdayDays++; }
+    }
+    const weekendAvg = weekendDays ? (weekend / weekendDays).toFixed(1) : '0';
+    const weekdayAvg = weekdayDays ? (weekday / weekdayDays).toFixed(1) : '0';
+    lines.push('Last 30 days: weekend avg ' + weekendAvg + ' ' + noun + '/day, weekday ' + weekdayAvg + '.');
+  }
+
+  // 3) Peak hour in current period
+  if (filteredForCurrentPeriod && filteredForCurrentPeriod.length >= 2) {
+    const byHour = new Array(24);
+    for (let h = 0; h < 24; h++) byHour[h] = 0;
+    filteredForCurrentPeriod.forEach(function(e) {
+      byHour[new Date(e.at).getHours()]++;
+    });
+    const maxH = Math.max.apply(null, byHour);
+    if (maxH > 0) {
+      const peakHour = byHour.indexOf(maxH);
+      const hourStr = peakHour === 12 ? '12pm' : peakHour === 0 ? '12am' : peakHour < 12 ? peakHour + 'am' : (peakHour - 12) + 'pm';
+      lines.push('This period: peak at ' + hourStr + ' (' + maxH + ' ' + noun + ').');
+    }
+  }
+
+  // 4) Dominant type for each of last 7 days (one-line summary)
+  const last7Days = getDayCountsLastN(7);
+  const withData = last7Days.filter(function(d) { return d.total > 0; });
+  if (withData.length >= 2) {
+    const dayLabels = [];
+    last7Days.forEach(function(d, i) {
+      const date = new Date(d.dayStart);
+      const label = date.toLocaleDateString([], { weekday: 'short' });
+      if (d.total === 0) dayLabels.push(label + ':—');
+      else if (d.avoidable >= d.fertile && d.avoidable > 0) dayLabels.push(label + ':' + avoidableLabel);
+      else if (d.fertile > 0) dayLabels.push(label + ':' + fertileLabel);
+      else dayLabels.push(label + ':—');
+    });
+    lines.push('Last 7 days (dominant type): ' + dayLabels.join(', ') + '.');
+  }
+
+  // 5) Longest streak of days with at least 1 avoidable (last 30)
+  if (last30.length >= 2) {
+    let streak = 0, maxStreak = 0;
+    for (let i = 0; i < 30; i++) {
+      const dayStart = getStartOfDay(now - i * dayMs);
+      const dayEnd = dayStart + dayMs;
+      const dayEntries = last30.filter(function(e) { return e.at >= dayStart && e.at < dayEnd; });
+      const hasAvoidable = dayEntries.some(function(e) { return (e.type || 'avoidable') === 'avoidable'; });
+      if (hasAvoidable) { streak++; maxStreak = Math.max(maxStreak, streak); }
+      else streak = 0;
+    }
+    if (maxStreak > 0) lines.push('Longest run of days with at least one ' + avoidableLabel + ' (last 30): ' + maxStreak + ' days.');
+  }
+
+  // 6) Improvement streak: consecutive days (from today back) where avoidable ≤ previous day (last 7)
+  if (last7Days.filter(function(d) { return d.total > 0; }).length >= 2) {
+    let streakDays = 1;
+    for (let i = last7Days.length - 1; i > 0; i--) {
+      if (last7Days[i].avoidable <= last7Days[i - 1].avoidable) streakDays++;
+      else break;
+    }
+    if (streakDays > 1) lines.push('Improvement streak: ' + streakDays + ' day(s) in a row with same or fewer ' + avoidableLabel + ' than the day before.');
+  }
+
+  // 7) Empty note rate % in period
+  if (filteredForCurrentPeriod && filteredForCurrentPeriod.length > 0) {
+    const withNote = filteredForCurrentPeriod.filter(function(e) { return (e.note || '').trim().length > 0; });
+    const pct = Math.round((1 - withNote.length / filteredForCurrentPeriod.length) * 100);
+    if (pct > 0) lines.push('This period: ' + pct + '% of entries have no note (quick +1).');
+    else lines.push('This period: every entry has a note.');
+  }
+
+  // 8) Average note length by type (avoidable vs fertile) in period
+  if (filteredForCurrentPeriod && filteredForCurrentPeriod.length >= 2) {
+    let avoidableLen = 0, avoidableN = 0, fertileLen = 0, fertileN = 0;
+    filteredForCurrentPeriod.forEach(function(e) {
+      const len = (e.note || '').trim().length;
+      const t = e.type || 'avoidable';
+      if (t === 'avoidable') { avoidableLen += len; avoidableN++; }
+      else if (t === 'fertile') { fertileLen += len; fertileN++; }
+    });
+    if (avoidableN > 0 && fertileN > 0) {
+      const aAvg = Math.round(avoidableLen / avoidableN);
+      const fAvg = Math.round(fertileLen / fertileN);
+      lines.push('Avg note length: ' + avoidableLabel + ' ' + aAvg + ' chars, ' + fertileLabel + ' ' + fAvg + ' chars.');
+    }
+  }
+
+  // 9) Last 7 days vs previous 7 days (rolling)
+  const prev7Start = getStartOfDay(now - 14 * dayMs);
+  const prev7End = getStartOfDay(now - 7 * dayMs);
+  const this7 = entries.filter(function(e) { return e.at >= prev7End; });
+  const prev7 = entries.filter(function(e) { return e.at >= prev7Start && e.at < prev7End; });
+  if (this7.length + prev7.length >= 3) {
+    const thisTotal = this7.length;
+    const prevTotal = prev7.length;
+    const diff = thisTotal - prevTotal;
+    let msg = 'Last 7 days: ' + thisTotal + ' ' + noun + '. Previous 7: ' + prevTotal + '.';
+    if (diff > 0) msg += ' Up from prior week.';
+    else if (diff < 0) msg += ' Down from prior week.';
+    else msg += ' Same as prior week.';
+    lines.push(msg);
+  }
+
+  // 10) Observed share % in period
+  if (filteredForCurrentPeriod && filteredForCurrentPeriod.length > 0) {
+    const observed = filteredForCurrentPeriod.filter(function(e) { return e.type === 'observed'; }).length;
+    const pct = Math.round((observed / filteredForCurrentPeriod.length) * 100);
+    lines.push('This period: ' + pct + '% ' + observedLabel + ' (noticed in others/system).');
+  }
+
+  return lines;
 }
 
 const AUTO_REFLECTION_PHRASES = {
