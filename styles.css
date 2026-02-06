@@ -747,45 +747,6 @@ body {
   margin-bottom: 0.75rem;
 }
 
-.stats-table-wrap {
-  overflow-x: auto;
-  margin-bottom: 1rem;
-  -webkit-overflow-scrolling: touch;
-}
-
-.stats-table {
-  width: 100%;
-  min-width: 320px;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-}
-
-.stats-table th,
-.stats-table td {
-  padding: 0.4rem 0.5rem;
-  text-align: right;
-  border-bottom: 1px solid var(--border);
-}
-
-.stats-table th:first-child,
-.stats-table td:first-child {
-  text-align: left;
-  position: sticky;
-  left: 0;
-  background: var(--surface);
-}
-
-.stats-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.stats-table tbody tr:hover {
-  background: var(--bg);
-}
-
 .line-chart-wrap {
   margin-bottom: 0.5rem;
 }

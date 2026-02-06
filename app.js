@@ -96,8 +96,6 @@ const timeOfDayEl = document.getElementById('time-of-day');
 const topPatternsTitleEl = document.getElementById('top-patterns-title');
 const topPatternsEl = document.getElementById('top-patterns');
 const morePatternsEl = document.getElementById('more-patterns');
-const statsTableHead = document.getElementById('stats-table-head');
-const statsTableBody = document.getElementById('stats-table-body');
 const lineChartWrap = document.getElementById('line-chart-wrap');
 const lineChartSvg = document.getElementById('line-chart-svg');
 const lineChartLegend = document.getElementById('line-chart-legend');
@@ -758,31 +756,6 @@ function renderStatsTableAndLineChart() {
   const days = getDayCountsLastNFull(14);
   const hasAny = days.some(d => d.total > 0);
 
-  // Table
-  if (statsTableHead && statsTableBody) {
-    statsTableHead.innerHTML = '';
-    statsTableBody.innerHTML = '';
-    const tr = document.createElement('tr');
-    ['Date', col1, col2, col3, 'Total', 'Exploration %'].forEach(function(label) {
-      const th = document.createElement('th');
-      th.textContent = label;
-      tr.appendChild(th);
-    });
-    statsTableHead.appendChild(tr);
-    days.forEach(function(d) {
-      const row = document.createElement('tr');
-      const date = new Date(d.dayStart);
-      const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
-      [dateStr, d.avoidable, d.fertile, d.observed, d.total, d.exploration + '%'].forEach(function(val) {
-        const td = document.createElement('td');
-        td.textContent = val;
-        row.appendChild(td);
-      });
-      statsTableBody.appendChild(row);
-    });
-  }
-
-  // Line chart
   if (lineChartWrap && lineChartSvg) {
     lineChartWrap.classList.toggle('hidden', !hasAny);
     if (lineChartEmpty) lineChartEmpty.classList.toggle('hidden', hasAny);
