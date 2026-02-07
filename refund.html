@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f0f12">
+  <title>SlipUp — Refund Policy</title>
+  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    .legal-page { max-width: 600px; margin: 0 auto; padding: 2rem 1.25rem 3rem; direction: ltr; text-align: left; }
+    .legal-page h1 { font-size: 1.35rem; margin-bottom: 1rem; }
+    .legal-page h2 { font-size: 1rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: var(--text); }
+    .legal-page p, .legal-page ul { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 0.75rem; }
+    .legal-page ul { padding-left: 1.25rem; margin-top: 0.25rem; }
+    .legal-page a { color: var(--accent); text-decoration: none; }
+    .legal-page a:hover { text-decoration: underline; }
+    .legal-footer { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); text-align: center; }
+    .legal-footer a { color: var(--accent); text-decoration: none; }
+    .legal-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <a href="index.html" class="top-bar-brand">SlipUp</a>
+    <div class="top-bar-actions">
+      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
+      <a href="index.html" class="top-bar-home">Home</a>
+    </div>
+  </header>
+  <div class="legal-page">
+    <h1>SlipUp — Refund Policy</h1>
+    <p><em>Last updated: February 2026</em></p>
+
+    <h2>1. Applicability</h2>
+    <p>This Refund Policy applies to paid purchases made through SlipUp (www.slipup.io), including the one-time payment to unlock the full version (e.g. unlimited entries).</p>
+
+    <h2>2. Refund eligibility</h2>
+    <p>We want you to be satisfied with your purchase. You may request a full refund within <strong>14 days</strong> of the purchase date if:</p>
+    <ul>
+      <li>The paid feature does not work as described (e.g. unlock not applying on your device), and the issue cannot be resolved with our support.</li>
+      <li>You purchased by mistake (e.g. duplicate purchase).</li>
+    </ul>
+    <p>Refunds are at our discretion for cases outside the above. We may refuse refunds if we suspect abuse (e.g. repeated purchase-and-refund cycles).</p>
+
+    <h2>3. How to request a refund</h2>
+    <p>Contact us by email at <a href="mailto:davidmusali8725@gmail.com">davidmusali8725@gmail.com</a> with:</p>
+    <ul>
+      <li>The email or identifier you used for the purchase (if any).</li>
+      <li>The approximate date of purchase.</li>
+      <li>A short reason for the refund request.</li>
+    </ul>
+    <p>We will respond within a reasonable time (typically within 5 business days) and process approved refunds via the same payment method used for the purchase, where possible.</p>
+
+    <h2>4. Processing time</h2>
+    <p>Approved refunds are processed as quickly as possible. Depending on your payment provider, it may take 5–10 business days for the refund to appear in your account.</p>
+
+    <h2>5. After a refund</h2>
+    <p>If a refund is granted, your access to the paid feature (e.g. full version unlock) may be revoked. Your locally stored data (entries, reflections) is not deleted by us; it remains in your browser unless you clear it.</p>
+
+    <h2>6. Contact</h2>
+    <p>For refund requests or questions: <a href="mailto:davidmusali8725@gmail.com">davidmusali8725@gmail.com</a></p>
+
+    <footer class="legal-footer">
+      <a href="index.html">SlipUp</a> ·
+      <a href="privacy.html">Privacy</a> ·
+      <a href="terms.html">Terms</a> ·
+      <a href="landing.html">About</a>
+    </footer>
+  </div>
+  <script>
+    (function() {
+      var THEME_KEY = 'mistake-tracker-theme';
+      var THEME_ORDER = ['calm', 'focus', 'warm'];
+      var btn = document.getElementById('btn-theme');
+      function applyTheme() {
+        var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        document.body.classList.remove('theme-focus', 'theme-warm');
+        if (theme === 'focus') {
+          document.body.classList.add('theme-focus');
+          if (btn) btn.textContent = 'Focus';
+        } else if (theme === 'warm') {
+          document.body.classList.add('theme-warm');
+          if (btn) btn.textContent = 'Warm';
+        } else {
+          if (btn) btn.textContent = 'Calm';
+        }
+      }
+      applyTheme();
+      if (btn) btn.addEventListener('click', function() {
+        var current = localStorage.getItem(THEME_KEY) || 'calm';
+        var idx = THEME_ORDER.indexOf(current);
+        var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+        localStorage.setItem(THEME_KEY, next);
+        applyTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

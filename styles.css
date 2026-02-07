@@ -732,6 +732,20 @@ body.theme-warm .top-bar-theme {
   line-height: 1.4;
 }
 
+.legal-purchase-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+.legal-purchase-note a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.legal-purchase-note a:hover {
+  text-decoration: underline;
+}
+
 .paypal-button-wrap {
   margin: 0.75rem 0;
   min-height: 40px;
