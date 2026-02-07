@@ -124,6 +124,16 @@ body.theme-focus .top-bar-theme {
   color: var(--accent);
 }
 
+/* Theme: warm (amber accent) */
+body.theme-warm {
+  --accent: #d4a024;
+  --accent-dim: #b88a1e;
+}
+
+body.theme-warm .top-bar-theme {
+  color: var(--accent);
+}
+
 /* Micro-goal */
 .micro-goal-section {
   margin-bottom: 1.5rem;
@@ -1287,6 +1297,15 @@ body.theme-focus .top-bar-theme {
 }
 
 .empty-state.hidden {
+  display: none;
+}
+
+.first-time-nudge {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.first-time-nudge.hidden {
   display: none;
 }
 

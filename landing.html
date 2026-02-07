@@ -83,6 +83,16 @@
 
     <div class="landing-divider"></div>
 
+    <h2 class="landing-h2">9 example entries to log</h2>
+    <p>Anything that fits the type. For example:</p>
+    <ul>
+      <li><strong>Avoidable:</strong> Forgot to save · Spoke harshly · Checked phone mid-task</li>
+      <li><strong>Fertile:</strong> Tried a new approach and missed · Said no to a request · Asked a “dumb” question in the meeting</li>
+      <li><strong>Observed:</strong> Saw someone lose their temper · Noticed a process that always fails · Heard how someone handled conflict well</li>
+    </ul>
+
+    <div class="landing-divider"></div>
+
     <h2 class="landing-h2">What you’ll see inside</h2>
     <ul>
       <li><strong>Today / week / month</strong> views so you can zoom out from one bad day.</li>
@@ -106,20 +116,26 @@
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
+      var THEME_ORDER = ['calm', 'focus', 'warm'];
       var btn = document.getElementById('btn-theme');
       function applyTheme() {
         var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        document.body.classList.remove('theme-focus', 'theme-warm');
         if (theme === 'focus') {
           document.body.classList.add('theme-focus');
           if (btn) btn.textContent = 'Focus';
+        } else if (theme === 'warm') {
+          document.body.classList.add('theme-warm');
+          if (btn) btn.textContent = 'Warm';
         } else {
-          document.body.classList.remove('theme-focus');
           if (btn) btn.textContent = 'Calm';
         }
       }
       applyTheme();
       if (btn) btn.addEventListener('click', function() {
-        var next = document.body.classList.contains('theme-focus') ? 'calm' : 'focus';
+        var current = localStorage.getItem(THEME_KEY) || 'calm';
+        var idx = THEME_ORDER.indexOf(current);
+        var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
         localStorage.setItem(THEME_KEY, next);
         applyTheme();
       });

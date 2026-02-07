@@ -102,6 +102,7 @@ const lineChartLegend = document.getElementById('line-chart-legend');
 const lineChartEmpty = document.getElementById('line-chart-empty');
 const historyFilters = document.getElementById('history-filters');
 const exportCsvBtn = document.getElementById('btn-export-csv');
+const exportJsonBtn = document.getElementById('btn-export-json');
 const shareSection = document.getElementById('share-section');
 const btnShare = document.getElementById('btn-share');
 const shareStatus = document.getElementById('share-status');
@@ -124,6 +125,7 @@ const reflectionFertileCounter = document.getElementById('reflection-fertile-cou
 const yesterdayReflection = document.getElementById('yesterday-reflection');
 const communityMetrics = document.getElementById('community-metrics');
 const limitMessage = document.getElementById('limit-message');
+const firstTimeNudge = document.getElementById('first-time-nudge');
 const upgradeCards = document.getElementById('upgrade-cards');
 const unlockedBadge = document.getElementById('unlocked-badge');
 const btnBuy = document.getElementById('btn-buy');
@@ -681,6 +683,7 @@ function renderList() {
   });
 
   if (emptyState) emptyState.classList.toggle('hidden', show.length > 0);
+  if (firstTimeNudge) firstTimeNudge.classList.toggle('hidden', entries.length > 0);
 }
 
 function getWeekBounds(weeksAgo) {
@@ -1488,6 +1491,30 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
+function exportBackupJson() {
+  const rawReflections = localStorage.getItem(REFLECTIONS_KEY);
+  let reflections = {};
+  try {
+    if (rawReflections) reflections = JSON.parse(rawReflections);
+  } catch (_) {}
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    mode: MODE,
+    entries,
+    reflections
+  };
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'slipup-backup.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 async function fetchSharedStats() {
   if (!SHARING_ENABLED) {
     showCommunitySetupMessage();
@@ -1783,6 +1810,9 @@ if (historyFilters) {
 if (exportCsvBtn) {
   exportCsvBtn.addEventListener('click', exportCsv);
 }
+if (exportJsonBtn) {
+  exportJsonBtn.addEventListener('click', exportBackupJson);
+}
 
 periodTabs.forEach(tab => {
   if (tab) tab.addEventListener('click', () => setPeriod(tab.dataset.period));
@@ -1821,20 +1851,27 @@ if (btnUnlockAfterPay) {
   });
 }
 
+const THEME_ORDER = ['calm', 'focus', 'warm'];
+
 function applyTheme() {
   const theme = localStorage.getItem(THEME_KEY) || 'calm';
+  document.body.classList.remove('theme-focus', 'theme-warm');
   if (theme === 'focus') {
     document.body.classList.add('theme-focus');
     if (btnTheme) btnTheme.textContent = 'Focus';
+  } else if (theme === 'warm') {
+    document.body.classList.add('theme-warm');
+    if (btnTheme) btnTheme.textContent = 'Warm';
   } else {
-    document.body.classList.remove('theme-focus');
     if (btnTheme) btnTheme.textContent = 'Calm';
   }
 }
 
 if (btnTheme) {
   btnTheme.addEventListener('click', function() {
-    const next = document.body.classList.contains('theme-focus') ? 'calm' : 'focus';
+    const current = localStorage.getItem(THEME_KEY) || 'calm';
+    const idx = THEME_ORDER.indexOf(current);
+    const next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
     localStorage.setItem(THEME_KEY, next);
     applyTheme();
   });
