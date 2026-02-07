@@ -1436,7 +1436,9 @@ async function shareAnonymously() {
 
 function cantTellAdd() {
   if (isAtLimit()) return;
-  const entry = { at: Date.now(), note: "I couldn't tell", type: 'observed', scope: 'observed' };
+  const type = getSelectedType();
+  const scope = type === 'observed' ? 'observed' : 'personal';
+  const entry = { at: Date.now(), note: "I couldn't tell", type, scope };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();

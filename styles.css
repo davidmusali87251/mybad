@@ -311,6 +311,26 @@ body.theme-warm .top-bar-theme {
   user-select: none;
 }
 
+.page-footer {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.page-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.page-footer a:hover {
+  text-decoration: underline;
+}
+.footer-sep {
+  margin: 0 0.35rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+
 .phase-label {
   font-size: 0.7rem;
   font-weight: 600;
