@@ -1363,6 +1363,8 @@ function getOrCreateAnonId() {
   return id;
 }
 
+let _supabaseClient = null;
+
 function getSupabase() {
   if (!SHARING_ENABLED) {
     throw new Error('Sharing is not enabled (missing Supabase config).');
@@ -1370,7 +1372,10 @@ function getSupabase() {
   if (typeof supabase === 'undefined') {
     throw new Error('Supabase client library did not load.');
   }
-  return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!_supabaseClient) {
+    _supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return _supabaseClient;
 }
 
 function getCurrentStatsForShare() {
