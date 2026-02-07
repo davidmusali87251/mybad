@@ -14,7 +14,10 @@
 <body>
   <header class="top-bar">
     <a href="index.html" class="top-bar-brand">SlipUp</a>
-    <a href="index.html" class="top-bar-home">Home</a>
+    <div class="top-bar-actions">
+      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
+      <a href="index.html" class="top-bar-home">Home</a>
+    </div>
   </header>
   <div class="app">
     <header class="header">
@@ -93,9 +96,19 @@
     <p class="stats-breakdown" id="stats-breakdown"></p>
     <p class="streak-note" id="streak-note"></p>
 
+    <section class="micro-goal-section" id="micro-goal-section">
+      <label for="micro-goal-input" class="micro-goal-label">Today's intention (optional)</label>
+      <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Keep avoidable under 3 · or: One fertile experiment" maxlength="60">
+      <p class="micro-goal-result" id="micro-goal-result"></p>
+    </section>
+
     <section class="insights-section" id="insights-section">
       <h2>What we noticed</h2>
       <p class="insights-intro">A few highlights from your data.</p>
+      <div class="insight-block insight-weekly-digest" id="weekly-digest-block">
+        <span class="insight-label">This week in one sentence</span>
+        <p class="insight-text" id="weekly-digest"></p>
+      </div>
       <div class="insight-block">
         <span class="insight-label">Today</span>
         <p class="insight-text" id="day-vs-average"></p>
@@ -193,6 +206,7 @@
       <p class="reflection-hint">
         This tracker is a mirror, not a judge. Reduce useless mistakes. Keep the ones that grow you.
       </p>
+      <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
       <div class="auto-reflection" id="auto-reflection"></div>
       <div class="reflection-grid">
         <div class="reflection-card">
@@ -216,7 +230,16 @@
       <h2>Share anonymously</h2>
       <p class="share-hint">Share your current period stats so others can see (no account, no name).</p>
       <button type="button" id="btn-share" class="btn-share">Share my result</button>
+      <button type="button" id="btn-share-image" class="btn-share btn-share-image">Share as image</button>
       <p class="share-status" id="share-status"></p>
+    </section>
+
+    <section class="settings-section" id="settings-section">
+      <h2>Settings</h2>
+      <label class="setting-row">
+        <input type="checkbox" id="reminder-checkbox">
+        <span>Notify me for evening check-in (8pm)</span>
+      </label>
     </section>
 
     <section class="community-section" id="community-section">

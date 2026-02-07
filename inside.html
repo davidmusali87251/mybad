@@ -14,7 +14,10 @@
 <body>
   <header class="top-bar">
     <a href="index.html" class="top-bar-brand">SlipUp</a>
-    <a href="index.html" class="top-bar-home">Home</a>
+    <div class="top-bar-actions">
+      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
+      <a href="index.html" class="top-bar-home">Home</a>
+    </div>
   </header>
   <div class="app">
     <header class="header">
@@ -91,9 +94,19 @@
     <p class="stats-breakdown" id="stats-breakdown"></p>
     <p class="streak-note" id="streak-note"></p>
 
+    <section class="micro-goal-section" id="micro-goal-section">
+      <label for="micro-goal-input" class="micro-goal-label">Today's intention (optional)</label>
+      <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat today · or: One shift" maxlength="60">
+      <p class="micro-goal-result" id="micro-goal-result"></p>
+    </section>
+
     <section class="insights-section" id="insights-section">
       <h2>What we noticed</h2>
       <p class="insights-intro">A few highlights from your data.</p>
+      <div class="insight-block insight-weekly-digest" id="weekly-digest-block">
+        <span class="insight-label">This week in one sentence</span>
+        <p class="insight-text" id="weekly-digest"></p>
+      </div>
       <div class="insight-block">
         <span class="insight-label">Today</span>
         <p class="insight-text" id="day-vs-average"></p>
@@ -174,11 +187,24 @@
       <p class="empty-state" id="empty-state">No moments logged yet. Add one above.</p>
     </section>
 
+    <p class="phase-label" id="phase-2-label">2 – Social</p>
+    <section class="community-entries-section" id="community-entries-section">
+      <h2>Everyone's recent moments</h2>
+      <p class="section-hint">Anonymous moments from all users. Add a moment above to contribute.</p>
+      <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
+      <p class="community-comparison" id="community-comparison"></p>
+      <p class="community-trend" id="community-entries-trend"></p>
+      <ul class="entry-list" id="shared-entries-list"></ul>
+      <p class="empty-state" id="shared-entries-empty">No shared moments yet. Add one to share yours.</p>
+      <p class="community-error hidden" id="shared-entries-error"></p>
+    </section>
+
     <section class="reflection-section">
       <h2>Today’s reflection</h2>
       <p class="reflection-hint">
         This is a space to notice what raised the heat and what cooled it down, and where support or shifts showed up.
       </p>
+      <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
       <div class="auto-reflection" id="auto-reflection"></div>
       <div class="reflection-grid">
         <div class="reflection-card">
@@ -202,7 +228,16 @@
       <h2>Share anonymously (optional)</h2>
       <p class="share-hint">If enabled, you can share your current period stats so others can see patterns (no names, no accounts).</p>
       <button type="button" id="btn-share" class="btn-share">Share my period</button>
+      <button type="button" id="btn-share-image" class="btn-share btn-share-image">Share as image</button>
       <p class="share-status" id="share-status"></p>
+    </section>
+
+    <section class="settings-section" id="settings-section">
+      <h2>Settings</h2>
+      <label class="setting-row">
+        <input type="checkbox" id="reminder-checkbox">
+        <span>Notify me for evening check-in (8pm)</span>
+      </label>
     </section>
 
     <section class="community-section" id="community-section">
