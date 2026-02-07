@@ -28,10 +28,7 @@ const PAYPAL_ENABLED = PAYPAL_CLIENT_ID && PAYPAL_HOSTED_BUTTON_ID;
 
 const addNoteInput = document.getElementById('mistake-note');
 const addBtn = document.getElementById('add-mistake');
-const quickAvoidableBtn = document.getElementById('btn-quick-avoidable');
-const quickFertileBtn = document.getElementById('btn-quick-fertile');
-const quickObservedBtn = document.getElementById('btn-quick-observed');
-const repeatLastBtn = document.getElementById('btn-repeat-last');
+const cantTellBtn = document.getElementById('btn-cant-tell');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const typeHint = document.getElementById('type-hint');
 const communityComparison = document.getElementById('community-comparison');
@@ -182,9 +179,7 @@ function updateUpgradeUI() {
   if (upgradeCards) upgradeCards.classList.toggle('hidden', unlocked);
   if (limitMessage) limitMessage.classList.toggle('hidden', !isAtLimit());
   const atLimit = isAtLimit();
-  [quickAvoidableBtn, quickFertileBtn, quickObservedBtn, repeatLastBtn].forEach(btn => {
-    if (btn) btn.disabled = atLimit;
-  });
+  if (cantTellBtn) cantTellBtn.disabled = atLimit;
   if (PAYPAL_ENABLED && paypalButtonContainer) {
     paypalButtonContainer.classList.remove('hidden');
     loadPayPalButton();
@@ -1439,28 +1434,9 @@ async function shareAnonymously() {
   }
 }
 
-function quickAdd(type) {
+function cantTellAdd() {
   if (isAtLimit()) return;
-  const scope = type === 'observed' ? 'observed' : 'personal';
-  const entry = { at: Date.now(), note: '', type, scope };
-  entries.push(entry);
-  lastEntry = entry;
-  saveEntries();
-  updateUpgradeUI();
-  renderStats();
-  renderList();
-  if (SHARING_ENABLED) pushEntryToShared({ note: '', type });
-}
-
-function repeatLastNote() {
-  if (isAtLimit() || (!lastEntry && entries.length === 0)) return;
-  const base = lastEntry || entries[entries.length - 1];
-  const entry = {
-    at: Date.now(),
-    note: base.note || '',
-    type: base.type || 'avoidable',
-    scope: normalizeScope(base)
-  };
+  const entry = { at: Date.now(), note: "I couldn't tell", type: 'observed', scope: 'observed' };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
@@ -1772,10 +1748,7 @@ if (addNoteInput) {
 }
 updateAddButtonState();
 
-if (quickAvoidableBtn) quickAvoidableBtn.addEventListener('click', () => quickAdd('avoidable'));
-if (quickFertileBtn) quickFertileBtn.addEventListener('click', () => quickAdd('fertile'));
-if (quickObservedBtn) quickObservedBtn.addEventListener('click', () => quickAdd('observed'));
-if (repeatLastBtn) repeatLastBtn.addEventListener('click', repeatLastNote);
+if (cantTellBtn) cantTellBtn.addEventListener('click', cantTellAdd);
 
 function updateTypeHint() {
   const type = getSelectedType();
