@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f0f12">
   <title>SlipUp</title>
+  <meta name="description" content="Log daily mistakes, see patterns, and turn them into deliberate learning. Your data stays on your device.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"SlipUp","description":"Log daily mistakes, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.","url":"https://www.slipup.io/","applicationCategory":"LifestyleApplication"}
+  </script>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +23,10 @@
       <a href="index.html" class="top-bar-home">Home</a>
     </div>
   </header>
+  <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
+    <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
+    <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
+  </div>
   <div class="app">
     <header class="header">
       <h1>SlipUp</h1>
@@ -89,6 +97,7 @@
     <p class="stats-note" id="stats-note"></p>
     <p class="stats-breakdown" id="stats-breakdown"></p>
     <p class="streak-note" id="streak-note"></p>
+    <p class="headline-stat" id="headline-stat"></p>
 
     <section class="micro-goal-section" id="micro-goal-section">
       <label for="micro-goal-input" class="micro-goal-label">Today's intention (optional)</label>
@@ -129,7 +138,13 @@
         <div class="premium-card premium-card-upgrade" id="upgrade-card">
           <h3>Full version — $5 one-time</h3>
           <p>Unlimited entries, full history, advanced export. One purchase, no subscription.</p>
+          <ul class="why-upgrade-list">
+            <li>Unlimited entries — no 10-entry cap</li>
+            <li>Full history &amp; export (CSV + backup)</li>
+            <li>Support development of SlipUp</li>
+          </ul>
           <a href="#" id="btn-buy" class="btn-buy" target="_blank" rel="noopener">Purchase for $5</a>
+          <p class="refund-note">14-day refund if it's not for you.</p>
           <p class="legal-purchase-note">By purchasing you agree to our <a href="terms.html">Terms</a> and <a href="refund.html">Refund Policy</a>.</p>
           <div id="paypal-button-container" class="paypal-button-wrap hidden"></div>
           <p class="unlock-after-pay">After you complete payment, click below to unlock.</p>

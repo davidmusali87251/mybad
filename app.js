@@ -77,6 +77,7 @@ const statExplorationHint = document.getElementById('stat-exploration-hint');
 const statExplorationSoWhat = document.getElementById('stat-exploration-so-what');
 const statsBreakdown = document.getElementById('stats-breakdown');
 const streakNote = document.getElementById('streak-note');
+const headlineStatEl = document.getElementById('headline-stat');
 const progressSection = document.getElementById('progress-section');
 const progressCards = document.getElementById('progress-cards');
 const progressEmpty = document.getElementById('progress-empty');
@@ -290,7 +291,9 @@ function renderReflection() {
 
   if (reflectionNote) {
     if (!today.avoidable && !today.fertile) {
-      reflectionNote.textContent = 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
+      reflectionNote.textContent = MODE === 'inside'
+        ? 'At the end of the day, write one line for each: what raised the heat (and how to cool it), and a shift you’re glad you made.'
+        : 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
     } else {
       reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
     }
@@ -309,7 +312,9 @@ function updateReflection(field, value) {
   saveReflections(all);
   if (reflectionNote) {
     if (!today.avoidable && !today.fertile) {
-      reflectionNote.textContent = 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
+      reflectionNote.textContent = MODE === 'inside'
+        ? 'At the end of the day, write one line for each: what raised the heat (and how to cool it), and a shift you’re glad you made.'
+        : 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
     } else {
       reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
     }
@@ -326,13 +331,15 @@ function renderYesterdayReflection() {
     yesterdayReflection.textContent = '';
     return;
   }
+  const avoidLabel = MODE === 'inside' ? 'Heat' : 'Avoidable';
+  const fertileLabel = MODE === 'inside' ? 'Shift' : 'Fertile';
   let text = 'Yesterday — ';
   if (y.avoidable) {
-    text += 'Avoidable: ' + y.avoidable;
+    text += avoidLabel + ': ' + y.avoidable;
   }
   if (y.fertile) {
     if (y.avoidable) text += ' · ';
-    text += 'Fertile: ' + y.fertile;
+    text += fertileLabel + ': ' + y.fertile;
   }
   yesterdayReflection.textContent = text;
 }
@@ -464,6 +471,12 @@ function renderStats() {
     } else {
       streakNote.textContent = '';
     }
+  }
+
+  if (headlineStatEl) {
+    const headline = getHeadlineStat();
+    headlineStatEl.textContent = headline || '';
+    headlineStatEl.classList.toggle('hidden', !headline);
   }
 
   // Exploration / shift index: fertile ÷ (avoidable + fertile)
@@ -710,6 +723,26 @@ function getThisWeekAndLastWeek() {
   return { thisWeek: toStats(inThisWeek), lastWeek: toStats(inLastWeek) };
 }
 
+function getHeadlineStat() {
+  const { thisWeek, lastWeek } = getThisWeekAndLastWeek();
+  const streak = getCurrentStreak();
+  const noun = MODE === 'inside' ? 'moments' : 'mistakes';
+  if (streak >= 2) {
+    return streak + '-day logging streak.';
+  }
+  if (thisWeek.total > 0 && lastWeek.total > 0 && lastWeek.avoidable > 0) {
+    const pctChange = Math.round(((thisWeek.avoidable - lastWeek.avoidable) / lastWeek.avoidable) * 100);
+    const avoidableLabel = MODE === 'inside' ? 'heat' : 'avoidable';
+    if (pctChange < 0) return 'This week: ' + Math.abs(pctChange) + '% less ' + avoidableLabel + ' than last week.';
+    if (pctChange > 0) return 'This week: ' + pctChange + '% more ' + avoidableLabel + ' than last week.';
+  }
+  if (thisWeek.total > 0 && lastWeek.total > 0 && thisWeek.exploration != null && lastWeek.exploration != null) {
+    const diff = thisWeek.exploration - lastWeek.exploration;
+    if (diff > 5) return MODE === 'inside' ? 'Higher shift index this week than last — more shift.' : 'More exploration this week than last — more fertile ' + noun + '.';
+  }
+  return '';
+}
+
 function renderProgress() {
   if (!progressCards || !progressEmpty) return;
   const { thisWeek, lastWeek } = getThisWeekAndLastWeek();
@@ -721,6 +754,7 @@ function renderProgress() {
     return;
   }
   progressCards.innerHTML = '';
+  const progressNoun = MODE === 'inside' ? 'moments' : 'mistakes';
   const renderWeekCard = (label, stats, isThisWeek) => {
     const card = document.createElement('div');
     card.className = 'progress-card' + (isThisWeek ? ' progress-card-current' : '');
@@ -730,11 +764,11 @@ function renderProgress() {
     card.appendChild(title);
     const totalEl = document.createElement('span');
     totalEl.className = 'progress-card-total';
-    totalEl.textContent = stats.total + ' mistakes';
+    totalEl.textContent = stats.total + ' ' + progressNoun;
     card.appendChild(totalEl);
     const explEl = document.createElement('span');
     explEl.className = 'progress-card-exploration';
-    explEl.textContent = stats.exploration != null ? stats.exploration + '% exploration' : '—';
+    explEl.textContent = stats.exploration != null ? stats.exploration + '% ' + (MODE === 'inside' ? 'shift' : 'exploration') : '—';
     card.appendChild(explEl);
     return card;
   };
@@ -748,13 +782,13 @@ function renderProgress() {
     : null;
   let diffText = '';
   if (lastWeek.total === 0 && thisWeek.total > 0) diffText = 'You\'ve started logging this week.';
-  else if (thisWeek.total === 0 && lastWeek.total > 0) diffText = 'No mistakes logged this week yet.';
+  else if (thisWeek.total === 0 && lastWeek.total > 0) diffText = 'No ' + progressNoun + ' logged this week yet.';
   else if (totalDiff !== 0 || (explDiff !== null && explDiff !== 0)) {
     const parts = [];
-    if (totalDiff < 0) parts.push('Fewer mistakes than last week.');
-    else if (totalDiff > 0) parts.push('More mistakes than last week.');
-    if (explDiff !== null && explDiff > 0) parts.push('Higher exploration—more fertile.');
-    else if (explDiff !== null && explDiff < 0) parts.push('Lower exploration than last week.');
+    if (totalDiff < 0) parts.push('Fewer ' + progressNoun + ' than last week.');
+    else if (totalDiff > 0) parts.push('More ' + progressNoun + ' than last week.');
+    if (explDiff !== null && explDiff > 0) parts.push(MODE === 'inside' ? 'Higher shift index—more shift.' : 'Higher exploration—more fertile.');
+    else if (explDiff !== null && explDiff < 0) parts.push(MODE === 'inside' ? 'Lower shift index than last week.' : 'Lower exploration than last week.');
     diffText = parts.join(' ') || 'Similar to last week.';
   } else diffText = 'Similar to last week.';
   diff.textContent = diffText;
@@ -1467,7 +1501,7 @@ function exportCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'mistakes.csv';
+  a.download = MODE === 'inside' ? 'slipup-moments.csv' : 'mistakes.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1804,6 +1838,25 @@ renderStats();
 renderList();
 initSharing();
 initReflection();
+
+setTimeout(function() {
+  if (addNoteInput && typeof addNoteInput.focus === 'function') addNoteInput.focus();
+}, 300);
+
+try {
+  localStorage.setItem('slipup-visited', '1');
+} catch (_) {}
+var addToHomeBanner = document.getElementById('add-to-home-banner');
+var addToHomeDismiss = document.getElementById('add-to-home-dismiss');
+if (addToHomeBanner && addToHomeDismiss) {
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var dismissed = localStorage.getItem('slipup-dismiss-add-to-home') === '1';
+  if (!isStandalone && !dismissed && entries.length > 0) addToHomeBanner.classList.remove('hidden');
+  addToHomeDismiss.addEventListener('click', function() {
+    try { localStorage.setItem('slipup-dismiss-add-to-home', '1'); } catch (_) {}
+    addToHomeBanner.classList.add('hidden');
+  });
+}
 
 if (btnBuy && PAYMENT_URL) {
   btnBuy.href = PAYMENT_URL;
