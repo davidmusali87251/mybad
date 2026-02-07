@@ -718,7 +718,7 @@ function getThisWeekAndLastWeek() {
     const totalPrimary = avoidable + fertile;
     const observed = list.length - totalPrimary;
     const exploration = totalPrimary > 0 ? Math.round((fertile / totalPrimary) * 100) : null;
-    return { total: totalPrimary, fertile, avoidable, observed, exploration };
+    return { total: list.length, fertile, avoidable, observed, exploration };
   };
   return { thisWeek: toStats(inThisWeek), lastWeek: toStats(inLastWeek) };
 }
