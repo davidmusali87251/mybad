@@ -1,8 +1,8 @@
-const STORAGE_KEY = 'mistake-tracker-entries';
-const ANON_ID_KEY = 'mistake-tracker-anon-id';
-
 // Mode: "personal" (default SlipUp) or "inside" (group / in-custody)
 const MODE = (typeof window !== 'undefined' && window.SLIPUP_MODE) || 'personal';
+
+const STORAGE_KEY = MODE === 'inside' ? 'mistake-tracker-entries-inside' : 'mistake-tracker-entries';
+const ANON_ID_KEY = MODE === 'inside' ? 'mistake-tracker-anon-id-inside' : 'mistake-tracker-anon-id';
 
 // Supabase table names (separate per app)
 const STATS_TABLE = MODE === 'inside' ? 'shared_stats_inside' : 'shared_stats';
@@ -19,8 +19,8 @@ const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim();
 const SUPABASE_ANON_KEY = (CONFIG.SUPABASE_ANON_KEY || '').trim();
 const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 const FREE_ENTRY_LIMIT = 10;
-const UNLOCKED_KEY = 'mistake-tracker-unlocked';
-const PAYMENT_LINK_CLICKED_KEY = 'mistake-tracker-payment-link-clicked';
+const UNLOCKED_KEY = MODE === 'inside' ? 'mistake-tracker-unlocked-inside' : 'mistake-tracker-unlocked';
+const PAYMENT_LINK_CLICKED_KEY = MODE === 'inside' ? 'mistake-tracker-payment-link-clicked-inside' : 'mistake-tracker-payment-link-clicked';
 const PAYMENT_URL = (CONFIG.PAYMENT_URL || '').trim();
 const PAYPAL_CLIENT_ID = (CONFIG.PAYPAL_CLIENT_ID || '').trim();
 const PAYPAL_HOSTED_BUTTON_ID = (CONFIG.PAYPAL_HOSTED_BUTTON_ID || '').trim();
@@ -139,10 +139,10 @@ const btnTheme = document.getElementById('btn-theme');
 const btnShareImage = document.getElementById('btn-share-image');
 const reminderCheckbox = document.getElementById('reminder-checkbox');
 
-const REFLECTIONS_KEY = 'mistake-tracker-reflections';
-const MICRO_GOAL_KEY = 'mistake-tracker-micro-goal';
+const REFLECTIONS_KEY = MODE === 'inside' ? 'mistake-tracker-reflections-inside' : 'mistake-tracker-reflections';
+const MICRO_GOAL_KEY = MODE === 'inside' ? 'mistake-tracker-micro-goal-inside' : 'mistake-tracker-micro-goal';
 const THEME_KEY = 'mistake-tracker-theme';
-const REMINDER_KEY = 'mistake-tracker-reminder';
+const REMINDER_KEY = MODE === 'inside' ? 'mistake-tracker-reminder-inside' : 'mistake-tracker-reminder';
 let paypalButtonRendered = false;
 
 function isUnlocked() {
