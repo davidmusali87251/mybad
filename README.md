@@ -119,6 +119,25 @@ create policy "Allow anonymous insert" on shared_entries_inside for insert with 
 create policy "Allow anonymous select" on shared_entries_inside for select using (true);
 ```
 
+**Optional – analytics events (for you only)**  
+To count how often users click the $5 button, “I've paid — unlock”, and first visit, create one table (same project, shared by personal and Inside):
+
+```sql
+create table slipup_events (
+  id uuid default gen_random_uuid() primary key,
+  event_type text not null,
+  mode text,
+  anonymous_id text,
+  created_at timestamptz default now()
+);
+
+alter table slipup_events enable row level security;
+create policy "Allow anonymous insert" on slipup_events for insert with check (true);
+create policy "Allow anonymous select" on slipup_events for select using (true);
+```
+
+Events sent: `purchase_button_clicked`, `unlock_button_clicked`, `first_visit`. No PII; you can query in Supabase (Table Editor or SQL) to see counts.
+
 3. Go to **Settings → API**. Copy:
    - **Project URL** (e.g. `https://xxxxx.supabase.co`)
    - **anon public** key — the long JWT that starts with `eyJ...` (under "Project API keys"). Do **not** use a key that looks like `sb_publishable_...`; that is not the anon key.

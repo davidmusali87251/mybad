@@ -7,6 +7,7 @@ const ANON_ID_KEY = MODE === 'inside' ? 'mistake-tracker-anon-id-inside' : 'mist
 // Supabase table names (separate per app)
 const STATS_TABLE = MODE === 'inside' ? 'shared_stats_inside' : 'shared_stats';
 const ENTRIES_TABLE = MODE === 'inside' ? 'shared_entries_inside' : 'shared_entries';
+const EVENTS_TABLE = 'slipup_events';
 
 let entries = [];
 let currentPeriod = 'day';
@@ -1412,6 +1413,20 @@ function getSupabase() {
   return _supabaseClient;
 }
 
+/** Send an anonymous event for your analytics (purchase clicks, unlock, first visit). No PII. */
+function trackEvent(eventType) {
+  if (!SHARING_ENABLED || typeof supabase === 'undefined') return;
+  try {
+    const payload = {
+      event_type: eventType,
+      mode: MODE,
+      created_at: new Date().toISOString()
+    };
+    if (typeof getOrCreateAnonId === 'function') payload.anonymous_id = getOrCreateAnonId();
+    getSupabase().from(EVENTS_TABLE).insert(payload).then(() => {}).catch(() => {});
+  } catch (_) {}
+}
+
 function getCurrentStatsForShare() {
   const filtered = filterByPeriod(currentPeriod);
   const count = filtered.length;
@@ -1839,6 +1854,13 @@ renderList();
 initSharing();
 initReflection();
 
+try {
+  if (!localStorage.getItem('slipup_first_visit_sent')) {
+    trackEvent('first_visit');
+    localStorage.setItem('slipup_first_visit_sent', '1');
+  }
+} catch (_) {}
+
 setTimeout(function() {
   if (addNoteInput && typeof addNoteInput.focus === 'function') addNoteInput.focus();
 }, 300);
@@ -1866,6 +1888,7 @@ if (btnBuy && PAYMENT_URL) {
 }
 if (btnBuy) {
   btnBuy.addEventListener('click', function(e) {
+    trackEvent('purchase_button_clicked');
     if (!PAYMENT_URL) e.preventDefault();
     else setPaymentLinkClicked();
     if (PAYMENT_URL) setTimeout(updateUpgradeUI, 0);
@@ -1873,6 +1896,7 @@ if (btnBuy) {
 }
 if (btnBuyUnlocked) {
   btnBuyUnlocked.addEventListener('click', function() {
+    trackEvent('purchase_button_clicked');
     setPaymentLinkClicked();
     setTimeout(updateUpgradeUI, 0);
   });
@@ -1880,6 +1904,7 @@ if (btnBuyUnlocked) {
 
 if (btnUnlockAfterPay) {
   btnUnlockAfterPay.addEventListener('click', function() {
+    trackEvent('unlock_button_clicked');
     setUnlocked();
   });
 }
