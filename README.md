@@ -1,8 +1,6 @@
 # SlipUp
 
-© 2026 SlipUp. All rights reserved.
-
-Created by Selim David Musali.
+© 2026 Selim David Musali. All rights reserved.
 
 A simple web app to count and track mistakes by **day**, **week**, and **month**.
 
@@ -139,6 +137,35 @@ create policy "Allow anonymous select" on slipup_events for select using (true);
 ```
 
 Events sent: `purchase_button_clicked`, `unlock_button_clicked`, `first_visit`. No PII; you can query in Supabase (Table Editor or SQL) to see counts.
+
+**Optional – analytics columns (for data analysis)**  
+The app can send extra columns so you can analyse patterns (e.g. heat vs shift over time, when people log). If your tables already exist, run this once in **SQL Editor**:
+
+```sql
+-- Stats: breakdown and exploration %
+alter table shared_stats
+  add column if not exists avoidable_count int,
+  add column if not exists fertile_count int,
+  add column if not exists observed_count int,
+  add column if not exists exploration_pct int,
+  add column if not exists mode text;
+alter table shared_stats_inside
+  add column if not exists avoidable_count int,
+  add column if not exists fertile_count int,
+  add column if not exists observed_count int,
+  add column if not exists exploration_pct int,
+  add column if not exists mode text;
+
+-- Entries: when (UTC hour) and which app
+alter table shared_entries
+  add column if not exists mode text,
+  add column if not exists hour_utc smallint;
+alter table shared_entries_inside
+  add column if not exists mode text,
+  add column if not exists hour_utc smallint;
+```
+
+After this, the app will send these fields on each share and on each shared entry. You can then run queries like “avg exploration_pct by week” or “entries by hour_utc”.
 
 3. Go to **Settings → API**. Copy:
    - **Project URL** (e.g. `https://xxxxx.supabase.co`)

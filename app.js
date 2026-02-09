@@ -1368,9 +1368,16 @@ function addMistake() {
 
 function pushEntryToShared(entry) {
   try {
+    const now = new Date();
+    const payload = {
+      note: entry.note || null,
+      type: entry.type || 'avoidable',
+      mode: MODE,
+      hour_utc: now.getUTCHours()
+    };
     getSupabase()
       .from(ENTRIES_TABLE)
-      .insert({ note: entry.note || null, type: entry.type || 'avoidable' })
+      .insert(payload)
       .then(({ error }) => {
         if (!error && typeof fetchSharedEntries === 'function') fetchSharedEntries();
       });
@@ -1432,7 +1439,20 @@ function getCurrentStatsForShare() {
   const count = filtered.length;
   const days = getDaysInPeriod(currentPeriod);
   const avg = days > 0 ? parseFloat((count / days).toFixed(1)) : null;
-  return { period: currentPeriod, count, avg_per_day: avg };
+  const avoidable_count = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+  const fertile_count = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
+  const observed_count = filtered.filter(e => e.type === 'observed').length;
+  const primaryTotal = avoidable_count + fertile_count;
+  const exploration_pct = primaryTotal > 0 ? Math.round((fertile_count / primaryTotal) * 100) : null;
+  return {
+    period: currentPeriod,
+    count,
+    avg_per_day: avg,
+    avoidable_count,
+    fertile_count,
+    observed_count,
+    exploration_pct
+  };
 }
 
 async function shareAnonymously() {
@@ -1459,12 +1479,18 @@ async function shareAnonymously() {
   try {
     const stats = getCurrentStatsForShare();
     const client = getSupabase();
-    const { error } = await client.from(STATS_TABLE).insert({
+    const payload = {
       period: stats.period,
       count: stats.count,
       avg_per_day: stats.avg_per_day,
-      anonymous_id: getOrCreateAnonId()
-    });
+      anonymous_id: getOrCreateAnonId(),
+      mode: MODE
+    };
+    if (stats.avoidable_count != null) payload.avoidable_count = stats.avoidable_count;
+    if (stats.fertile_count != null) payload.fertile_count = stats.fertile_count;
+    if (stats.observed_count != null) payload.observed_count = stats.observed_count;
+    if (stats.exploration_pct != null) payload.exploration_pct = stats.exploration_pct;
+    const { error } = await client.from(STATS_TABLE).insert(payload);
     if (error) {
       throw error;
     }

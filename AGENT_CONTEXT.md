@@ -6,13 +6,14 @@ This file exists to give future AI agents enough context to work on this project
 
 - **Name**: SlipUp  
 - **Type**: Client-side web app (static HTML/CSS/JS)  
-- **Purpose**: Track mistakes/moments by **day/week/month**, classify as **Avoidable / Fertile / Observed** (or **Heat / Shift / Support** in group mode), and encourage daily reflection.  
+- **Purpose**: Track mistakes/moments by **day/week/month**, classify as **Avoidable / Fertile / Observed** (or **Heat / Shift / Support** in group mode), and encourage daily reflection and a “mirror, not judge” relationship with mistakes.  
 - **Tech stack**:
   - Static HTML: `index.html` (personal), `inside.html` (groups / “SlipUp Inside”), `landing.html`, `privacy.html`
   - Vanilla CSS (`styles.css`)
   - Vanilla JavaScript (`app.js`) – no framework; same script for both apps, mode set by `window.SLIPUP_MODE` before loading
   - Optional Supabase backend for anonymous sharing
   - Deployed via GitHub Pages at `https://www.slipup.io`
+  - Project docs: `README.md` (setup + Supabase SQL), `ARCHITECTURE.md`, `CONCEPT_NEXT_LEVEL.md` (product direction), `HOW-TO-ENABLE-SHARING.md` (plain-English Supabase guide)
 
 ### Two apps, one codebase
 
@@ -42,10 +43,29 @@ This file exists to give future AI agents enough context to work on this project
 ### Persistence & data model
 
 - **Local storage** (browser; same keys for both apps when same origin):
-  - `mistake-tracker-entries` → array of `{ at, note, type, scope }`.
-  - `mistake-tracker-reflections` → daily reflection text.
-  - `mistake-tracker-unlocked` → `"true"` when full version unlocked.
-  - `mistake-tracker-anon-id` → UUID for anonymous sharing.
+  - Entries:
+    - Personal: `mistake-tracker-entries`
+    - Inside: `mistake-tracker-entries-inside`
+    - Shape: array of `{ at, note, type, scope }`.
+  - Reflections:
+    - Personal: `mistake-tracker-reflections`
+    - Inside: `mistake-tracker-reflections-inside`
+  - Unlock state:
+    - Personal: `mistake-tracker-unlocked`
+    - Inside: `mistake-tracker-unlocked-inside`
+  - Anonymous ID:
+    - Personal: `mistake-tracker-anon-id`
+    - Inside: `mistake-tracker-anon-id-inside`
+  - Micro-goal per day:
+    - Personal: `mistake-tracker-micro-goal`
+    - Inside: `mistake-tracker-micro-goal-inside`
+  - Theme selection:
+    - `mistake-tracker-theme` (values: `calm` | `focus` | `warm`)
+  - Reminder opt-in:
+    - Personal: `mistake-tracker-reminder`
+    - Inside: `mistake-tracker-reminder-inside`
+  - Misc:
+    - `slipup_first_visit_sent`, `slipup-visited`, `slipup-dismiss-add-to-home` (used for one-time events and banners)
 
 ### Backend / Supabase (optional)
 
@@ -55,15 +75,21 @@ This file exists to give future AI agents enough context to work on this project
   - Inside: `shared_stats_inside`, `shared_entries_inside`
 - In `app.js`, `STATS_TABLE` and `ENTRIES_TABLE` are set from `MODE` (`'inside'` → `*_inside` tables). All share/fetch logic uses these.
 - **Others’ results**: list is limited to **5** items (`MAX_OTHER_RESULTS = 5` in `fetchSharedStats`).
-- README documents SQL and RLS for creating the `*_inside` tables.
+- **Events**: optional `slipup_events` table is used for anonymous analytics events (`purchase_button_clicked`, `unlock_button_clicked`, `first_visit`), shared by both modes.
+- `README.md` documents SQL and RLS for creating all Supabase tables (`shared_stats*`, `shared_entries*`, `slipup_events`), plus common migration fixes.
 
 ### Main code touchpoints (`app.js`)
 
 - **MODE**: `'personal'` | `'inside'` from `window.SLIPUP_MODE`.
 - **TYPE_PHRASES / getTypeLabel()**: mode‑aware labels (e.g. Heat/Shift/Support for Inside).
 - **filterByPeriod()**, **getDayCountsLastN(n)** (avoidable + fertile only), **getDayCountsLastNFull(n)** (adds observed, total, exploration %) – used for stats chart and insights.
-- **renderStats()**, **renderTrends()**, **renderStatsTableAndLineChart()** (line chart only), **renderAdditionalInsights(filtered)** (Today, When you log, Repeating notes, **getMorePatternLines()** → chips).
-- Share/fetch: **pushEntryToShared**, **fetchSharedStats**, **fetchSharedEntries** use `STATS_TABLE` and `ENTRIES_TABLE`.
+- **renderStats()**: core counts, avg/day, exploration/shift index, streak text (“X days in a row” / “Last log was N days ago”).
+- **renderTrends()**, **renderStatsTableAndLineChart()** (line chart only), **renderAdditionalInsights(filtered)** (Today vs average, When you log, Repeating notes, **getMorePatternLines()** → 10 pattern chips).
+- **Reflection & micro-goals**:
+  - `renderReflection()`, `updateReflection()`, `renderYesterdayReflection()`, `generateAutoReflection()` / `renderAutoReflection()` implement the daily reflection loop.
+  - `loadMicroGoal()`, `saveMicroGoal()`, `renderMicroGoal()`, `evaluateMicroGoal()` implement the “Today’s intention” + “You hit it / Tomorrow’s another day” micro-goal feature.
+- **Sharing & community**:
+  - `pushEntryToShared`, `getSupabase`, `shareAnonymously`, `fetchSharedStats`, `fetchSharedEntries`, `showCommunitySetupMessage`, `showCommunityEntriesSetupMessage` use `STATS_TABLE` and `ENTRIES_TABLE` and handle “Unregistered API key” and missing-table cases gracefully.
 
 ### Design & constraints
 
