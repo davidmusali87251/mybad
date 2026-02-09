@@ -1,6 +1,8 @@
 # SlipUp
 
-© 2025. All rights reserved.
+© 2026 SlipUp. All rights reserved.
+
+Created by Selim David Musali.
 
 A simple web app to count and track mistakes by **day**, **week**, and **month**.
 

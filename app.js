@@ -2032,3 +2032,4 @@ if (reminderCheckbox) {
   if (reminderCheckbox.checked && 'Notification' in window && Notification.permission === 'granted') scheduleReminderNotification();
 }
 
+
