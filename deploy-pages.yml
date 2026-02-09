@@ -2,7 +2,7 @@
 # 1. In the repo: Settings → Secrets and variables → Actions → New repository secret.
 #    Add: SUPABASE_URL, SUPABASE_ANON_KEY, and optionally PAYMENT_URL.
 # 2. Enable GitHub Pages: Settings → Pages → Source: GitHub Actions.
-# 3. Push to main (or run workflow manually). The live site will have full service.
+# 3. Push to main/master or run workflow manually. The live site will have full service.
 
 name: Deploy to GitHub Pages
 
