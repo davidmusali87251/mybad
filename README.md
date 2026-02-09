@@ -171,6 +171,8 @@ window.MISTAKE_TRACKER_CONFIG = {
 
    **Deploying (e.g. GitHub Pages):** If you want the live site to use sharing, add a `config.js` with your Supabase URL and anon key to the deployed branch. The anon key is intended to be public; keeping it out of the repo is for cleanliness and so forks use their own project.
 
+   **Protect config.js and still get full service on the live site:** This repo includes a GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) that builds `config.js` from **repository secrets** during deploy, so you never commit keys. Steps: (1) In the repo go to **Settings → Secrets and variables → Actions** and add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`. (2) In **Settings → Pages** set Source to **GitHub Actions**. (3) Push to `main` or run the workflow manually. The published site will have full sharing and payment links; your repo stays without `config.js`.
+
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
 
