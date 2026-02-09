@@ -1,8 +1,3 @@
-# Deploy to GitHub Pages with config.js built from secrets (so you never commit keys).
-# 1. Repo → Settings → Secrets and variables → Actions → add SUPABASE_URL, SUPABASE_ANON_KEY, PAYMENT_URL.
-# 2. Settings → Pages → Source: GitHub Actions.
-# 3. Push to main or run this workflow from the Actions tab.
-
 name: Deploy to GitHub Pages
 
 on:
