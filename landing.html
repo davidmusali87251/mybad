@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f0f12">
   <title>SlipUp — A smarter relationship with mistakes</title>
-  <meta name="description" content="Log daily mistakes, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.">
-  <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebApplication","name":"SlipUp","description":"Log daily mistakes, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.","url":"https://www.slipup.io/","applicationCategory":"LifestyleApplication"}
-  </script>
+  <meta name="description" content="An operational awareness tool. Reduce useless mistakes. Keep the ones that grow you. Daily system for conscious error.">
   <link rel="stylesheet" href="styles.css?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +13,11 @@
   <style>
     .landing { max-width: 580px; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
     .landing-hero { text-align: center; margin-bottom: 2.5rem; }
+    .landing-hero h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .landing-hero .lead { font-size: 1.05rem; color: var(--text-muted); line-height: 1.55; margin-top: 0.75rem; }
+    .landing-hero .lead strong { color: var(--text); }
+    .landing-cta { display: inline-block; margin-top: 1.25rem; padding: 0.7rem 1.4rem; background: var(--accent); color: var(--bg); text-decoration: none; font-weight: 600; border-radius: 8px; font-size: 0.95rem; }
+    .landing-cta:hover { filter: brightness(1.1); }
     .landing-h2 { font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 0.5rem; color: var(--text); }
     .landing-h3 { font-size: 0.9rem; font-weight: 600; margin: 1.25rem 0 0.35rem; color: var(--text-muted); }
     .landing p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.55; }
@@ -32,119 +34,65 @@
   </style>
 </head>
 <body>
-  <header class="top-bar">
-    <a href="index.html" class="top-bar-brand">SlipUp</a>
-    <div class="top-bar-actions">
-      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
-      <a href="index.html" class="top-bar-home">Home</a>
-    </div>
-  </header>
   <div class="landing">
     <header class="landing-hero">
       <h1>SlipUp</h1>
-      <p class="lead hero-punch"><strong>Log your mistakes. See the pattern. Change the behavior.</strong></p>
+      <p class="lead">It doesn’t sell a counter.<br>It sells a <strong>smarter relationship with mistakes.</strong></p>
       <p class="lead">Reduce useless mistakes. Keep the ones that grow you.</p>
-      <p class="lead" style="font-size: 0.9rem; margin-top: 0.35rem;">A small daily ritual for clearer judgment and calmer decision‑making.</p>
-      <a href="index.html" class="landing-cta">Start now — open the app</a>
-      <p class="trust-badge">No account. No signup. Data stays on your device. We don't sell it.</p>
+      <p class="lead" style="font-size: 0.9rem; margin-top: 0.35rem;">A daily system for conscious error. Judgment training — and judgment is something people pay for.</p>
+      <a href="index.html" class="landing-cta">Start free — open the app</a>
     </header>
 
-    <div class="landing-teams-block">
-      <h2 class="landing-h2" style="margin-top: 0;">For teams or groups</h2>
-      <p style="margin: 0.25rem 0 0.75rem;">Anonymous daily check-ins for your unit or program. One shared space, no names.</p>
-      <a href="inside.html" class="landing-cta" style="margin-top: 0;">Open SlipUp Inside</a>
-    </div>
-
-    <h2 class="landing-h2">What SlipUp does for you</h2>
-    <p>SlipUp is a simple tracker that turns “I messed up again” into a concrete signal you can work with.</p>
+    <h2 class="landing-h2">What you’re really selling</h2>
+    <p>Not statistics, counters, or charts. You’re selling:</p>
 
     <h3 class="landing-h3">1. Daily mental clarity</h3>
-    <p>See where your day actually goes wrong: repeated triggers, fragile moments, and patterns you can’t spot in your head alone.</p>
+    <p>A place to see patterns, reduce anxiety about making mistakes, and turn failures into information. That’s <strong>cognitive hygiene</strong>.</p>
 
     <h3 class="landing-h3">2. A personal learning system</h3>
-    <p>Every entry is tagged into a small mental model you can act on:</p>
+    <p>Three categories that form a mental model — a small philosophical system turned into a tool.</p>
     <ul>
-      <li><strong>Avoidable</strong> → slips you want less of</li>
-      <li><strong>Fertile</strong> → experiments and useful failures</li>
-      <li><strong>Observed</strong> → things you notice in others or systems</li>
+      <li><strong>Avoidable</strong> → discipline</li>
+      <li><strong>Fertile</strong> → growth</li>
+      <li><strong>Observed</strong> → systemic awareness</li>
     </ul>
 
-    <h3 class="landing-h3">3. A gentle push to reflect</h3>
-    <p>You get a short reflection prompt and an “exploration index” — how much of what you logged was fertile vs. avoidable — plus optional reflection areas to write what to change and what to keep.</p>
+    <h3 class="landing-h3">3. Healthy error culture</h3>
+    <p>Anonymous entries from all users. A database of real human errors that can become reports, trends, behavioral insights, and organizational culture.</p>
 
     <div class="landing-divider"></div>
 
-    <h2 class="landing-h2">How to use it (30 seconds)</h2>
-    <ul>
-      <li><strong>During the day</strong>: whenever you slip, add a short note and choose the type — or tap <strong>I can't tell</strong> if you're unsure.</li>
-      <li><strong>Choose the type</strong>: avoidable, fertile, or observed.</li>
-      <li><strong>In the evening</strong>: glance at your counts and write one line about what to change or keep.</li>
-    </ul>
-
-    <p class="landing-h3">You don’t need an account. Everything is saved locally on your device by default.</p>
+    <h2 class="landing-h2">Strategic advantage</h2>
+    <p>Most apps are about productivity, habits, goals, tasks. SlipUp is about <strong>awareness</strong>, <strong>error</strong>, <strong>learning</strong>, and <strong>reflection</strong> — a much less saturated territory.</p>
 
     <div class="landing-divider"></div>
 
-    <h2 class="landing-h2">9 example entries to log</h2>
-    <p>Anything that fits the type. For example:</p>
-    <ul>
-      <li><strong>Avoidable:</strong> Forgot to save · Spoke harshly · Checked phone mid-task</li>
-      <li><strong>Fertile:</strong> Tried a new approach and missed · Said no to a request · Asked a “dumb” question in the meeting</li>
-      <li><strong>Observed:</strong> Saw someone lose their temper · Noticed a process that always fails · Heard how someone handled conflict well</li>
-    </ul>
+    <h2 class="landing-h2">Pricing &amp; roadmap</h2>
+
+    <table class="landing-table">
+      <tr><th>Today</th><td><strong>Free:</strong> basic counter, 10 entries, daily reflection. <strong>Full version — $5 one-time:</strong> unlimited entries, full history, advanced export. No subscription.</td></tr>
+      <tr><th>Personal (B2C) later</th><td>Optional subscription ($3–8/mo): pattern analysis, monthly reports, automated insights, historical archive.</td></tr>
+      <tr><th>Teams (B2B) later</th><td>Error intelligence for teams: startups, product teams, education. Anonymous team errors, trends by area, pattern dashboards. $5–15 per user/month or team plans.</td></tr>
+      <tr><th>Content &amp; community</th><td>Monthly reports, “Top mistakes this month,” industry trends, psychological insights — newsletter, podcast, premium reports, courses.</td></tr>
+    </table>
+
+    <div class="landing-roadmap">
+      <strong>Coming later:</strong> Teams &amp; reports. For now: full personal use for $5 one-time.
+    </div>
+
+    <p style="margin-top: 1.25rem;"><a href="index.html" class="landing-cta">Open SlipUp</a></p>
 
     <div class="landing-divider"></div>
 
-    <h2 class="landing-h2">What you’ll see inside</h2>
-    <ul>
-      <li><strong>Today / week / month</strong> views so you can zoom out from one bad day.</li>
-      <li><strong>Exploration index</strong> showing the balance between avoidable and fertile mistakes.</li>
-      <li><strong>Insights & patterns</strong> — “What we noticed” (e.g. when you log, repeating notes, streaks).</li>
-      <li><strong>Two-week chart</strong> and progress vs last week.</li>
-      <li><strong>Recent log</strong> of your entries so you remember what actually happened.</li>
-      <li><strong>Reflection areas</strong> (avoidable & fertile) to note what to change and what to keep.</li>
-      <li><strong>Optional</strong>: share stats anonymously, export as image, evening reminder.</li>
-    </ul>
-
-    <p style="margin-top: 1.25rem; text-align: center;"><a href="index.html" class="landing-cta">Open SlipUp</a></p>
+    <h2 class="landing-h2">Why it’s monetizable</h2>
+    <p>It works for individuals, for teams, and for organizations. That’s why it’s monetizable.</p>
 
     <footer class="landing-footer">
-      <a href="privacy.html">Privacy</a> ·
-      <a href="terms.html">Terms</a> ·
-      <a href="refund.html">Refund policy</a> ·
-      <a href="inside.html">SlipUp Inside (groups)</a><br>
       <a href="index.html">SlipUp</a> ·
+      <a href="privacy.html">Privacy policy / מדיניות פרטיות</a> ·
       <a href="mailto:davidmusali8725@gmail.com">Contact</a><br>
-      <span style="font-size: 0.8rem; opacity: 0.9;">© 2026 SlipUp. All rights reserved.</span>
+      <span style="font-size: 0.8rem; opacity: 0.9;">© 2025. All rights reserved.</span>
     </footer>
   </div>
-  <script>
-    (function() {
-      var THEME_KEY = 'mistake-tracker-theme';
-      var THEME_ORDER = ['calm', 'focus', 'warm'];
-      var btn = document.getElementById('btn-theme');
-      function applyTheme() {
-        var theme = localStorage.getItem(THEME_KEY) || 'calm';
-        document.body.classList.remove('theme-focus', 'theme-warm');
-        if (theme === 'focus') {
-          document.body.classList.add('theme-focus');
-          if (btn) btn.textContent = 'Focus';
-        } else if (theme === 'warm') {
-          document.body.classList.add('theme-warm');
-          if (btn) btn.textContent = 'Warm';
-        } else {
-          if (btn) btn.textContent = 'Calm';
-        }
-      }
-      applyTheme();
-      if (btn) btn.addEventListener('click', function() {
-        var current = localStorage.getItem(THEME_KEY) || 'calm';
-        var idx = THEME_ORDER.indexOf(current);
-        var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
-        localStorage.setItem(THEME_KEY, next);
-        applyTheme();
-      });
-    })();
-  </script>
 </body>
 </html>
