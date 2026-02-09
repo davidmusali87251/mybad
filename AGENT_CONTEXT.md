@@ -70,13 +70,13 @@ This file exists to give future AI agents enough context to work on this project
 ### Backend / Supabase (optional)
 
 - Config: `window.MISTAKE_TRACKER_CONFIG` from `config.js` (git‑ignored). Keys: `SUPABASE_URL`, `SUPABASE_ANON_KEY`; optional payment keys.
-- **Tables by mode**:
-  - Personal: `shared_stats`, `shared_entries`
-  - Inside: `shared_stats_inside`, `shared_entries_inside`
-- In `app.js`, `STATS_TABLE` and `ENTRIES_TABLE` are set from `MODE` (`'inside'` → `*_inside` tables). All share/fetch logic uses these.
+- **Tables**:
+  - Stats (per mode): `shared_stats` (personal), `shared_stats_inside` (Inside).
+  - Entries (one table): `shared_what_happened` for both modes; app sends `mode` and filters by it when fetching.
+- In `app.js`, `STATS_TABLE` is `shared_stats` or `shared_stats_inside` by `MODE`; `ENTRIES_TABLE` is always `shared_what_happened`. Share/fetch logic uses these.
 - **Others’ results**: list is limited to **5** items (`MAX_OTHER_RESULTS = 5` in `fetchSharedStats`).
 - **Events**: optional `slipup_events` table is used for anonymous analytics events (`purchase_button_clicked`, `unlock_button_clicked`, `first_visit`), shared by both modes.
-- `README.md` documents SQL and RLS for creating all Supabase tables (`shared_stats*`, `shared_entries*`, `slipup_events`), plus common migration fixes.
+- `README.md` documents SQL and RLS for creating all Supabase tables (`shared_stats`, `shared_stats_inside`, `shared_what_happened`, `slipup_events`), plus common migration fixes.
 
 ### Main code touchpoints (`app.js`)
 

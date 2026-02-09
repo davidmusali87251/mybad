@@ -4,9 +4,9 @@ const MODE = (typeof window !== 'undefined' && window.SLIPUP_MODE) || 'personal'
 const STORAGE_KEY = MODE === 'inside' ? 'mistake-tracker-entries-inside' : 'mistake-tracker-entries';
 const ANON_ID_KEY = MODE === 'inside' ? 'mistake-tracker-anon-id-inside' : 'mistake-tracker-anon-id';
 
-// Supabase table names (separate per app)
+// Supabase table names: stats per app; one shared table for "what happened" entries (filtered by mode)
 const STATS_TABLE = MODE === 'inside' ? 'shared_stats_inside' : 'shared_stats';
-const ENTRIES_TABLE = MODE === 'inside' ? 'shared_entries_inside' : 'shared_entries';
+const ENTRIES_TABLE = 'shared_what_happened'; // one table for all entry notes; filter by mode
 const EVENTS_TABLE = 'slipup_events';
 
 let entries = [];
@@ -1706,6 +1706,7 @@ async function fetchSharedEntries() {
     const { data, error } = await client
       .from(ENTRIES_TABLE)
       .select('id, note, type, created_at')
+      .eq('mode', MODE)
       .order('created_at', { ascending: false })
       .limit(10);
     if (error) throw error;

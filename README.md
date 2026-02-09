@@ -75,10 +75,13 @@ create table shared_stats (
   anonymous_id text
 );
 
-create table shared_entries (
+-- One table for all "what happened" entries (personal + Inside); app filters by mode
+create table shared_what_happened (
   id uuid default gen_random_uuid() primary key,
   note text,
   type text not null default 'avoidable',
+  mode text not null default 'personal',
+  hour_utc smallint,
   created_at timestamptz default now()
 );
 
@@ -86,12 +89,12 @@ alter table shared_stats enable row level security;
 create policy "Allow anonymous insert" on shared_stats for insert with check (true);
 create policy "Allow anonymous select" on shared_stats for select using (true);
 
-alter table shared_entries enable row level security;
-create policy "Allow anonymous insert" on shared_entries for insert with check (true);
-create policy "Allow anonymous select" on shared_entries for select using (true);
+alter table shared_what_happened enable row level security;
+create policy "Allow anonymous insert" on shared_what_happened for insert with check (true);
+create policy "Allow anonymous select" on shared_what_happened for select using (true);
 ```
 
-If you also use **SlipUp Inside** (`inside.html`, group mode), create a second pair of tables so group data stays separate:
+If you also use **SlipUp Inside** (`inside.html`, group mode), create the Inside stats table (entries already go into `shared_what_happened` with `mode = 'inside'`):
 
 ```sql
 create table shared_stats_inside (
@@ -103,20 +106,9 @@ create table shared_stats_inside (
   anonymous_id text
 );
 
-create table shared_entries_inside (
-  id uuid default gen_random_uuid() primary key,
-  note text,
-  type text not null default 'avoidable',
-  created_at timestamptz default now()
-);
-
 alter table shared_stats_inside enable row level security;
 create policy "Allow anonymous insert" on shared_stats_inside for insert with check (true);
 create policy "Allow anonymous select" on shared_stats_inside for select using (true);
-
-alter table shared_entries_inside enable row level security;
-create policy "Allow anonymous insert" on shared_entries_inside for insert with check (true);
-create policy "Allow anonymous select" on shared_entries_inside for select using (true);
 ```
 
 **Optional – analytics events (for you only)**  
@@ -156,13 +148,7 @@ alter table shared_stats_inside
   add column if not exists exploration_pct int,
   add column if not exists mode text;
 
--- Entries: when (UTC hour) and which app
-alter table shared_entries
-  add column if not exists mode text,
-  add column if not exists hour_utc smallint;
-alter table shared_entries_inside
-  add column if not exists mode text,
-  add column if not exists hour_utc smallint;
+-- (Entries use shared_what_happened, which already has mode and hour_utc.)
 ```
 
 After this, the app will send these fields on each share and on each shared entry. You can then run queries like “avg exploration_pct by week” or “entries by hour_utc”.
@@ -188,21 +174,23 @@ window.MISTAKE_TRACKER_CONFIG = {
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
 
-### "Could not find the table 'public.shared_entries' in the schema cache"
+### "Could not find the table 'public.shared_what_happened' in the schema cache"
 
-The **Everyone's recent entries** feature needs a `shared_entries` table. If you set up Supabase before this was added, run this in **SQL Editor** (Dashboard → SQL Editor → New query):
+The **Everyone's recent entries** feature uses the `shared_what_happened` table. If you set up Supabase before this was added, run this in **SQL Editor** (Dashboard → SQL Editor → New query):
 
 ```sql
-create table if not exists shared_entries (
+create table if not exists shared_what_happened (
   id uuid default gen_random_uuid() primary key,
   note text,
   type text not null default 'avoidable',
+  mode text not null default 'personal',
+  hour_utc smallint,
   created_at timestamptz default now()
 );
 
-alter table shared_entries enable row level security;
-create policy "Allow anonymous insert" on shared_entries for insert with check (true);
-create policy "Allow anonymous select" on shared_entries for select using (true);
+alter table shared_what_happened enable row level security;
+create policy "Allow anonymous insert" on shared_what_happened for insert with check (true);
+create policy "Allow anonymous select" on shared_what_happened for select using (true);
 ```
 
 Then reload the app. If you get "policy already exists", you can ignore it and just run the `create table` part.

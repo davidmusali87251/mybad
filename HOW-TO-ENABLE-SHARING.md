@@ -61,7 +61,7 @@ Supabase needs a few tables for sharing. In the app’s **README.md** there is a
 
 1. In Supabase, left menu → **SQL Editor**
 2. Click **New query**
-3. Copy the SQL from README (the part that creates `shared_stats`, `shared_entries`, etc.)
+3. Copy the SQL from README (the part that creates `shared_stats`, `shared_what_happened`, and if you use Inside, `shared_stats_inside`)
 4. Paste into the editor and click **Run**
 
 ---

@@ -54,7 +54,7 @@ When you add a feature, check both `index.html` and `inside.html` if the UI is s
 - **New UI only:** Add HTML in the right page(s), add classes/ids, style in `styles.css`.  
 - **New behavior:** In `app.js` add DOM refs (e.g. `getElementById`), then functions and event listeners. Prefer one place that runs on load (e.g. where `renderStats()` is called) so everything stays in sync.  
 - **New data:** Prefer `localStorage` with a key (see `STORAGE_KEY`, `REFLECTIONS_KEY`, `MICRO_GOAL_KEY` in `app.js`). Keep one JSON object or array per key.  
-- **Backend:** Only Supabase is used (optional). Tables: `shared_stats` / `shared_entries` (personal) and `shared_stats_inside` / `shared_entries_inside` (Inside). See README for SQL and RLS.
+- **Backend:** Only Supabase is used (optional). Tables: `shared_stats` (personal), `shared_stats_inside` (Inside), and one table `shared_what_happened` for all “what happened” entries (filtered by mode). See README for SQL and RLS.
 
 **Product ideas** are in **CONCEPT_NEXT_LEVEL.md** (streaks, weekly digest, share-as-image, themes, reminders, etc.). Many are already implemented; the rest are a good backlog.
 
