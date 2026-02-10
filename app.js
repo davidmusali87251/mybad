@@ -16,7 +16,8 @@ let lastEntry = null;
 let lastShareAt = 0;
 
 const CONFIG = (typeof window !== 'undefined' && window.MISTAKE_TRACKER_CONFIG) || {};
-const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim();
+// Normalize Supabase URL: trim and remove trailing slash (avoids "Invalid API key" from wrong URL format)
+const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim().replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = (CONFIG.SUPABASE_ANON_KEY || '').trim();
 const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 const FREE_ENTRY_LIMIT = 10;
@@ -802,6 +803,13 @@ function getSupabase() {
   }
   if (typeof supabase === 'undefined') {
     throw new Error('Supabase client library did not load.');
+  }
+  // Basic format check: URL should be Supabase host, key should be a JWT (eyJ...)
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL)) {
+    throw new Error('Invalid Supabase URL in config.js. Use https://YOUR_PROJECT_REF.supabase.co (no trailing slash).');
+  }
+  if (!SUPABASE_ANON_KEY.startsWith('eyJ')) {
+    throw new Error('Invalid Supabase anon key in config.js. Use the anon public key from Supabase → Settings → API (JWT starting with eyJ...).');
   }
   return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
