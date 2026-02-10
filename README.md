@@ -169,6 +169,15 @@ alter table shared_stats add column if not exists anonymous_id text;
 
 The app will then send a per-browser anonymous ID when sharing and group results by it in the UI.
 
+### Sharing works in the app but Supabase tables don't update
+
+If the app shows "Shared anonymously" or no errors but rows don't appear in the Supabase dashboard:
+
+1. **Check you're looking at the same project.** The app uses `SUPABASE_URL` and `SUPABASE_ANON_KEY` from config (or from GitHub Secrets when deployed). Open the Supabase project that matches that URL (e.g. `https://YOUR_REF.supabase.co`). If the live site uses different secrets, data is in that project, not the one you're viewing.
+2. **Check table names.** Personal app writes to `shared_stats` and `shared_what_happened`. SlipUp Inside writes to `shared_stats_inside` and the same `shared_what_happened` (with `mode = 'inside'`). Create any missing tables (see SQL above).
+3. **Check RLS.** In Supabase: **Table Editor** → select the table → **Policies**. You need policies that allow **INSERT** and **SELECT** for anonymous users (e.g. "Allow anonymous insert" and "Allow anonymous select" with `true`).
+4. **Use the browser console.** When you click "Share my result" or add a mistake, errors are logged with `SlipUp: share stats failed` or `SlipUp: shared_what_happened insert failed`. Open DevTools (F12) → **Console** to see the exact Supabase error (e.g. missing table, RLS violation, wrong key).
+
 ### "Failed: Unregistered API key"
 
 This means Supabase doesn't recognize the key you're using. Fix it by:

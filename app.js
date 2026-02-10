@@ -759,6 +759,7 @@ function addMistake() {
 }
 
 function pushEntryToShared(entry) {
+  if (!SHARING_ENABLED) return;
   try {
     const now = new Date();
     const payload = {
@@ -771,9 +772,32 @@ function pushEntryToShared(entry) {
       .from(ENTRIES_TABLE)
       .insert(payload)
       .then(({ error }) => {
-        if (!error && typeof fetchSharedEntries === 'function') fetchSharedEntries();
+        if (error) {
+          const msg = error.message || error.error_description || (error.msg && error.msg.message) || JSON.stringify(error);
+          if (sharedEntriesError) {
+            sharedEntriesError.textContent = 'Could not add this entry to the feed: ' + msg;
+            sharedEntriesError.classList.remove('hidden');
+          }
+          console.warn('SlipUp: shared_what_happened insert failed', error);
+          return;
+        }
+        if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+      })
+      .catch((err) => {
+        const msg = err && (err.message || err.toString());
+        if (sharedEntriesError) {
+          sharedEntriesError.textContent = 'Could not add this entry to the feed: ' + (msg || 'Network or request error');
+          sharedEntriesError.classList.remove('hidden');
+        }
+        console.warn('SlipUp: shared_what_happened insert error', err);
       });
-  } catch (_) {}
+  } catch (e) {
+    if (sharedEntriesError) {
+      sharedEntriesError.textContent = 'Could not share entry: ' + (e && e.message ? e.message : 'Check config (Supabase URL and anon key).');
+      sharedEntriesError.classList.remove('hidden');
+    }
+    console.warn('SlipUp: pushEntryToShared failed', e);
+  }
 }
 
 function setPeriod(period) {
@@ -853,6 +877,7 @@ async function shareAnonymously() {
       anonymous_id: getOrCreateAnonId()
     });
     if (error) {
+      console.error('SlipUp: share stats failed', { table: STATS_TABLE, error });
       throw error;
     }
     lastShareAt = Date.now();
@@ -866,6 +891,7 @@ async function shareAnonymously() {
     const raw = (err && (err.message || err.error_description || err.msg)) || (typeof err === 'string' ? err : '');
     const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
     const isUnregisteredKey = /unregistered\s*api\s*key/i.test(msg);
+    console.error('SlipUp: share failed', { table: STATS_TABLE, err });
     if (shareStatus) {
       shareStatus.textContent = 'Failed: ' + (isUnregisteredKey ? 'Unregistered API key' : msg);
       shareStatus.className = 'share-status error';
