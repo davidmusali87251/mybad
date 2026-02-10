@@ -110,9 +110,7 @@ window.MISTAKE_TRACKER_CONFIG = {
 
    `config.js` is in `.gitignore`, so it stays local and your keys are not pushed to the repo.
 
-   **Deploying (e.g. GitHub Pages):** If you want the live site to use sharing, add a `config.js` with your Supabase URL and anon key to the deployed branch. The anon key is intended to be public; keeping it out of the repo is for cleanliness and so forks use their own project.
-
-   **Use the workflow (recommended):** This repo includes `.github/workflows/deploy-pages.yml`. It builds `config.js` from **repository secrets** during deploy, so you never commit keys. Steps: (1) Settings → Secrets and variables → Actions → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`. (2) Settings → Pages → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing; the repo stays without `config.js`.
+   **Deploy (GitHub Pages) — use secrets, no config.js in the repo:** The live site must **not** use a committed `config.js`. The workflow `.github/workflows/main.yml` builds `config.js` from **repository secrets** at deploy time. (1) In the repo: **Settings → Secrets and variables → Actions** → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`. (2) **Settings → Pages** → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing; the repo never contains `config.js`.
 
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
@@ -162,7 +160,7 @@ The app will then send a per-browser anonymous ID when sharing and group results
 
 This means Supabase doesn't recognize the key you're using. Fix it by:
 
-- **Use the anon key, not the service role.** In the browser you must use the **anon public** key. Never put `service_role` or a secret key in `config.js`.
+- **Use the anon key, not the service role.** In the browser you must use the **anon public** key. Never put `service_role` or a secret key in config (local `config.js` or repo Secrets).
 - **Get the key from the right place.** In the dashboard go to **Settings → API**. Use the **anon** key from the **Legacy API Keys** tab (the long JWT starting with `eyJ...`). If you use a Publishable key (`sb_publishable_...`) and see this error, switch to the legacy anon key.
 - **Same project.** The key must belong to the project whose URL you set. Check that `SUPABASE_URL` matches the project where you copied the key.
-- **Exact value.** Paste the key with no extra spaces, newlines, or quotes. Don't rotate or revoke the key in the dashboard without updating `config.js`. You’ll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
+- **Exact value.** Paste the key with no extra spaces, newlines, or quotes. Don't rotate or revoke the key without updating your local `config.js` or the repo Secrets. You’ll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).

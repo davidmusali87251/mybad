@@ -1,12 +1,14 @@
 // Optional: set these to enable anonymous sharing & viewing others' results.
+// FOR LOCAL USE ONLY. Do not commit config.js (it is in .gitignore).
+// The deployed site (e.g. GitHub Pages) gets config from repository Secrets, not from this file.
+//
 // 1. Copy this file to config.js:  cp config.example.js config.js  (or copy-paste and save as config.js)
 // 2. Get URL and anon key from Supabase: project → Settings → API.
 //    - SUPABASE_URL: "Project URL" (e.g. https://xxxxx.supabase.co) — no trailing slash.
-//    - SUPABASE_ANON_KEY: "anon" "public" key (long JWT starting with eyJ...). Use the same project as the URL.
-// 3. Paste your values below. config.js is gitignored so your keys are not committed.
+//    - SUPABASE_ANON_KEY: "anon" "public" key (long JWT starting with eyJ...). Same project as the URL.
+// 3. Paste your values below.
 //
-// If you see "Invalid API key": URL and key must be from the same Supabase project; use anon key, not service_role.
-// If the project is paused, resume it in the Supabase dashboard.
+// If you see "Invalid API key": URL and key must be from the same project; use anon key, not service_role; resume project if paused.
 window.MISTAKE_TRACKER_CONFIG = {
   SUPABASE_URL: '',
   SUPABASE_ANON_KEY: '',
