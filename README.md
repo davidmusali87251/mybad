@@ -4,7 +4,7 @@
 
 A simple web app to count and track mistakes by **day**, **week**, and **month**.
 
-**Live demo:** [https://davidmusali87251.github.io/mybad/](https://davidmusali87251.github.io/mybad/)
+**Live:** [https://www.slipup.io](https://www.slipup.io) (or [GitHub Pages demo](https://davidmusali87251.github.io/mybad/) if different)
 
 Design and constraints are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -92,6 +92,19 @@ create policy "Allow anonymous select" on shared_stats for select using (true);
 alter table shared_what_happened enable row level security;
 create policy "Allow anonymous insert" on shared_what_happened for insert with check (true);
 create policy "Allow anonymous select" on shared_what_happened for select using (true);
+
+-- Optional: for SlipUp Inside (group check-ins), create a separate stats table:
+create table if not exists shared_stats_inside (
+  id uuid default gen_random_uuid() primary key,
+  period text not null,
+  count int not null,
+  avg_per_day float,
+  created_at timestamptz default now(),
+  anonymous_id text
+);
+alter table shared_stats_inside enable row level security;
+create policy "Allow anonymous insert" on shared_stats_inside for insert with check (true);
+create policy "Allow anonymous select" on shared_stats_inside for select using (true);
 ```
 
 3. Go to **Settings → API**. Copy:
@@ -110,7 +123,7 @@ window.MISTAKE_TRACKER_CONFIG = {
 
    `config.js` is in `.gitignore`, so it stays local and your keys are not pushed to the repo.
 
-   **Deploy (GitHub Pages) — use secrets, no config.js in the repo:** The live site must **not** use a committed `config.js`. The workflow `.github/workflows/main.yml` builds `config.js` from **repository secrets** at deploy time. (1) In the repo: **Settings → Secrets and variables → Actions** → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`. (2) **Settings → Pages** → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing; the repo never contains `config.js`.
+   **Deploy (GitHub Pages) — use secrets, no config.js in the repo:** The live site must **not** use a committed `config.js`. The workflow `.github/workflows/main.yml` builds `config.js` from **repository secrets** at deploy time. (1) In the repo: **Settings → Secrets and variables → Actions** → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_HOSTED_BUTTON_ID`. (2) **Settings → Pages** → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing (and PayPal if those secrets are set); the repo never contains `config.js`.
 
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).

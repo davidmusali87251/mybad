@@ -99,7 +99,7 @@ const paypalButtonContainer = document.getElementById('paypal-button-container')
 const btnUnlockAfterPay = document.getElementById('btn-unlock-after-pay');
 const btnBuyUnlocked = document.getElementById('btn-buy-unlocked');
 
-const REFLECTIONS_KEY = 'mistake-tracker-reflections';
+const REFLECTIONS_KEY = MODE === 'inside' ? 'mistake-tracker-reflections-inside' : 'mistake-tracker-reflections';
 let paypalButtonRendered = false;
 
 function isUnlocked() {
@@ -1191,6 +1191,8 @@ if (quickAvoidableBtn) quickAvoidableBtn.addEventListener('click', () => quickAd
 if (quickFertileBtn) quickFertileBtn.addEventListener('click', () => quickAdd('fertile'));
 if (quickObservedBtn) quickObservedBtn.addEventListener('click', () => quickAdd('observed'));
 if (repeatLastBtn) repeatLastBtn.addEventListener('click', repeatLastNote);
+const btnCantTell = document.getElementById('btn-cant-tell');
+if (btnCantTell) btnCantTell.addEventListener('click', () => quickAdd(getSelectedType()));
 
 function updateTypeHint() {
   const type = getSelectedType();

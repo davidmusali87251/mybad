@@ -37,7 +37,7 @@ This document captures the constraints and technical decisions derived from the 
 Each mistake entry includes:
 
 - **timestamp**
-- **type:** `avoidable` | `fertile`
+- **type:** `avoidable` | `fertile` | `observed`
 - **optional note** (short text)
 - **visibility flag:** `private` | `shared_anonymous` | `stats_only`
 
