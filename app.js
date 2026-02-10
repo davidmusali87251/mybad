@@ -16,7 +16,8 @@ let lastEntry = null;
 let lastShareAt = 0;
 
 const CONFIG = (typeof window !== 'undefined' && window.MISTAKE_TRACKER_CONFIG) || {};
-const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim();
+// Normalize Supabase URL: trim and remove trailing slash (avoids "Invalid API key" from wrong URL format)
+const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim().replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = (CONFIG.SUPABASE_ANON_KEY || '').trim();
 const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 const FREE_ENTRY_LIMIT = 10;
@@ -803,6 +804,13 @@ function getSupabase() {
   if (typeof supabase === 'undefined') {
     throw new Error('Supabase client library did not load.');
   }
+  // Basic format check: URL should be Supabase host, key should be a JWT (eyJ...)
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL)) {
+    throw new Error('Invalid Supabase URL. Use https://YOUR_PROJECT_REF.supabase.co (no trailing slash). Set in config.js locally or in repo Secrets for deploy.');
+  }
+  if (!SUPABASE_ANON_KEY.startsWith('eyJ')) {
+    throw new Error('Invalid Supabase anon key. Use the anon public key from Supabase → Settings → API (JWT starting with eyJ...). Set in config.js locally or in repo Secrets for deploy.');
+  }
   return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
@@ -817,7 +825,7 @@ function getCurrentStatsForShare() {
 async function shareAnonymously() {
   if (!SHARING_ENABLED) {
     if (shareStatus) {
-      shareStatus.textContent = 'Set SUPABASE_URL and SUPABASE_ANON_KEY in config.js to enable sharing.';
+      shareStatus.textContent = 'Set SUPABASE_URL and SUPABASE_ANON_KEY (config.js locally, or repo Secrets for deploy) to enable sharing.';
       shareStatus.className = 'share-status error';
     }
     return;
@@ -1021,7 +1029,7 @@ async function fetchSharedStats() {
 function showCommunitySetupMessage() {
   if (!sharedList || !sharedEmpty) return;
   sharedList.innerHTML = '';
-  sharedEmpty.textContent = "Set up Supabase in config.js to share and see others' results. See README.";
+  sharedEmpty.textContent = "Set up Supabase (config.js locally or repo Secrets for deploy) to share and see others' results. See README.";
   sharedEmpty.classList.remove('hidden');
 }
 
@@ -1136,7 +1144,7 @@ async function fetchSharedEntries() {
 function showCommunityEntriesSetupMessage() {
   if (!sharedEntriesList || !sharedEntriesEmpty) return;
   sharedEntriesList.innerHTML = '';
-  sharedEntriesEmpty.textContent = "Set up Supabase in config.js to see everyone's entries. See README.";
+  sharedEntriesEmpty.textContent = "Set up Supabase (config.js locally or repo Secrets for deploy) to see everyone's entries. See README.";
   sharedEntriesEmpty.classList.remove('hidden');
 }
 
