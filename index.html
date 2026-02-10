@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f0f12">
+  <title>SlipUp</title>
+  <meta name="description" content="Log daily mistakes, see patterns, and turn them into deliberate learning. Your data stays on your device.">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"SlipUp","description":"Log daily mistakes, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.","url":"https://www.slipup.io/","applicationCategory":"LifestyleApplication"}
+  </script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="top-bar">
+    <a href="index.html" class="top-bar-brand">SlipUp</a>
+    <div class="top-bar-actions">
+      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
+      <a href="index.html" class="top-bar-home">Home</a>
+    </div>
+  </header>
+  <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
+    <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
+    <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
+  </div>
+  <div class="app">
+    <header class="header">
+      <h1>SlipUp</h1>
+      <p class="tagline">Count & reflect by day, week, month</p>
+      <p class="tagline-sub">Reduce useless mistakes. Keep the ones that grow you.</p>
+      <a href="landing.html" class="header-about">What is this?</a>
+    </header>
+
+    <p class="phase-label">1 – Personal</p>
+    <section class="add-section">
+      <div class="add-card">
+        <label for="mistake-note">What happened?</label>
+        <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="200">
+
+        <div class="type-row">
+          <span class="type-label">Type</span>
+          <div class="type-options">
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="avoidable" checked>
+              <span class="pill-main">⚠ Avoidable</span>
+              <span class="pill-sub">Careless / repetitive</span>
+            </label>
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="fertile">
+              <span class="pill-main">✶ Fertile</span>
+              <span class="pill-sub">Experiment / growth</span>
+            </label>
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="observed">
+              <span class="pill-main">👁 Observed</span>
+              <span class="pill-sub">In others: avoid or understand</span>
+            </label>
+          </div>
+        </div>
+        <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
+
+        <button type="button" id="add-mistake" class="btn-add" disabled>+ Add mistake</button>
+        <div class="quick-add-row">
+          <button type="button" id="btn-cant-tell" class="btn-quick">I can't tell</button>
+        </div>
+        <p class="limit-message hidden" id="limit-message">Free version: 10 entries. Unlock full version for $5.</p>
+        <p class="first-time-nudge" id="first-time-nudge">Add your first mistake above — one line is enough, or tap I can't tell if you're unsure.</p>
+      </div>
+    </section>
+
+    <section class="period-tabs">
+      <button type="button" class="tab active" data-period="day">Today</button>
+      <button type="button" class="tab" data-period="week">This week</button>
+      <button type="button" class="tab" data-period="month">This month</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-count">0</span>
+        <span class="stat-label" id="stat-label">mistakes today</span>
+      </div>
+      <div class="stat-card secondary">
+        <span class="stat-value" id="stat-avg">—</span>
+        <span class="stat-label">avg per day (period)</span>
+      </div>
+      <div class="stat-card stat-exploration">
+        <span class="stat-value" id="stat-exploration">—</span>
+        <span class="stat-label">exploration index</span>
+        <span class="stat-sublabel" id="stat-exploration-hint">fertile ÷ (avoidable + fertile)</span>
+        <span class="stat-so-what" id="stat-exploration-so-what"></span>
+      </div>
+    </section>
+    <p class="stats-note" id="stats-note"></p>
+    <p class="stats-breakdown" id="stats-breakdown"></p>
+    <p class="streak-note" id="streak-note"></p>
+    <p class="headline-stat" id="headline-stat"></p>
+
+    <section class="micro-goal-section" id="micro-goal-section">
+      <label for="micro-goal-input" class="micro-goal-label">Today's intention (optional)</label>
+      <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Keep avoidable under 3 · or: One fertile experiment" maxlength="60">
+      <p class="micro-goal-result" id="micro-goal-result"></p>
+    </section>
+
+    <section class="insights-section" id="insights-section">
+      <h2>What we noticed</h2>
+      <p class="insights-intro">A few highlights from your data.</p>
+      <div class="insight-block insight-weekly-digest" id="weekly-digest-block">
+        <span class="insight-label">This week in one sentence</span>
+        <p class="insight-text" id="weekly-digest"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">Today</span>
+        <p class="insight-text" id="day-vs-average"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">When you log</span>
+        <p class="insight-text" id="time-of-day"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">Repeating notes</span>
+        <p class="insight-subtitle" id="top-patterns-title"></p>
+        <ul class="entry-list insight-list" id="top-patterns"></ul>
+      </div>
+      <div class="insight-block insight-patterns">
+        <span class="insight-label">More patterns</span>
+        <div class="insight-chips" id="more-patterns"></div>
+      </div>
+    </section>
+
+    <section class="premium-section" id="premium-section">
+      <h2>Unlock your full mistake intelligence</h2>
+      <p class="section-hint">Turn mistakes into a personal learning system. See patterns, keep history, export and reflect without limits.</p>
+      <div class="premium-cards" id="upgrade-cards">
+        <div class="premium-card premium-card-upgrade" id="upgrade-card">
+          <h3>Full version — $5 one-time</h3>
+          <p>Unlimited entries, full history, advanced export. One purchase, no subscription.</p>
+          <ul class="why-upgrade-list">
+            <li>Unlimited entries — no 10-entry cap</li>
+            <li>Full history &amp; export (CSV + backup)</li>
+            <li>Support development of SlipUp</li>
+          </ul>
+          <a href="#" id="btn-buy" class="btn-buy" target="_blank" rel="noopener">Purchase for $5</a>
+          <p class="refund-note">14-day refund if it's not for you.</p>
+          <p class="legal-purchase-note">By purchasing you agree to our <a href="terms.html">Terms</a> and <a href="refund.html">Refund Policy</a>.</p>
+          <div id="paypal-button-container" class="paypal-button-wrap hidden"></div>
+          <p class="unlock-after-pay">After you complete payment, click below to unlock.</p>
+          <button type="button" id="btn-unlock-after-pay" class="btn-unlock-after-pay">I've paid — unlock full version</button>
+        </div>
+      </div>
+      <div class="premium-cards hidden" id="unlocked-badge">
+        <p class="unlocked-text">Full version active. Unlimited entries.</p>
+        <a href="#" id="btn-buy-unlocked" class="btn-buy hidden" target="_blank" rel="noopener">Purchase for $5</a>
+      </div>
+      <p class="roadmap-note">Teams &amp; reports coming later. <a href="landing.html">See roadmap</a></p>
+    </section>
+
+    <section class="progress-section" id="progress-section">
+      <h2>This week vs last week</h2>
+      <p class="section-hint">See if you're trending better.</p>
+      <div class="progress-cards" id="progress-cards"></div>
+      <p class="progress-empty" id="progress-empty">Log mistakes in this week and last to compare.</p>
+    </section>
+
+    <section class="trends-section" id="trends-section">
+      <h2>Your trends</h2>
+      <p class="section-hint">Avoidable ↓ · Fertile ↔ or ↑</p>
+      <div class="trends-chart" id="trends-chart"></div>
+      <p class="trends-empty" id="trends-empty">Log mistakes over a few days to see your curves.</p>
+      <p class="trends-highlight" id="trends-highlight"></p>
+    </section>
+
+    <section class="chart-section" id="stats-table-section">
+      <h2 class="chart-section-title">Your last 2 weeks</h2>
+      <p class="chart-section-intro">See how avoidable, fertile, and observed stack up day by day.</p>
+      <div class="line-chart-wrap" id="line-chart-wrap">
+        <div class="line-chart-legend" id="line-chart-legend"></div>
+        <svg class="line-chart-svg" id="line-chart-svg" viewBox="0 0 400 180" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+      </div>
+      <p class="line-chart-empty" id="line-chart-empty">Add a few entries over the next days to see your chart here.</p>
+    </section>
+
+    <section class="history">
+      <h2>Recent entries</h2>
+      <p class="section-hint">Your entries (saved on this device).</p>
+      <div class="history-controls">
+        <div class="history-filters" id="history-filters">
+          <button type="button" class="history-filter active" data-type="all">All</button>
+          <button type="button" class="history-filter" data-type="avoidable">Avoidable</button>
+          <button type="button" class="history-filter" data-type="fertile">Fertile</button>
+          <button type="button" class="history-filter" data-type="observed">Observed</button>
+        </div>
+        <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
+        <button type="button" id="btn-export-json" class="btn-export">Export backup (JSON)</button>
+      </div>
+      <ul class="entry-list" id="entry-list"></ul>
+      <p class="empty-state" id="empty-state">No mistakes logged yet. Add one above.</p>
+    </section>
+
+    <p class="phase-label" id="phase-2-label">2 – Social</p>
+    <section class="community-entries-section" id="community-entries-section">
+      <h2>Everyone's recent entries</h2>
+      <p class="section-hint">Anonymous entries from all users. Add a mistake above to contribute.</p>
+      <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
+      <p class="community-comparison" id="community-comparison"></p>
+      <p class="community-trend" id="community-entries-trend"></p>
+      <ul class="entry-list" id="shared-entries-list"></ul>
+      <p class="empty-state" id="shared-entries-empty">No shared entries yet. Add a mistake to share yours.</p>
+      <p class="community-error hidden" id="shared-entries-error"></p>
+    </section>
+
+    <section class="reflection-section">
+      <h2>Today's reflection</h2>
+      <p class="reflection-hint">
+        This tracker is a mirror, not a judge. Reduce useless mistakes. Keep the ones that grow you.
+      </p>
+      <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
+      <div class="auto-reflection" id="auto-reflection"></div>
+      <div class="reflection-grid">
+        <div class="reflection-card">
+          <h3>Avoidable errors</h3>
+          <p class="reflection-subtitle">Where was I careless or on autopilot? How can I reduce repeats?</p>
+          <textarea id="reflection-avoidable" rows="3" placeholder="e.g. Checked messages mid-task, rushed merges without review..."></textarea>
+          <p class="char-counter" id="reflection-avoidable-counter"></p>
+        </div>
+        <div class="reflection-card">
+          <h3>Fertile errors</h3>
+          <p class="reflection-subtitle">Where did I stretch, experiment, or try something new?</p>
+          <textarea id="reflection-fertile" rows="3" placeholder="e.g. Tried a new API, experimented with a different workflow..."></textarea>
+          <p class="char-counter" id="reflection-fertile-counter"></p>
+        </div>
+      </div>
+      <p class="reflection-note" id="reflection-note"></p>
+      <div class="yesterday-reflection" id="yesterday-reflection"></div>
+    </section>
+
+    <section class="share-section" id="share-section">
+      <h2>Share anonymously</h2>
+      <p class="share-hint">Share your current period stats so others can see (no account, no name).</p>
+      <button type="button" id="btn-share" class="btn-share">Share my result</button>
+      <button type="button" id="btn-share-image" class="btn-share btn-share-image">Share as image</button>
+      <p class="share-status" id="share-status"></p>
+    </section>
+
+    <section class="settings-section" id="settings-section">
+      <h2>Settings</h2>
+      <label class="setting-row">
+        <input type="checkbox" id="reminder-checkbox">
+        <span>Notify me for evening check-in (8pm)</span>
+      </label>
+    </section>
+
+    <section class="community-section" id="community-section">
+      <h2>Others' results</h2>
+      <p class="community-hint">Recent anonymous shares from everyone.</p>
+      <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
+      <p class="community-metrics" id="community-metrics"></p>
+      <ul class="shared-list" id="shared-list"></ul>
+      <p class="empty-state" id="shared-empty">No shared results yet. Share yours above!</p>
+      <p class="community-error hidden" id="community-error"></p>
+    </section>
+
+    <footer class="page-footer">
+      <a href="privacy.html">Privacy</a>
+      <span class="footer-sep">·</span>
+      <a href="terms.html">Terms</a>
+      <span class="footer-sep">·</span>
+      <a href="refund.html">Refund policy</a>
+      <span class="footer-sep">·</span>
+      <a href="inside.html">SlipUp Inside (groups)</a>
+    </footer>
+  </div>
+
+  <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
+  <script src="config.js"></script>
+  <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
+  <script src="app.js?v=4"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+    }
+  </script>
+</body>
+</html>

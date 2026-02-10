@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1013">
+  <title>SlipUp Inside — Group check‑ins</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="top-bar">
+    <a href="index.html" class="top-bar-brand">SlipUp</a>
+    <div class="top-bar-actions">
+      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
+      <a href="index.html" class="top-bar-home">Home</a>
+    </div>
+  </header>
+  <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
+    <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
+    <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
+  </div>
+  <div class="app">
+    <header class="header">
+      <h1>SlipUp Inside</h1>
+      <p class="tagline">Daily check‑ins for the unit or group</p>
+      <p class="tagline-sub">A quiet place to put down tense moments, shifts, and support.</p>
+      <a href="landing.html" class="header-about">About SlipUp</a>
+    </header>
+
+    <p class="phase-label">Group — Today</p>
+    <section class="add-section">
+      <div class="add-card">
+        <label for="mistake-note">What moment do you want to remember?</label>
+        <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="50">
+
+        <div class="type-row">
+          <span class="type-label">Kind of moment</span>
+          <div class="type-options">
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="avoidable" checked>
+              <span class="pill-main">⚠ Heat</span>
+              <span class="pill-sub">Tension, conflict, close call</span>
+            </label>
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="fertile">
+              <span class="pill-main">✶ Shift</span>
+              <span class="pill-sub">Different choice than usual</span>
+            </label>
+            <label class="type-pill">
+              <input type="radio" name="mistake-type" value="observed">
+              <span class="pill-main">👁 Support</span>
+              <span class="pill-sub">Help you gave, got, or saw</span>
+            </label>
+          </div>
+        </div>
+        <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
+
+        <button type="button" id="add-mistake" class="btn-add" disabled>+ Add moment</button>
+        <div class="quick-add-row">
+          <button type="button" id="btn-cant-tell" class="btn-quick">I can't tell</button>
+        </div>
+        <p class="limit-message hidden" id="limit-message">Free version: 10 moments. Unlock full version for $5.</p>
+        <p class="first-time-nudge" id="first-time-nudge">Add your first moment above — one line is enough, or tap I can't tell if you're unsure.</p>
+      </div>
+    </section>
+
+    <section class="period-tabs">
+      <button type="button" class="tab active" data-period="day">Today</button>
+      <button type="button" class="tab" data-period="week">This week</button>
+      <button type="button" class="tab" data-period="month">This month</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-count">0</span>
+        <span class="stat-label" id="stat-label">moments today</span>
+      </div>
+      <div class="stat-card secondary">
+        <span class="stat-value" id="stat-avg">—</span>
+        <span class="stat-label">avg per day (period)</span>
+      </div>
+      <div class="stat-card stat-exploration">
+        <span class="stat-value" id="stat-exploration">—</span>
+        <span class="stat-label">shift index</span>
+        <span class="stat-sublabel" id="stat-exploration-hint">shift ÷ (heat + shift)</span>
+        <span class="stat-so-what" id="stat-exploration-so-what"></span>
+      </div>
+    </section>
+    <p class="stats-note" id="stats-note"></p>
+    <p class="stats-breakdown" id="stats-breakdown"></p>
+    <p class="streak-note" id="streak-note"></p>
+    <p class="headline-stat" id="headline-stat"></p>
+
+    <section class="micro-goal-section" id="micro-goal-section">
+      <label for="micro-goal-input" class="micro-goal-label">Today's intention (optional)</label>
+      <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat today · or: One shift" maxlength="60">
+      <p class="micro-goal-result" id="micro-goal-result"></p>
+    </section>
+
+    <section class="insights-section" id="insights-section">
+      <h2>What we noticed</h2>
+      <p class="insights-intro">A few highlights from your data.</p>
+      <div class="insight-block insight-weekly-digest" id="weekly-digest-block">
+        <span class="insight-label">This week in one sentence</span>
+        <p class="insight-text" id="weekly-digest"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">Today</span>
+        <p class="insight-text" id="day-vs-average"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">When you log</span>
+        <p class="insight-text" id="time-of-day"></p>
+      </div>
+      <div class="insight-block">
+        <span class="insight-label">Repeating notes</span>
+        <p class="insight-subtitle" id="top-patterns-title"></p>
+        <ul class="entry-list insight-list" id="top-patterns"></ul>
+      </div>
+      <div class="insight-block insight-patterns">
+        <span class="insight-label">More patterns</span>
+        <div class="insight-chips" id="more-patterns"></div>
+      </div>
+    </section>
+
+    <section class="premium-section" id="premium-section">
+      <h2>Unlock full group history</h2>
+      <p class="section-hint">Keep more than 10 moments so you can look back over a longer program or stay.</p>
+      <div class="premium-cards" id="upgrade-cards">
+        <div class="premium-card premium-card-upgrade" id="upgrade-card">
+          <h3>Full version — $5 one-time</h3>
+          <p>Unlimited moments, full history, advanced export. One purchase, no subscription.</p>
+          <ul class="why-upgrade-list">
+            <li>Unlimited moments — no 10-moment cap</li>
+            <li>Full history &amp; export (CSV + backup)</li>
+            <li>Support development of SlipUp</li>
+          </ul>
+          <a href="#" id="btn-buy" class="btn-buy" target="_blank" rel="noopener">Purchase for $5</a>
+          <p class="refund-note">14-day refund if it's not for you.</p>
+          <p class="legal-purchase-note">By purchasing you agree to our <a href="terms.html">Terms</a> and <a href="refund.html">Refund Policy</a>.</p>
+          <div id="paypal-button-container" class="paypal-button-wrap hidden"></div>
+          <p class="unlock-after-pay">After you complete payment, click below to unlock.</p>
+          <button type="button" id="btn-unlock-after-pay" class="btn-unlock-after-pay">I've paid — unlock full version</button>
+        </div>
+      </div>
+      <div class="premium-cards hidden" id="unlocked-badge">
+        <p class="unlocked-text">Full version active. Unlimited moments.</p>
+        <a href="#" id="btn-buy-unlocked" class="btn-buy hidden" target="_blank" rel="noopener">Purchase for $5</a>
+      </div>
+      <p class="roadmap-note">Built on SlipUp. <a href="landing.html">See original app</a></p>
+    </section>
+
+    <section class="progress-section" id="progress-section">
+      <h2>This week vs last week</h2>
+      <p class="section-hint">Is the group seeing more shifts and support over time?</p>
+      <div class="progress-cards" id="progress-cards"></div>
+      <p class="progress-empty" id="progress-empty">Log moments in this week and last to compare.</p>
+    </section>
+
+    <section class="trends-section" id="trends-section">
+      <h2>Your trends</h2>
+      <p class="section-hint">Heat ↓ · Shift / Support ↔ or ↑</p>
+      <div class="trends-chart" id="trends-chart"></div>
+      <p class="trends-empty" id="trends-empty">Log moments over a few days to see your curves.</p>
+      <p class="trends-highlight" id="trends-highlight"></p>
+    </section>
+
+    <section class="chart-section" id="stats-table-section">
+      <h2 class="chart-section-title">Your last 2 weeks</h2>
+      <p class="chart-section-intro">See how heat, shift, and support stack up day by day.</p>
+      <div class="line-chart-wrap" id="line-chart-wrap">
+        <div class="line-chart-legend" id="line-chart-legend"></div>
+        <svg class="line-chart-svg" id="line-chart-svg" viewBox="0 0 400 180" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+      </div>
+      <p class="line-chart-empty" id="line-chart-empty">Add a few moments over the next days to see your chart here.</p>
+    </section>
+
+    <section class="history">
+      <h2>Recent moments</h2>
+      <p class="section-hint">Saved on this device. Use in group or 1‑on‑1 sessions.</p>
+      <div class="history-controls">
+        <div class="history-filters" id="history-filters">
+          <button type="button" class="history-filter active" data-type="all">All</button>
+          <button type="button" class="history-filter" data-type="avoidable">Heat</button>
+          <button type="button" class="history-filter" data-type="fertile">Shift</button>
+          <button type="button" class="history-filter" data-type="observed">Support</button>
+        </div>
+        <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
+        <button type="button" id="btn-export-json" class="btn-export">Export backup (JSON)</button>
+      </div>
+      <ul class="entry-list" id="entry-list"></ul>
+      <p class="empty-state" id="empty-state">No moments logged yet. Add one above.</p>
+    </section>
+
+    <p class="phase-label" id="phase-2-label">2 – Social</p>
+    <section class="community-entries-section" id="community-entries-section">
+      <h2>Everyone's recent moments</h2>
+      <p class="section-hint">Anonymous moments from all users. Add a moment above to contribute.</p>
+      <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
+      <p class="community-comparison" id="community-comparison"></p>
+      <p class="community-trend" id="community-entries-trend"></p>
+      <ul class="entry-list" id="shared-entries-list"></ul>
+      <p class="empty-state" id="shared-entries-empty">No shared moments yet. Add one to share yours.</p>
+      <p class="community-error hidden" id="shared-entries-error"></p>
+    </section>
+
+    <section class="reflection-section">
+      <h2>Today’s reflection</h2>
+      <p class="reflection-hint">
+        This is a space to notice what raised the heat and what cooled it down, and where support or shifts showed up.
+      </p>
+      <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
+      <div class="auto-reflection" id="auto-reflection"></div>
+      <div class="reflection-grid">
+        <div class="reflection-card">
+          <h3>Heat</h3>
+          <p class="reflection-subtitle">What set things off today? What would you like to handle differently next time?</p>
+          <textarea id="reflection-avoidable" rows="3" placeholder="e.g. Argument over TV, comment that stuck with me..."></textarea>
+          <p class="char-counter" id="reflection-avoidable-counter"></p>
+        </div>
+        <div class="reflection-card">
+          <h3>Shift & Support</h3>
+          <p class="reflection-subtitle">Where did you choose differently or get/give support?</p>
+          <textarea id="reflection-fertile" rows="3" placeholder="e.g. Took a walk instead of snapping back, checked in on someone..."></textarea>
+          <p class="char-counter" id="reflection-fertile-counter"></p>
+        </div>
+      </div>
+      <p class="reflection-note" id="reflection-note"></p>
+      <div class="yesterday-reflection" id="yesterday-reflection"></div>
+    </section>
+
+    <section class="share-section" id="share-section">
+      <h2>Share anonymously (optional)</h2>
+      <p class="share-hint">If enabled, you can share your current period stats so others can see patterns (no names, no accounts).</p>
+      <button type="button" id="btn-share" class="btn-share">Share my period</button>
+      <button type="button" id="btn-share-image" class="btn-share btn-share-image">Share as image</button>
+      <p class="share-status" id="share-status"></p>
+    </section>
+
+    <section class="settings-section" id="settings-section">
+      <h2>Settings</h2>
+      <label class="setting-row">
+        <input type="checkbox" id="reminder-checkbox">
+        <span>Notify me for evening check-in (8pm)</span>
+      </label>
+    </section>
+
+    <section class="community-section" id="community-section">
+      <h2>Others’ results</h2>
+      <p class="community-hint">Recent anonymous shares (heat, shifts, support).</p>
+      <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
+      <p class="community-metrics" id="community-metrics"></p>
+      <ul class="shared-list" id="shared-list"></ul>
+      <p class="empty-state" id="shared-empty">No shared results yet.</p>
+      <p class="community-error hidden" id="community-error"></p>
+    </section>
+
+    <footer class="page-footer">
+      <a href="privacy.html">Privacy</a>
+      <span class="footer-sep">·</span>
+      <a href="terms.html">Terms</a>
+      <span class="footer-sep">·</span>
+      <a href="refund.html">Refund policy</a>
+      <span class="footer-sep">·</span>
+      <a href="inside.html">SlipUp Inside (groups)</a>
+    </footer>
+  </div>
+
+  <script>
+    window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
+    window.SLIPUP_MODE = 'inside';
+  </script>
+  <script src="config.js"></script>
+  <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
+  <script src="app.js?v=4"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+    }
+  </script>
+</body>
+</html>
+
