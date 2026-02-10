@@ -1,15 +1,9 @@
-# Deploy to GitHub Pages
-# - Uses secrets: SUPABASE_URL, SUPABASE_ANON_KEY, PAYMENT_URL (only in deploy job).
-# - Deploy runs ONLY on push to main or workflow_dispatch (never on pull_request),
-#   so fork PRs never get access to secrets and never get stuck waiting for approval.
-
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main, master]
   workflow_dispatch:
-  # Optional: run a safe job on PRs (no secrets). Deploy is still only push/main or manual.
   pull_request:
     branches: [main, master]
 
@@ -23,7 +17,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 1) Safe job for pull requests (main repo or fork). No secrets. No approval needed.
   pr-check:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -33,11 +26,8 @@ jobs:
       - name: Check workflow files
         run: |
           echo "PR from fork=${{ github.event.pull_request.head.repo.fork }}"
-          echo "Running safe PR check (no secrets used)."
           test -f index.html && echo "index.html present" || exit 1
-          test -f config.example.js && echo "config.example.js present" || true
 
-  # 2) Deploy job: only for push to main or manual run. Never for pull_request (avoids fork + secrets).
   deploy:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
