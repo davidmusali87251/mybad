@@ -26,6 +26,8 @@ const UNLOCKED_KEY = 'mistake-tracker-unlocked';
 const PAYMENT_LINK_CLICKED_KEY = 'mistake-tracker-payment-link-clicked';
 // Theme used when the entry was logged (calm / focus / warm)
 const THEME_KEY = 'mistake-tracker-theme';
+// Optional extra analytics table (daily_summaries); separate from STATS_TABLE
+const DAILY_SUMMARIES_TABLE = (CONFIG.SUPABASE_DAILY_SUMMARIES_TABLE || '').trim() || 'daily_summaries';
 const PAYMENT_URL = (CONFIG.PAYMENT_URL || '').trim();
 const PAYPAL_CLIENT_ID = (CONFIG.PAYPAL_CLIENT_ID || '').trim();
 const PAYPAL_HOSTED_BUTTON_ID = (CONFIG.PAYPAL_HOSTED_BUTTON_ID || '').trim();
@@ -230,6 +232,15 @@ function loadEntries() {
       : [];
   } catch {
     entries = [];
+  }
+}
+
+function getCurrentTheme() {
+  try {
+    const t = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || 'calm';
+    return t === 'focus' || t === 'warm' ? t : 'calm';
+  } catch {
+    return 'calm';
   }
 }
 
@@ -911,6 +922,10 @@ async function shareAnonymously() {
   if (btnShare) btnShare.disabled = true;
   try {
     const stats = getCurrentStatsForShare();
+    const filtered = filterByPeriod(currentPeriod);
+    const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+    const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
+    const observedCount = filtered.filter(e => e.type === 'observed').length;
     const client = getSupabase();
     const { error } = await client.from(STATS_TABLE).insert({
       period: stats.period,
@@ -921,6 +936,28 @@ async function shareAnonymously() {
     if (error) {
       console.error('SlipUp: share stats failed', { table: STATS_TABLE, error });
       throw error;
+    }
+    // Also log a daily summary row if configured
+    if (DAILY_SUMMARIES_TABLE) {
+      try {
+        const today = new Date();
+        const day = today.toISOString().slice(0, 10); // YYYY-MM-DD
+        const primaryTotal = avoidableCount + fertileCount;
+        const exploration_pct = primaryTotal > 0 ? Math.round((fertileCount / primaryTotal) * 100) : null;
+        await client.from(DAILY_SUMMARIES_TABLE).insert({
+          anonymous_id: getOrCreateAnonId(),
+          mode: MODE,
+          day,
+          avoidable_count: avoidableCount,
+          fertile_count: fertileCount,
+          observed_count: observedCount,
+          exploration_pct,
+          first_at: null,
+          last_at: null
+        });
+      } catch (err) {
+        console.warn('SlipUp: daily_summaries insert failed', { table: DAILY_SUMMARIES_TABLE, err });
+      }
     }
     lastShareAt = Date.now();
     if (shareStatus) {
