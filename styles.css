@@ -519,6 +519,40 @@ body.theme-tired .add-card {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+/* Mood (mode) on mistake screen */
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+.mode-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.btn-mode {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-tint);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.btn-mode:hover {
+  background: var(--accent-glow);
+  color: var(--text);
+}
+.btn-mode:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .type-row {
   display: flex;
   flex-direction: column;
