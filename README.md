@@ -81,6 +81,7 @@ create table shared_what_happened (
   note text,
   type text not null default 'avoidable',
   mode text not null default 'personal',
+  theme text not null default 'calm',
   hour_utc smallint,
   created_at timestamptz default now()
 );
@@ -138,6 +139,7 @@ create table if not exists shared_what_happened (
   note text,
   type text not null default 'avoidable',
   mode text not null default 'personal',
+  theme text not null default 'calm',
   hour_utc smallint,
   created_at timestamptz default now()
 );
@@ -155,6 +157,12 @@ Add the column in **SQL Editor** (Dashboard → SQL Editor → New query). Run o
 
 ```sql
 alter table shared_stats add column if not exists anonymous_id text;
+```
+
+If you created `shared_what_happened` earlier without the `theme` column, add it once:
+
+```sql
+alter table shared_what_happened add column if not exists theme text not null default 'calm';
 ```
 
 Then reload the app. After this, "Others' results" will group shares by anonymous user.
@@ -177,6 +185,26 @@ If the app shows "Shared anonymously" or no errors but rows don't appear in the 
 2. **Check table names.** Personal app writes to `shared_stats` and `shared_what_happened`. SlipUp Inside writes to `shared_stats_inside` and the same `shared_what_happened` (with `mode = 'inside'`). Create any missing tables (see SQL above).
 3. **Check RLS.** In Supabase: **Table Editor** → select the table → **Policies**. You need policies that allow **INSERT** and **SELECT** for anonymous users (e.g. "Allow anonymous insert" and "Allow anonymous select" with `true`).
 4. **Use the browser console.** When you click "Share my result" or add a mistake, errors are logged with `SlipUp: share stats failed` or `SlipUp: shared_what_happened insert failed`. Open DevTools (F12) → **Console** to see the exact Supabase error (e.g. missing table, RLS violation, wrong key).
+
+### Using your own table names (e.g. daily_summaries, shared_entries)
+
+If your Supabase project already has tables like `daily_summaries` and `shared_entries`, set them in config:
+
+```js
+window.MISTAKE_TRACKER_CONFIG = {
+  SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJ...',
+  SUPABASE_STATS_TABLE: 'daily_summaries',   // for "Share my result" / Others' results
+  SUPABASE_ENTRIES_TABLE: 'shared_entries'    // for "Everyone's recent entries"
+};
+```
+
+**Required columns** (names must match exactly):
+
+- **Stats table** (e.g. `daily_summaries`): `id` (uuid, optional default), `period` (text), `count` (int), `avg_per_day` (float), `created_at` (timestamptz, optional default `now()`), `anonymous_id` (text).
+- **Entries table** (e.g. `shared_entries`): `id` (uuid, optional default), `note` (text), `type` (text), `mode` (text), `hour_utc` (smallint), `created_at` (timestamptz, optional default `now()`).
+
+Enable RLS and add policies that allow anonymous **insert** and **select** on both tables (same as in the SQL above for `shared_stats` / `shared_what_happened`).
 
 ### "Failed: Unregistered API key"
 

@@ -35,6 +35,8 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_STATS_TABLE: ${{ secrets.SUPABASE_STATS_TABLE }}
+      SUPABASE_ENTRIES_TABLE: ${{ secrets.SUPABASE_ENTRIES_TABLE }}
       PAYMENT_URL: ${{ secrets.PAYMENT_URL }}
       PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
       PAYPAL_HOSTED_BUTTON_ID: ${{ secrets.PAYPAL_HOSTED_BUTTON_ID }}
@@ -49,6 +51,8 @@ jobs:
           const config = {
             SUPABASE_URL: process.env.SUPABASE_URL || '',
             SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+            SUPABASE_STATS_TABLE: process.env.SUPABASE_STATS_TABLE || '',
+            SUPABASE_ENTRIES_TABLE: process.env.SUPABASE_ENTRIES_TABLE || '',
             PAYMENT_URL: process.env.PAYMENT_URL || '',
             PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID || '',
             PAYPAL_HOSTED_BUTTON_ID: process.env.PAYPAL_HOSTED_BUTTON_ID || ''

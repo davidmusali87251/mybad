@@ -4,9 +4,11 @@ const MODE = (typeof window !== 'undefined' && window.SLIPUP_MODE) || 'personal'
 const STORAGE_KEY = MODE === 'inside' ? 'mistake-tracker-entries-inside' : 'mistake-tracker-entries';
 const ANON_ID_KEY = MODE === 'inside' ? 'mistake-tracker-anon-id-inside' : 'mistake-tracker-anon-id';
 
-// Supabase: stats table per mode; one table for all "what happened" entries
-const STATS_TABLE = MODE === 'inside' ? 'shared_stats_inside' : 'shared_stats';
-const ENTRIES_TABLE = 'shared_what_happened';
+const CONFIG = (typeof window !== 'undefined' && window.MISTAKE_TRACKER_CONFIG) || {};
+// Supabase: table names (override in config with SUPABASE_STATS_TABLE / SUPABASE_ENTRIES_TABLE to use e.g. daily_summaries, shared_entries)
+const STATS_TABLE = (CONFIG.SUPABASE_STATS_TABLE || '').trim() ||
+  (MODE === 'inside' ? 'shared_stats_inside' : 'shared_stats');
+const ENTRIES_TABLE = (CONFIG.SUPABASE_ENTRIES_TABLE || '').trim() || 'shared_what_happened';
 const EVENTS_TABLE = 'slipup_events';
 
 let entries = [];
@@ -15,7 +17,6 @@ let currentTypeFilter = 'all';
 let lastEntry = null;
 let lastShareAt = 0;
 
-const CONFIG = (typeof window !== 'undefined' && window.MISTAKE_TRACKER_CONFIG) || {};
 // Normalize Supabase URL: trim and remove trailing slash (avoids "Invalid API key" from wrong URL format)
 const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim().replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = (CONFIG.SUPABASE_ANON_KEY || '').trim();
@@ -23,6 +24,8 @@ const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 const FREE_ENTRY_LIMIT = 10;
 const UNLOCKED_KEY = 'mistake-tracker-unlocked';
 const PAYMENT_LINK_CLICKED_KEY = 'mistake-tracker-payment-link-clicked';
+// Theme used when the entry was logged (calm / focus / warm)
+const THEME_KEY = 'mistake-tracker-theme';
 const PAYMENT_URL = (CONFIG.PAYMENT_URL || '').trim();
 const PAYPAL_CLIENT_ID = (CONFIG.PAYPAL_CLIENT_ID || '').trim();
 const PAYPAL_HOSTED_BUTTON_ID = (CONFIG.PAYPAL_HOSTED_BUTTON_ID || '').trim();
@@ -205,11 +208,26 @@ function normalizeScope(entry) {
   return s === 'observed' || s === 'team' ? s : 'personal';
 }
 
+function getCurrentTheme() {
+  try {
+    const t = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || 'calm';
+    return t === 'focus' || t === 'warm' ? t : 'calm';
+  } catch {
+    return 'calm';
+  }
+}
+
 function loadEntries() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    entries = Array.isArray(parsed) ? parsed.map(e => ({ ...e, scope: normalizeScope(e) })) : [];
+    entries = Array.isArray(parsed)
+      ? parsed.map(e => ({
+          ...e,
+          scope: normalizeScope(e),
+          theme: e.theme || 'calm'
+        }))
+      : [];
   } catch {
     entries = [];
   }
@@ -363,6 +381,19 @@ function renderStats() {
   const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
   const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
   const observedCount = filtered.filter(e => e.type === 'observed').length;
+  const byTheme = { calm: 0, focus: 0, warm: 0 };
+  filtered.forEach(e => {
+    const t = e.theme || 'calm';
+    if (byTheme[t] != null) byTheme[t] += 1;
+  });
+  let topTheme = null;
+  let topThemeCount = 0;
+  Object.keys(byTheme).forEach(key => {
+    if (byTheme[key] > topThemeCount) {
+      topTheme = key;
+      topThemeCount = byTheme[key];
+    }
+  });
 
   if (statCount) statCount.textContent = count;
   if (statLabel) statLabel.textContent = getPeriodLabel(currentPeriod);
@@ -383,9 +414,14 @@ function renderStats() {
     if (count === 0) {
       statsNote.textContent = "No mistakes logged this period. That's okay—just check that you're still exploring and learning.";
     } else {
-      statsNote.textContent =
+      let text =
         avoidableCount + " avoidable (aim to reduce) · " +
         fertileCount + " fertile (valuable experiments)";
+      if (topTheme && topThemeCount > 0) {
+        const label = topTheme === 'focus' ? 'focus' : topTheme === 'warm' ? 'warm' : 'calm';
+        text += " · Most entries in “" + label + "” theme.";
+      }
+      statsNote.textContent = text;
     }
   }
 
@@ -474,11 +510,16 @@ function renderList() {
     const note = document.createElement('span');
     note.className = 'note' + (entry.note ? '' : ' empty');
     note.textContent = entry.note || '(no note)';
+    const theme = document.createElement('span');
+    theme.className = 'theme';
+    const t = entry.theme || 'calm';
+    theme.textContent = t === 'focus' ? 'FOCUS' : t === 'warm' ? 'WARM' : 'CALM';
     const time = document.createElement('span');
     time.className = 'time';
     time.textContent = formatTime(entry.at);
     li.appendChild(badge);
     li.appendChild(note);
+    li.appendChild(theme);
     li.appendChild(time);
     entryList.appendChild(li);
   });
@@ -745,7 +786,7 @@ function addMistake() {
   if (!note) return;
   const type = getSelectedType();
   const scope = type === 'observed' ? 'observed' : 'personal';
-  const entry = { at: Date.now(), note, type, scope };
+  const entry = { at: Date.now(), note, type, scope, theme: getCurrentTheme() };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
@@ -766,6 +807,7 @@ function pushEntryToShared(entry) {
       note: entry.note || null,
       type: entry.type || 'avoidable',
       mode: MODE,
+      theme: entry.theme || getCurrentTheme(),
       hour_utc: now.getUTCHours()
     };
     getSupabase()
@@ -1080,7 +1122,7 @@ async function fetchSharedEntries() {
     const client = getSupabase();
     const { data, error } = await client
       .from(ENTRIES_TABLE)
-      .select('id, note, type, created_at')
+      .select('id, note, type, theme, created_at')
       .eq('mode', MODE)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -1142,11 +1184,16 @@ async function fetchSharedEntries() {
       const note = document.createElement('span');
       note.className = 'note' + (row.note ? '' : ' empty');
       note.textContent = row.note || '(no note)';
+      const theme = document.createElement('span');
+      theme.className = 'theme';
+      const t = row.theme || 'calm';
+      theme.textContent = t === 'focus' ? 'FOCUS' : t === 'warm' ? 'WARM' : 'CALM';
       const time = document.createElement('span');
       time.className = 'time';
       time.textContent = formatTimeFromISO(row.created_at);
       li.appendChild(badge);
       li.appendChild(note);
+      li.appendChild(theme);
       li.appendChild(time);
       sharedEntriesList.appendChild(li);
     });

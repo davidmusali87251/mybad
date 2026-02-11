@@ -12,6 +12,9 @@
 window.MISTAKE_TRACKER_CONFIG = {
   SUPABASE_URL: '',
   SUPABASE_ANON_KEY: '',
+  // Optional: use your own table names (defaults: shared_stats, shared_what_happened)
+  SUPABASE_STATS_TABLE: '',      // e.g. 'daily_summaries' for "Share my result" / Others' results
+  SUPABASE_ENTRIES_TABLE: '',    // e.g. 'shared_entries' for "Everyone's recent entries"
   // Optional: URL for "Unlock full version" (e.g. Stripe, Gumroad). Leave empty to hide buy link.
   PAYMENT_URL: '',
   // Optional: PayPal hosted button.
