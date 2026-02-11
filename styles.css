@@ -6,7 +6,7 @@
   --border: #28333d;
   --text: #eef3f7;
   --text-muted: #8f9ba7;
-  /* Calm accent: royal violet (same hue, different warmth by mode) */
+  /* Calm accent: royal violet (base; modes adjust this slightly) */
   --accent: #7260ff;
   --accent-dim: #5f4de0;
   /* Gentle danger: softer red for avoidable mistakes */
@@ -24,6 +24,39 @@
   --accent-glow: rgba(114, 96, 255, 0.08);
   --accent-glow-strong: rgba(114, 96, 255, 0.28);
   --accent-tint: rgba(114, 96, 255, 0.12);
+}
+
+/* Per-mode accent tweaks (all royal-violet, but different warmth/energy) */
+body.theme-focus {
+  --accent: #8a7bff;
+  --accent-dim: #705fe3;
+  --accent-glow: rgba(138, 123, 255, 0.10);
+  --accent-glow-strong: rgba(138, 123, 255, 0.30);
+  --accent-tint: rgba(138, 123, 255, 0.16);
+}
+
+body.theme-stressed {
+  --accent: #5e49d2;
+  --accent-dim: #4b3ab0;
+  --accent-glow: rgba(94, 73, 210, 0.12);
+  --accent-glow-strong: rgba(94, 73, 210, 0.32);
+  --accent-tint: rgba(94, 73, 210, 0.18);
+}
+
+body.theme-curious {
+  --accent: #a997ff;
+  --accent-dim: #8b7bdb;
+  --accent-glow: rgba(169, 151, 255, 0.09);
+  --accent-glow-strong: rgba(169, 151, 255, 0.28);
+  --accent-tint: rgba(169, 151, 255, 0.15);
+}
+
+body.theme-tired {
+  --accent: #4a3aa8;
+  --accent-dim: #3a2f86;
+  --accent-glow: rgba(74, 58, 168, 0.11);
+  --accent-glow-strong: rgba(74, 58, 168, 0.30);
+  --accent-tint: rgba(74, 58, 168, 0.17);
 }
 
 * {
