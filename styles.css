@@ -6,9 +6,9 @@
   --border: #28333d;
   --text: #eef3f7;
   --text-muted: #8f9ba7;
-  /* Calm accent: teal/green = growth, reflection */
-  --accent: #3fb6a8;
-  --accent-dim: #349a8e;
+  /* Calm accent: royal violet (same hue, different warmth by mode) */
+  --accent: #7260ff;
+  --accent-dim: #5f4de0;
   /* Gentle danger: softer red for avoidable mistakes */
   --danger: #e06b6b;
   --danger-dim: #a94a4a;
@@ -20,10 +20,10 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.2);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-  /* Theme-aware glows (calm teal) */
-  --accent-glow: rgba(63, 182, 168, 0.04);
-  --accent-glow-strong: rgba(63, 182, 168, 0.25);
-  --accent-tint: rgba(63, 182, 168, 0.08);
+  /* Theme-aware glows (violet) */
+  --accent-glow: rgba(114, 96, 255, 0.08);
+  --accent-glow-strong: rgba(114, 96, 255, 0.28);
+  --accent-tint: rgba(114, 96, 255, 0.12);
 }
 
 * {
@@ -52,7 +52,8 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(63, 182, 168, 0.06), transparent 50%);
+  /* Base calm tone: soft violet */
+  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(114, 96, 255, 0.06), transparent 50%);
 }
 /* Visual tone modes (all in a royal-violet family) */
 body.theme-focus::before { background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(120, 110, 255, 0.08), transparent 50%); }
@@ -137,29 +138,11 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
   box-shadow: var(--focus-ring);
 }
 
-/* Theme: focus (blue accent) */
-body.theme-focus {
-  --accent: #5b8def;
-  --accent-dim: #4a7ad8;
-  --accent-glow: rgba(91, 141, 239, 0.04);
-  --accent-glow-strong: rgba(91, 141, 239, 0.25);
-  --accent-tint: rgba(91, 141, 239, 0.08);
-}
-
-body.theme-focus .top-bar-theme {
-  color: var(--accent);
-}
-
-/* Theme: warm (amber accent) */
-body.theme-warm {
-  --accent: #d4a024;
-  --accent-dim: #b88a1e;
-  --accent-glow: rgba(212, 160, 36, 0.04);
-  --accent-glow-strong: rgba(212, 160, 36, 0.25);
-  --accent-tint: rgba(212, 160, 36, 0.08);
-}
-
-body.theme-warm .top-bar-theme {
+/* Top-bar mode button always uses accent (violet family) */
+body.theme-focus .top-bar-theme,
+body.theme-stressed .top-bar-theme,
+body.theme-curious .top-bar-theme,
+body.theme-tired .top-bar-theme {
   color: var(--accent);
 }
 

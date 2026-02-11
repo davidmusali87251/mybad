@@ -109,17 +109,23 @@
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
-      var THEME_ORDER = ['calm', 'focus', 'warm'];
+      var THEME_ORDER = ['calm', 'focus', 'stressed', 'curious', 'tired'];
       var btn = document.getElementById('btn-theme');
       function applyTheme() {
         var theme = localStorage.getItem(THEME_KEY) || 'calm';
-        document.body.classList.remove('theme-focus', 'theme-warm');
+        document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
         if (theme === 'focus') {
           document.body.classList.add('theme-focus');
           if (btn) btn.textContent = 'Focus';
-        } else if (theme === 'warm') {
-          document.body.classList.add('theme-warm');
-          if (btn) btn.textContent = 'Warm';
+        } else if (theme === 'stressed') {
+          document.body.classList.add('theme-stressed');
+          if (btn) btn.textContent = 'Stressed';
+        } else if (theme === 'curious') {
+          document.body.classList.add('theme-curious');
+          if (btn) btn.textContent = 'Curious';
+        } else if (theme === 'tired') {
+          document.body.classList.add('theme-tired');
+          if (btn) btn.textContent = 'Tired';
         } else {
           if (btn) btn.textContent = 'Calm';
         }
