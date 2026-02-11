@@ -406,7 +406,14 @@ function renderStats() {
     }
   });
 
-  if (statCount) statCount.textContent = count;
+  if (statCount) {
+    const prev = statCount.textContent;
+    statCount.textContent = count;
+    if (prev !== String(count)) {
+      statCount.classList.add('updated');
+      setTimeout(function () { statCount.classList.remove('updated'); }, 450);
+    }
+  }
   if (statLabel) statLabel.textContent = getPeriodLabel(currentPeriod);
   if (statAvg) statAvg.textContent = avg;
 

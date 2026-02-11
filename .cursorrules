@@ -1,0 +1,35 @@
+# SlipUp — file context for Cursor / AI agent
+
+## Project
+- **SlipUp** — mistake/moment tracker (personal + SlipUp Inside). © 2026 SlipUp.
+- Repo: mistake-tracker (GitHub: davidmusali87251/mybad). Live: www.slipup.io.
+
+## Key files
+- **app.js** — Core logic: entries (add, filter, localStorage), stats, sharing (Supabase), theme/mode, reflection, streaks, daily_summaries insert on share.
+- **index.html** — Personal mistake tracker UI (add card, type pills, mood row, stats, recent entries, share, others' results).
+- **inside.html** — SlipUp Inside (group check-ins): same add/stats/entries pattern; mode `inside`; shares to same Supabase with mode filter.
+- **landing.html** — Marketing/landing (Why SlipUp, Roadmap, footer links).
+- **styles.css** — Global theme (violet accent, modes: calm/focus/stressed/curious/tired), layout, components (btn-add, type-pill, btn-mode, entry-item left border by type, stat cards, empty-state icon), body gradients (::before, ::after).
+- **config.example.js** — Template only. Real config: local `config.js` (gitignored) or **GitHub Secrets** at deploy. Never commit `config.js`.
+- **.github/workflows/main.yml** — Single deploy workflow (build config from Secrets, deploy to GitHub Pages). No other deploy workflow.
+
+## Config (for agent)
+- **Local:** Copy `config.example.js` → `config.js`; set `SUPABASE_URL`, `SUPABASE_ANON_KEY`. Optional: `SUPABASE_STATS_TABLE`, `SUPABASE_ENTRIES_TABLE`, `PAYMENT_URL`, `PAYPAL_*`.
+- **Deploy:** Config is built from repo **Secrets** (SUPABASE_URL, SUPABASE_ANON_KEY, etc.). No `config.js` in repo.
+- **Tables:** Defaults: `shared_stats`, `shared_what_happened`. Optional override via config; app also writes to `daily_summaries` when sharing (if using that table). Inside uses `shared_stats_inside` and `shared_what_happened` with `mode = 'inside'`.
+
+## Data & conventions
+- **Entry:** timestamp, type (avoidable|fertile|observed), note, theme (calm|focus|stressed|curious|tired), optional visibility. Stored in localStorage; optionally pushed to Supabase on share.
+- **Theme/mode:** Stored in localStorage (THEME_KEY); applied as body class (e.g. `theme-focus`). Same THEME_ORDER and mode button on index, inside, privacy, terms, refund.
+- **Legal pages:** privacy.html, terms.html, refund.html — each has inline theme script and footer.
+
+## Where to change things
+- **UI/copy:** index.html, inside.html, landing.html.
+- **Behavior/data:** app.js (entries, stats, share, theme).
+- **Styling/theming:** styles.css (variables in :root and body.theme-*).
+- **Deploy:** .github/workflows/main.yml; config from Secrets only.
+
+## Don’t
+- Commit `config.js` or real API keys.
+- Rely on a second deploy workflow (only main.yml).
+- Add leaderboards, rankings, or competitive comparisons (see ARCHITECTURE.md).
