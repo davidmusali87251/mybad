@@ -1,4 +1,4 @@
-const CACHE_NAME = 'slip-track-v3';
+const CACHE_NAME = 'slip-track-v4';
 
 const STATIC_ASSETS = [
   './',
@@ -28,6 +28,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    ).then(() =>
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.keys().then((reqs) =>
+          Promise.all(reqs.filter((r) => /config\.js(\?|$)/i.test(new URL(r.url).pathname)).map((r) => cache.delete(r)))
+        ).then(() => {})
+      ).catch(() => {})
     ).then(() => self.clients.claim())
   );
 });
@@ -43,6 +49,11 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  // Never cache config.js — PWA must always load fresh Supabase config
+  if (/config\.js(\?|$)/i.test(url.pathname)) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   if (!isAppAsset(url.pathname)) return;
 
   event.respondWith(

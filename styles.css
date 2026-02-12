@@ -2085,6 +2085,82 @@ body.theme-tired .add-card {
   display: none;
 }
 
+.global-count-chart-wrap {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.global-count-chart-wrap.hidden {
+  display: none;
+}
+
+.global-count-chart-bar {
+  display: flex;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.global-count-segment {
+  min-width: 4px;
+  transition: flex 0.2s;
+}
+
+.global-count-segment.global-count-avoidable {
+  background: var(--danger-dim);
+}
+
+.global-count-segment.global-count-fertile {
+  background: var(--accent-dim);
+}
+
+.global-count-segment.global-count-observed {
+  background: #5a8ed6;
+  opacity: 0.85;
+}
+
+.global-count-chart-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.global-count-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.global-count-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.global-count-dot.global-count-avoidable {
+  background: var(--danger-dim);
+}
+
+.global-count-dot.global-count-fertile {
+  background: var(--accent-dim);
+}
+
+.global-count-dot.global-count-observed {
+  background: #5a8ed6;
+  opacity: 0.85;
+}
+
+.global-count-label strong {
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+
 .community-metrics {
   font-size: 0.8rem;
   color: var(--text-muted);

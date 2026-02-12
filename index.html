@@ -20,6 +20,7 @@
   <header class="top-bar">
     <a href="index.html" class="top-bar-brand">SlipUp</a>
     <div class="top-bar-actions">
+      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?">Calm</button>
       <a href="index.html" class="top-bar-home">Home</a>
     </div>
   </header>
@@ -207,7 +208,8 @@
     <p class="phase-label" id="phase-2-label">2 – Social</p>
     <section class="community-entries-section" id="community-entries-section">
       <h2>Everyone's recent entries</h2>
-      <p class="section-hint">Anonymous entries from all users. Add a mistake above to contribute.</p>
+      <p class="section-hint">Avoidable ↓ · Fertile ↔ or ↑. Anonymous entries from all users. Add a mistake above to contribute.</p>
+      <div class="global-count-chart-wrap" id="global-count-chart" aria-label="Global count of shared entries by type" aria-hidden="true"></div>
       <div class="community-entries-actions">
         <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
         <button type="button" id="btn-shared-entries-toggle" class="btn-refresh btn-refresh-secondary">Show more (last 50)</button>
@@ -327,33 +329,29 @@
       var THEME_KEY = 'mistake-tracker-theme';
       var THEME_ORDER = ['calm', 'focus', 'stressed', 'curious', 'tired'];
       var btn = document.getElementById('btn-theme');
+      var btnTop = document.getElementById('btn-theme-top');
+      function setBtnText(el, label) { if (el) el.textContent = label; }
       function applyTheme() {
         var theme = localStorage.getItem(THEME_KEY) || 'calm';
         document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
-        if (theme === 'focus') {
-          document.body.classList.add('theme-focus');
-          if (btn) btn.textContent = 'Focus';
-        } else if (theme === 'stressed') {
-          document.body.classList.add('theme-stressed');
-          if (btn) btn.textContent = 'Stressed';
-        } else if (theme === 'curious') {
-          document.body.classList.add('theme-curious');
-          if (btn) btn.textContent = 'Curious';
-        } else if (theme === 'tired') {
-          document.body.classList.add('theme-tired');
-          if (btn) btn.textContent = 'Tired';
-        } else {
-          if (btn) btn.textContent = 'Calm';
-        }
+        var label = 'Calm';
+        if (theme === 'focus') { document.body.classList.add('theme-focus'); label = 'Focus'; }
+        else if (theme === 'stressed') { document.body.classList.add('theme-stressed'); label = 'Stressed'; }
+        else if (theme === 'curious') { document.body.classList.add('theme-curious'); label = 'Curious'; }
+        else if (theme === 'tired') { document.body.classList.add('theme-tired'); label = 'Tired'; }
+        setBtnText(btn, label);
+        setBtnText(btnTop, label);
       }
-      applyTheme();
-      if (btn) btn.addEventListener('click', function() {
+      function cycleTheme() {
         var current = localStorage.getItem(THEME_KEY) || 'calm';
         var idx = THEME_ORDER.indexOf(current);
         var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
         localStorage.setItem(THEME_KEY, next);
         applyTheme();
-      });
+      }
+      applyTheme();
+      if (btn) btn.addEventListener('click', cycleTheme);
+      if (btnTop) btnTop.addEventListener('click', cycleTheme);
     })();
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});

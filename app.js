@@ -95,6 +95,7 @@ const btnSharedEntriesToggle = document.getElementById('btn-shared-entries-toggl
 const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const communityEntriesTrend = document.getElementById('community-entries-trend');
 const communityEntriesRange = document.getElementById('community-entries-range');
+const globalCountChart = document.getElementById('global-count-chart');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
@@ -702,6 +703,7 @@ function renderList() {
     const note = document.createElement('span');
     note.className = 'note' + (entry.note ? '' : ' empty');
     note.textContent = entry.note || "I couldn't tell";
+    if (entry.note) note.title = entry.note;
     const theme = document.createElement('span');
     theme.className = 'theme';
     const t = entry.theme || 'calm';
@@ -1829,12 +1831,14 @@ async function fetchSharedEntries() {
       }
     }
 
+    renderGlobalCountChart(avoidable, fertile, observed);
     renderSharedEntriesList();
   } catch (err) {
     const raw = err && (err.message || err.error_description || err.msg) || '';
     const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
     if (communityComparison) communityComparison.textContent = '';
     if (communityEntriesTrend) communityEntriesTrend.textContent = '';
+    renderGlobalCountChart(0, 0, 0);
     if (sharedEntriesError) {
       sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
       sharedEntriesError.classList.remove('hidden');
@@ -1845,6 +1849,36 @@ async function fetchSharedEntries() {
       sharedEntriesEmpty.classList.remove('hidden');
     }
   }
+}
+
+function renderGlobalCountChart(avoidable, fertile, observed) {
+  if (!globalCountChart) return;
+  const total = avoidable + fertile + observed;
+  if (total === 0) {
+    globalCountChart.innerHTML = '';
+    globalCountChart.classList.add('hidden');
+    globalCountChart.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  globalCountChart.classList.remove('hidden');
+  globalCountChart.setAttribute('aria-hidden', 'false');
+  const aLab = MODE === 'inside' ? 'Heat' : 'Avoidable';
+  const fLab = MODE === 'inside' ? 'Shift' : 'Fertile';
+  const oLab = MODE === 'inside' ? 'Support' : 'Observed';
+  const aFlex = Math.max(avoidable, 1);
+  const fFlex = Math.max(fertile, 1);
+  const oFlex = Math.max(observed, 1);
+  globalCountChart.innerHTML =
+    '<div class="global-count-chart-bar" role="img">' +
+      '<span class="global-count-segment global-count-avoidable" style="flex:' + aFlex + '" title="' + aLab + ': ' + avoidable + '"></span>' +
+      '<span class="global-count-segment global-count-fertile" style="flex:' + fFlex + '" title="' + fLab + ': ' + fertile + '"></span>' +
+      '<span class="global-count-segment global-count-observed" style="flex:' + oFlex + '" title="' + oLab + ': ' + observed + '"></span>' +
+    '</div>' +
+    '<div class="global-count-chart-labels">' +
+      '<span class="global-count-label"><span class="global-count-dot global-count-avoidable"></span>' + aLab + ' <strong>' + avoidable + '</strong></span>' +
+      '<span class="global-count-label"><span class="global-count-dot global-count-fertile"></span>' + fLab + ' <strong>' + fertile + '</strong></span>' +
+      '<span class="global-count-label"><span class="global-count-dot global-count-observed"></span>' + oLab + ' <strong>' + observed + '</strong></span>' +
+    '</div>';
 }
 
 function renderSharedEntriesList() {
@@ -1893,6 +1927,7 @@ function renderSharedEntriesList() {
     const note = document.createElement('span');
     note.className = 'note' + (row.note ? '' : ' empty');
     note.textContent = row.note || "I couldn't tell";
+    if (row.note) note.title = row.note;
     const theme = document.createElement('span');
     theme.className = 'theme';
     const tRaw = row.theme || 'calm';
