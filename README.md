@@ -63,7 +63,7 @@ When the app is served over **HTTPS** (e.g. on GitHub Pages), you can install it
 - **Mobile (Android):** Open in Chrome → menu → “Add to Home screen” or “Install app”.
 - **iOS (Safari):** Share → “Add to Home Screen”.
 
-The app includes a `manifest.json` and a service worker (`sw.js`) so it can be installed and works better offline.
+The app includes a `manifest.json` and a service worker (`sw.js`) so it can be installed and works better offline. **Note:** The PWA opens the personal tracker (`index.html`) by default. For SlipUp Inside, use `inside.html` via a direct link or bookmark.
 
 ---
 

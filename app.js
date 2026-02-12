@@ -35,10 +35,6 @@ const PAYPAL_ENABLED = PAYPAL_CLIENT_ID && PAYPAL_HOSTED_BUTTON_ID;
 
 const addNoteInput = document.getElementById('mistake-note');
 const addBtn = document.getElementById('add-mistake');
-const quickAvoidableBtn = document.getElementById('btn-quick-avoidable');
-const quickFertileBtn = document.getElementById('btn-quick-fertile');
-const quickObservedBtn = document.getElementById('btn-quick-observed');
-const repeatLastBtn = document.getElementById('btn-repeat-last');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const typeHint = document.getElementById('type-hint');
 const communityComparison = document.getElementById('community-comparison');
@@ -62,6 +58,7 @@ const statExplorationHint = document.getElementById('stat-exploration-hint');
 const statExplorationSoWhat = document.getElementById('stat-exploration-so-what');
 const statsBreakdown = document.getElementById('stats-breakdown');
 const streakNote = document.getElementById('streak-note');
+const headlineStat = document.getElementById('headline-stat');
 const progressSection = document.getElementById('progress-section');
 const progressCards = document.getElementById('progress-cards');
 const progressEmpty = document.getElementById('progress-empty');
@@ -72,6 +69,7 @@ const trendsHighlight = document.getElementById('trends-highlight');
 const autoReflectionEl = document.getElementById('auto-reflection');
 const entryList = document.getElementById('entry-list');
 const emptyState = document.getElementById('empty-state');
+const firstTimeNudge = document.getElementById('first-time-nudge');
 const statsNote = document.getElementById('stats-note');
 const historyFilters = document.getElementById('history-filters');
 const exportCsvBtn = document.getElementById('btn-export-csv');
@@ -100,6 +98,7 @@ const communityEntriesRange = document.getElementById('community-entries-range')
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
+const reflectionContextPrompt = document.getElementById('reflection-context-prompt');
 const reflectionAvoidableCounter = document.getElementById('reflection-avoidable-counter');
 const reflectionFertileCounter = document.getElementById('reflection-fertile-counter');
 const yesterdayReflection = document.getElementById('yesterday-reflection');
@@ -175,10 +174,6 @@ function updateUpgradeUI() {
   if (unlockedBadge) unlockedBadge.classList.toggle('hidden', !unlocked);
   if (upgradeCards) upgradeCards.classList.toggle('hidden', unlocked);
   if (limitMessage) limitMessage.classList.toggle('hidden', !isAtLimit());
-  const atLimit = isAtLimit();
-  [quickAvoidableBtn, quickFertileBtn, quickObservedBtn, repeatLastBtn].forEach(btn => {
-    if (btn) btn.disabled = atLimit;
-  });
   if (PAYPAL_ENABLED && paypalButtonContainer) {
     paypalButtonContainer.classList.remove('hidden');
     loadPayPalButton();
@@ -303,6 +298,12 @@ function saveReflections(reflections) {
   localStorage.setItem(REFLECTIONS_KEY, JSON.stringify(reflections));
 }
 
+function getReflectionPrompt() {
+  return MODE === 'inside'
+    ? "At the end of the day, write one line for each: heat to cool down, and shift or support you're glad for."
+    : "At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you're glad you took.";
+}
+
 function renderReflection() {
   if (!reflectionAvoidable || !reflectionFertile) return;
   const key = getTodayKey();
@@ -311,9 +312,10 @@ function renderReflection() {
   reflectionAvoidable.value = today.avoidable || '';
   reflectionFertile.value = today.fertile || '';
 
+  if (reflectionContextPrompt) reflectionContextPrompt.textContent = getReflectionPrompt();
   if (reflectionNote) {
     if (!today.avoidable && !today.fertile) {
-      reflectionNote.textContent = 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
+      reflectionNote.textContent = '';
     } else {
       reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
     }
@@ -333,7 +335,7 @@ function updateReflection(field, value) {
   saveReflections(all);
   if (reflectionNote) {
     if (!today.avoidable && !today.fertile) {
-      reflectionNote.textContent = 'At the end of the day, write one line for each: an avoidable pattern to reduce, and a fertile risk you’re glad you took.';
+      reflectionNote.textContent = '';
     } else {
       reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
     }
@@ -351,13 +353,15 @@ function renderYesterdayReflection() {
     yesterdayReflection.textContent = '';
     return;
   }
+  const aLab = MODE === 'inside' ? 'Heat' : 'Avoidable';
+  const fLab = MODE === 'inside' ? 'Shift & Support' : 'Fertile';
   let text = 'Yesterday — ';
   if (y.avoidable) {
-    text += 'Avoidable: ' + y.avoidable;
+    text += aLab + ': ' + y.avoidable;
   }
   if (y.fertile) {
     if (y.avoidable) text += ' · ';
-    text += 'Fertile: ' + y.fertile;
+    text += fLab + ': ' + y.fertile;
   }
   yesterdayReflection.textContent = text;
 }
@@ -496,9 +500,10 @@ function getDaysInPeriod(period) {
 }
 
 function getPeriodLabel(period) {
-  if (period === 'day') return 'mistakes today';
-  if (period === 'week') return 'mistakes this week';
-  return 'mistakes this month';
+  const noun = MODE === 'inside' ? 'moments' : 'mistakes';
+  if (period === 'day') return noun + ' today';
+  if (period === 'week') return noun + ' this week';
+  return noun + ' this month';
 }
 
 function renderStats() {
@@ -537,33 +542,46 @@ function renderStats() {
   if (statLabel) statLabel.textContent = getPeriodLabel(currentPeriod);
   if (statAvg) statAvg.textContent = avg;
 
+  const labels = MODE === 'inside'
+    ? { avoidable: 'heat', fertile: 'shift', observed: 'support' }
+    : { avoidable: 'avoidable', fertile: 'fertile', observed: 'observed' };
+  const reduceHint = MODE === 'inside' ? 'to cool down' : 'to reduce';
+  const fertileHint = MODE === 'inside' ? 'stretches' : 'experiments';
+
   if (statsBreakdown) {
     if (count === 0) {
       statsBreakdown.textContent = '';
     } else {
-      statsBreakdown.textContent =
-        'Avoidable: ' + avoidableCount +
-        ' · Fertile: ' + fertileCount +
-        ' · Observed: ' + observedCount;
+      const parts = [];
+      if (avoidableCount) parts.push(avoidableCount + ' ' + labels.avoidable);
+      if (fertileCount) parts.push(fertileCount + ' ' + labels.fertile);
+      if (observedCount) parts.push(observedCount + ' ' + labels.observed);
+      statsBreakdown.textContent = parts.join(' · ');
     }
   }
 
   if (statsNote) {
     if (count === 0) {
-      statsNote.textContent = "No mistakes logged this period. That's okay—just check that you're still exploring and learning.";
+      statsNote.textContent = MODE === 'inside'
+        ? "No moments yet this period. Add one when you're ready."
+        : "No mistakes logged yet. That's fine — add one when something comes up.";
     } else {
-      let text =
-        avoidableCount + " avoidable (aim to reduce) · " +
-        fertileCount + " fertile (valuable experiments)";
-      if (topTheme && topThemeCount > 0) {
-        let label = 'calm';
-        if (topTheme === 'focus') label = 'focus';
-        else if (topTheme === 'stressed') label = 'stressed';
-        else if (topTheme === 'curious') label = 'curious';
-        else if (topTheme === 'tired') label = 'tired';
-        text += " · Most entries in “" + label + "” theme.";
+      const parts = [];
+      if (avoidableCount > 0) {
+        parts.push(avoidableCount + ' ' + labels.avoidable + ' ' + reduceHint);
       }
-      statsNote.textContent = text;
+      if (fertileCount > 0) {
+        parts.push(fertileCount + ' ' + labels.fertile + ' ' + fertileHint);
+      }
+      if (avoidableCount === 0 && fertileCount === 0 && observedCount > 0) {
+        parts.push(observedCount + ' ' + labels.observed + ' noticed');
+      }
+      if (topTheme && topThemeCount > 0) {
+        const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'stressed', curious: 'curious', tired: 'tired' };
+        const themeLabel = themeLabels[topTheme] || topTheme;
+        parts.push('mostly ' + themeLabel + ' when logging');
+      }
+      statsNote.textContent = parts.join(' · ');
     }
   }
 
@@ -572,11 +590,25 @@ function renderStats() {
     if (streak <= 0) {
       streakNote.textContent = '';
     } else if (streak === 1) {
-      streakNote.textContent = 'You have a 1-day logging streak.';
+      streakNote.textContent = MODE === 'inside'
+        ? "1 day in a row — nice start."
+        : "1 day in a row — nice start.";
+    } else if (streak < 7) {
+      streakNote.textContent = streak + " days in a row — keep it going.";
     } else {
-      streakNote.textContent = 'You have a ' + streak + '-day logging streak.';
+      streakNote.textContent = streak + "-day streak — you're building a habit.";
     }
+  }
 
+  if (headlineStat) {
+    const primaryTotal = avoidableCount + fertileCount;
+    if (primaryTotal === 0) {
+      headlineStat.textContent = '';
+      headlineStat.classList.add('hidden');
+    } else {
+      headlineStat.textContent = getExplorationSoWhat(Math.round((fertileCount / primaryTotal) * 100));
+      headlineStat.classList.remove('hidden');
+    }
   }
 
   // Exploration index: fertile ÷ (avoidable + fertile)
@@ -584,13 +616,15 @@ function renderStats() {
     const primaryTotal = avoidableCount + fertileCount;
     if (primaryTotal === 0) {
       statExploration.textContent = '—';
-      if (statExplorationHint) statExplorationHint.textContent = 'fertile ÷ (avoidable + fertile)';
+      if (statExplorationHint) statExplorationHint.textContent = MODE === 'inside' ? 'shift ÷ (heat + shift)' : 'fertile ÷ (avoidable + fertile)';
       if (statExplorationSoWhat) statExplorationSoWhat.textContent = '';
     } else {
       const ratio = fertileCount / primaryTotal;
       const pct = Math.round(ratio * 100);
       statExploration.textContent = pct + '%';
-      if (statExplorationHint) statExplorationHint.textContent = fertileCount + ' fertile ÷ ' + primaryTotal + ' (avoidable + fertile)';
+      if (statExplorationHint) statExplorationHint.textContent = MODE === 'inside'
+        ? fertileCount + ' shift ÷ ' + primaryTotal + ' (heat + shift)'
+        : fertileCount + ' fertile ÷ ' + primaryTotal + ' (avoidable + fertile)';
       if (statExplorationSoWhat) statExplorationSoWhat.textContent = getExplorationSoWhat(pct);
     }
   }
@@ -603,6 +637,14 @@ function renderStats() {
 }
 
 function getExplorationSoWhat(pct) {
+  if (MODE === 'inside') {
+    if (pct >= 70) return 'Lots of shifts.';
+    if (pct >= 50) return 'Good balance of heat and shift.';
+    if (pct >= 30) return 'Room for more shifts.';
+    if (pct >= 10) return 'Aim for more shifts.';
+    if (pct > 0) return 'One small shift can help.';
+    return 'Try one stretch today.';
+  }
   if (pct >= 70) return 'Lots of experimenting.';
   if (pct >= 50) return 'Good mix of risk and care.';
   if (pct >= 30) return 'Room to add more experiments.';
@@ -677,6 +719,7 @@ function renderList() {
   });
 
   if (emptyState) emptyState.classList.toggle('hidden', show.length > 0);
+  if (firstTimeNudge) firstTimeNudge.classList.toggle('hidden', entries.length > 0);
 }
 
 function getWeekBounds(weeksAgo) {
@@ -728,11 +771,11 @@ function renderProgress() {
     card.appendChild(title);
     const totalEl = document.createElement('span');
     totalEl.className = 'progress-card-total';
-    totalEl.textContent = stats.total + ' mistakes';
+    totalEl.textContent = stats.total + ' ' + (MODE === 'inside' ? 'moments' : 'mistakes');
     card.appendChild(totalEl);
     const explEl = document.createElement('span');
     explEl.className = 'progress-card-exploration';
-    explEl.textContent = stats.exploration != null ? stats.exploration + '% exploration' : '—';
+    explEl.textContent = stats.exploration != null ? stats.exploration + '% ' + (MODE === 'inside' ? 'shift' : 'exploration') : '—';
     card.appendChild(explEl);
     return card;
   };
@@ -746,13 +789,14 @@ function renderProgress() {
     : null;
   let diffText = '';
   if (lastWeek.total === 0 && thisWeek.total > 0) diffText = 'You\'ve started logging this week.';
-  else if (thisWeek.total === 0 && lastWeek.total > 0) diffText = 'No mistakes logged this week yet.';
+  else if (thisWeek.total === 0 && lastWeek.total > 0) diffText = MODE === 'inside' ? 'No moments this week yet.' : 'No mistakes logged this week yet.';
   else if (totalDiff !== 0 || (explDiff !== null && explDiff !== 0)) {
     const parts = [];
-    if (totalDiff < 0) parts.push('Fewer mistakes than last week.');
-    else if (totalDiff > 0) parts.push('More mistakes than last week.');
-    if (explDiff !== null && explDiff > 0) parts.push('Higher exploration—more fertile.');
-    else if (explDiff !== null && explDiff < 0) parts.push('Lower exploration than last week.');
+    const noun = MODE === 'inside' ? 'moments' : 'mistakes';
+    if (totalDiff < 0) parts.push('Fewer ' + noun + ' than last week.');
+    else if (totalDiff > 0) parts.push('More ' + noun + ' than last week.');
+    if (explDiff !== null && explDiff > 0) parts.push(MODE === 'inside' ? 'Higher shift—more stretches.' : 'Higher exploration—more fertile.');
+    else if (explDiff !== null && explDiff < 0) parts.push(MODE === 'inside' ? 'Lower shift than last week.' : 'Lower exploration than last week.');
     diffText = parts.join(' ') || 'Similar to last week.';
   } else diffText = 'Similar to last week.';
   diff.textContent = diffText;
@@ -830,14 +874,16 @@ function renderTrends() {
     const avoidableH = maxVal > 0 ? (d.avoidable / maxVal) * 100 : 0;
     const fertileH = maxVal > 0 ? (d.fertile / maxVal) * 100 : 0;
     const barA = document.createElement('div');
+    const aLabel = MODE === 'inside' ? 'heat' : 'avoidable';
+    const fLabel = MODE === 'inside' ? 'shift' : 'fertile';
     barA.className = 'trends-bar trends-bar-avoidable';
     barA.style.height = avoidableH + '%';
-    barA.title = d.avoidable + ' avoidable';
+    barA.title = d.avoidable + ' ' + aLabel;
     bars.appendChild(barA);
     const barF = document.createElement('div');
     barF.className = 'trends-bar trends-bar-fertile';
     barF.style.height = fertileH + '%';
-    barF.title = d.fertile + ' fertile';
+    barF.title = d.fertile + ' ' + fLabel;
     bars.appendChild(barF);
     col.appendChild(bars);
     const vals = document.createElement('span');
@@ -861,8 +907,9 @@ function renderTrends() {
       const date = new Date(best.dayStart);
       const label = date.toLocaleDateString([], { weekday: 'short' });
       const pct = Math.round(best.ratio * 100);
-      trendsHighlight.textContent =
-        'Best exploration day (last 7): ' + label + ' at ' + pct + '%.';
+      trendsHighlight.textContent = MODE === 'inside'
+        ? 'Best shift day (last 7): ' + label + ' at ' + pct + '%.'
+        : 'Best exploration day (last 7): ' + label + ' at ' + pct + '%.';
     }
   }
 }
@@ -980,13 +1027,24 @@ function generateAutoReflection() {
   if (total === 0) return '';
   const ratio = fertile / total;
   const a = avoidable, f = fertile;
+  let text;
   if (total === 1) {
-    return fertile ? pick(AUTO_REFLECTION_PHRASES.oneFertile) : pick(AUTO_REFLECTION_PHRASES.oneAvoidable);
+    text = fertile ? pick(AUTO_REFLECTION_PHRASES.oneFertile) : pick(AUTO_REFLECTION_PHRASES.oneAvoidable);
+  } else if (ratio >= 0.6) {
+    text = pick(AUTO_REFLECTION_PHRASES.highFertile).replace(/\{f\}/g, f).replace(/\{a\}/g, a);
+  } else if (ratio >= 0.4) {
+    text = pick(AUTO_REFLECTION_PHRASES.mixed).replace(/\{a\}/g, a).replace(/\{f\}/g, f);
+  } else if (ratio > 0) {
+    text = pick(AUTO_REFLECTION_PHRASES.lowFertile).replace(/\{a\}/g, a).replace(/\{f\}/g, f);
+  } else {
+    text = pick(AUTO_REFLECTION_PHRASES.allAvoidable).replace(/\{a\}/g, a);
   }
-  if (ratio >= 0.6) return pick(AUTO_REFLECTION_PHRASES.highFertile).replace(/\{f\}/g, f).replace(/\{a\}/g, a);
-  if (ratio >= 0.4) return pick(AUTO_REFLECTION_PHRASES.mixed).replace(/\{a\}/g, a).replace(/\{f\}/g, f);
-  if (ratio > 0) return pick(AUTO_REFLECTION_PHRASES.lowFertile).replace(/\{a\}/g, a).replace(/\{f\}/g, f);
-  return pick(AUTO_REFLECTION_PHRASES.allAvoidable).replace(/\{a\}/g, a);
+  if (MODE === 'inside') {
+    text = text.replace(/\bavoidable\b/gi, 'heat').replace(/\bfertile\b/gi, 'shift')
+      .replace(/\bmistake(s?)\b/gi, 'moment$1').replace(/\bslip-up(s?)\b/gi, 'heat$1')
+      .replace(/\bexperiment(s?)\b/gi, 'stretch$1');
+  }
+  return text;
 }
 
 function renderAutoReflection() {
@@ -1035,21 +1093,23 @@ function renderMicroGoal() {
   const todayEntries = entries.filter(e => e.at >= todayStart && e.at < todayEnd);
   const avoidable = todayEntries.filter(e => (e.type || 'avoidable') === 'avoidable').length;
   const fertile = todayEntries.filter(e => (e.type || 'avoidable') === 'fertile').length;
+  const aLabel = MODE === 'inside' ? 'heat' : 'avoidable';
+  const fLabel = MODE === 'inside' ? 'shift' : 'fertile';
+  let result = 'Today: ' + avoidable + ' ' + aLabel + ', ' + fertile + ' ' + fLabel + '.';
   const lower = goal.toLowerCase();
-  let result = 'Today: ' + avoidable + ' avoidable, ' + fertile + ' fertile.';
   const underMatch = lower.match(/(?:under|less than|below)\s*(\d+)/) || lower.match(/(\d+)\s*(?:or\s*)?(?:fewer|less)/);
   if (underMatch) {
     const cap = parseInt(underMatch[1], 10);
     if (avoidable <= cap) {
-      result += ' You aimed to keep avoidable under ' + cap + ' — on track.';
+      result += ' You aimed to keep ' + aLabel + ' under ' + cap + ' — on track.';
     } else {
-      result += ' You aimed for under ' + cap + ' avoidable — over by ' + (avoidable - cap) + '.';
+      result += ' You aimed for under ' + cap + ' ' + aLabel + ' — over by ' + (avoidable - cap) + '.';
     }
-  } else if (/\b(?:one|1)\s*fertile/.test(lower) || /fertile\s*(?:experiment|risk)/.test(lower)) {
+  } else if (/\b(?:one|1)\s*fertile/.test(lower) || /\b(?:one|1)\s*shift/.test(lower) || /fertile\s*(?:experiment|risk)/.test(lower) || /shift\s*(?:experiment)?/.test(lower)) {
     if (fertile >= 1) {
-      result += ' You aimed for at least one fertile — done.';
+      result += ' You aimed for at least one ' + fLabel + ' — done.';
     } else {
-      result += ' You aimed for a fertile experiment — not yet.';
+      result += ' You aimed for a ' + fLabel + ' — not yet.';
     }
   } else {
     result += ' Goal: ' + goal;
@@ -1196,7 +1256,7 @@ function shareAsImage() {
   ctx.fillText(statCountEl.textContent + ' ' + (statLabelEl.textContent || ''), 20, 70);
   if (statAvgEl) ctx.fillText('Avg ' + statAvgEl.textContent + '/day', 20, 92);
   if (statExplorationEl && statExplorationEl.textContent !== '—') {
-    ctx.fillText(statExplorationEl.textContent + ' exploration', 20, 114);
+    ctx.fillText(statExplorationEl.textContent + ' ' + (MODE === 'inside' ? 'shift' : 'exploration'), 20, 114);
   }
   ctx.fillStyle = '#71717a';
   ctx.font = '11px DM Sans, sans-serif';
@@ -1531,7 +1591,9 @@ async function fetchSharedStats() {
   sharedEmpty.classList.toggle('hidden', (data && data.length) > 0);
   if (!data || data.length === 0) {
     sharedList.innerHTML = '';
-    sharedEmpty.textContent = "No shared results yet. Share yours above!";
+    sharedEmpty.textContent = MODE === 'inside'
+      ? "No shared results yet. Share your period above!"
+      : "No shared results yet. Share yours above!";
     if (communityMetrics) communityMetrics.textContent = '';
     return;
   }
@@ -1641,7 +1703,9 @@ async function fetchSharedEntries() {
       communityEntriesRange.textContent = 'Showing ' + label + ' ' + noun + ' (most recent first).';
     }
     sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
-    sharedEntriesEmpty.textContent = list.length === 0 ? "No shared entries yet. Add a mistake to share yours." : "";
+    sharedEntriesEmpty.textContent = list.length === 0
+      ? (MODE === 'inside' ? "No shared moments yet. Add one to share yours." : "No shared entries yet. Add a mistake to share yours.")
+      : "";
 
     let avoidable = 0;
     let fertile = 0;
@@ -1659,8 +1723,8 @@ async function fetchSharedEntries() {
 
     if (communityComparison) {
       const parts = [];
-      if (myPct != null) parts.push('Your exploration this week: ' + myPct + '%.');
-      if (sharedFertilePct != null) parts.push('Recent shared entries: ' + sharedFertilePct + '% fertile.');
+      if (myPct != null) parts.push(MODE === 'inside' ? 'Your shift this week: ' + myPct + '%.' : 'Your exploration this week: ' + myPct + '%.');
+      if (sharedFertilePct != null) parts.push(MODE === 'inside' ? 'Recent shared moments: ' + sharedFertilePct + '% shift.' : 'Recent shared entries: ' + sharedFertilePct + '% fertile.');
       communityComparison.textContent = parts.length ? parts.join(' ') : '';
     }
 
@@ -1668,11 +1732,14 @@ async function fetchSharedEntries() {
       if (!list.length) {
         communityEntriesTrend.textContent = '';
       } else {
+        const al = MODE === 'inside' ? 'heat' : 'avoidable';
+        const fl = MODE === 'inside' ? 'shift' : 'fertile';
+        const ol = MODE === 'inside' ? 'support' : 'observed';
         communityEntriesTrend.textContent =
-          'Last ' + list.length + ' shared entries: ' +
-          avoidable + ' avoidable · ' +
-          fertile + ' fertile · ' +
-          observed + ' observed.';
+          'Last ' + list.length + ' shared ' + (MODE === 'inside' ? 'moments' : 'entries') + ': ' +
+          avoidable + ' ' + al + ' · ' +
+          fertile + ' ' + fl + ' · ' +
+          observed + ' ' + ol + '.';
       }
     }
 
@@ -1913,10 +1980,6 @@ if (addNoteInput) {
 }
 updateAddButtonState();
 
-if (quickAvoidableBtn) quickAvoidableBtn.addEventListener('click', () => quickAdd('avoidable'));
-if (quickFertileBtn) quickFertileBtn.addEventListener('click', () => quickAdd('fertile'));
-if (quickObservedBtn) quickObservedBtn.addEventListener('click', () => quickAdd('observed'));
-if (repeatLastBtn) repeatLastBtn.addEventListener('click', repeatLastNote);
 const btnCantTell = document.getElementById('btn-cant-tell');
 if (btnCantTell) btnCantTell.addEventListener('click', () => quickAdd(getSelectedType()));
 
