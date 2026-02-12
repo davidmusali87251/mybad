@@ -65,6 +65,16 @@ When the app is served over **HTTPS** (e.g. on GitHub Pages), you can install it
 
 The app includes a `manifest.json` and a service worker (`sw.js`) so it can be installed and works better offline. **Note:** The PWA opens the personal tracker (`index.html`) by default. For SlipUp Inside, use `inside.html` via a direct link or bookmark.
 
+### Cache busting (GitHub Pages deploys)
+
+CSS and JS files use version params (e.g. `styles.css?v=6`, `app.js?v=6`) so browsers load fresh assets after each deploy. **Before pushing a major update**, run:
+
+```bash
+node bump-version.js
+```
+
+This bumps `?v=` in all HTML files and `CACHE_NAME` in `sw.js`. Optionally pass a version: `node bump-version.js 6`.
+
 ---
 
 ## Enable anonymous sharing (optional)
@@ -133,7 +143,7 @@ window.MISTAKE_TRACKER_CONFIG = {
 
    `config.js` is in `.gitignore`, so it stays local and your keys are not pushed to the repo.
 
-   **Deploy (GitHub Pages) — use secrets, no config.js in the repo:** The live site must **not** use a committed `config.js`. The workflow `.github/workflows/main.yml` builds `config.js` from **repository secrets** at deploy time. (1) In the repo: **Settings → Secrets and variables → Actions** → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_HOSTED_BUTTON_ID`. (2) **Settings → Pages** → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing (and PayPal if those secrets are set); the repo never contains `config.js`.
+   **Deploy (GitHub Pages) — use secrets, no config.js in the repo:** The live site must **not** use a committed `config.js`. The workflow `.github/workflows/main.yml` builds `config.js` from **repository secrets** at deploy time. (1) In the repo: **Settings → Secrets and variables → Actions** → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_HOSTED_BUTTON_ID`, `SUPABASE_STATS_TABLE`, `SUPABASE_ENTRIES_TABLE`, `SUPABASE_DAILY_SUMMARIES_TABLE`. (2) **Settings → Pages** → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing (and PayPal if those secrets are set); the repo never contains `config.js`.
 
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).

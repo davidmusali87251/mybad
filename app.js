@@ -242,9 +242,14 @@ function normalizeScope(entry) {
 }
 
 // Theme used when the entry was logged (calm / focus / stressed / curious / tired).
-// Stored in localStorage under THEME_KEY and controlled by the Mood button on the page.
+// Prefer the Mood button's displayed value so "I can't tell" and add-mistake use the current selection.
 function getCurrentTheme() {
   try {
+    const btn = document.getElementById('btn-theme');
+    if (btn) {
+      const label = (btn.textContent || '').trim().toLowerCase();
+      if (label === 'focus' || label === 'stressed' || label === 'curious' || label === 'tired') return label;
+    }
     const t = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || 'calm';
     return (t === 'focus' || t === 'stressed' || t === 'curious' || t === 'tired') ? t : 'calm';
   } catch {
@@ -696,7 +701,7 @@ function renderList() {
     badge.textContent = label;
     const note = document.createElement('span');
     note.className = 'note' + (entry.note ? '' : ' empty');
-    note.textContent = entry.note || '(no note)';
+    note.textContent = entry.note || "I couldn't tell";
     const theme = document.createElement('span');
     theme.className = 'theme';
     const t = entry.theme || 'calm';
@@ -1238,29 +1243,106 @@ function shareAsImage() {
   const statLabelEl = document.getElementById('stat-label');
   const statAvgEl = document.getElementById('stat-avg');
   const statExplorationEl = document.getElementById('stat-exploration');
+  const statsBreakdownEl = document.getElementById('stats-breakdown');
+  const streakNoteEl = document.getElementById('streak-note');
+  const statExplorationSoWhatEl = document.getElementById('stat-exploration-so-what');
   if (!statCountEl || !statLabelEl) return;
-  const w = 340;
-  const h = 200;
+
+  const scale = Math.min(window.devicePixelRatio || 2, 3);
+  const w = 520 * scale;
+  const h = 340 * scale;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  ctx.fillStyle = '#0f0f12';
+
+  const pad = 28 * scale;
+  const s = (v) => v * scale;
+
+  // SlipUp colors
+  const bg = '#0b1013';
+  const surface = '#151b20';
+  const accent = '#7260ff';
+  const text = '#eef3f7';
+  const muted = '#8f9ba7';
+  const border = '#28333d';
+
+  // Background
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = '#e4e4e7';
-  ctx.font = 'bold 28px DM Sans, sans-serif';
-  ctx.fillText('SlipUp', 20, 40);
-  ctx.font = '14px DM Sans, sans-serif';
-  ctx.fillStyle = '#a1a1aa';
-  ctx.fillText(statCountEl.textContent + ' ' + (statLabelEl.textContent || ''), 20, 70);
-  if (statAvgEl) ctx.fillText('Avg ' + statAvgEl.textContent + '/day', 20, 92);
-  if (statExplorationEl && statExplorationEl.textContent !== '—') {
-    ctx.fillText(statExplorationEl.textContent + ' ' + (MODE === 'inside' ? 'shift' : 'exploration'), 20, 114);
+
+  // Card surface (rounded rect)
+  const cardX = pad;
+  const cardY = pad;
+  const cardW = w - pad * 2;
+  const cardH = h - pad * 2;
+  const radius = s(12);
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY, cardW, cardH, radius);
+  } else {
+    ctx.rect(cardX, cardY, cardW, cardH);
   }
-  ctx.fillStyle = '#71717a';
-  ctx.font = '11px DM Sans, sans-serif';
-  ctx.fillText('slipup.io', 20, h - 15);
+  ctx.fillStyle = surface;
+  ctx.fill();
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Accent bar top
+  ctx.fillStyle = accent;
+  ctx.fillRect(cardX, cardY, cardW, s(4));
+
+  // Title
+  ctx.fillStyle = text;
+  ctx.font = 'bold ' + s(24) + 'px "DM Sans", system-ui, sans-serif';
+  ctx.fillText('SlipUp', cardX + pad, cardY + s(42));
+
+  // Main stat — prominent
+  const countStr = statCountEl.textContent + ' ' + (statLabelEl.textContent || '');
+  ctx.font = '600 ' + s(20) + 'px "DM Sans", system-ui, sans-serif';
+  ctx.fillStyle = text;
+  ctx.fillText(countStr, cardX + pad, cardY + s(78));
+
+  let y = cardY + s(110);
+  ctx.font = s(14) + 'px "DM Sans", system-ui, sans-serif';
+
+  // Avg
+  if (statAvgEl && statAvgEl.textContent !== '—') {
+    ctx.fillStyle = muted;
+    ctx.fillText('Avg ' + statAvgEl.textContent + '/day', cardX + pad, y);
+    y += s(28);
+  }
+
+  // Exploration
+  if (statExplorationEl && statExplorationEl.textContent !== '—') {
+    const explLabel = MODE === 'inside' ? 'Shift index' : 'Exploration';
+    ctx.fillStyle = muted;
+    ctx.fillText(explLabel + ' ' + statExplorationEl.textContent, cardX + pad, y);
+    y += s(28);
+  }
+
+  // Breakdown
+  if (statsBreakdownEl && statsBreakdownEl.textContent) {
+    ctx.fillStyle = muted;
+    ctx.fillText(statsBreakdownEl.textContent, cardX + pad, y);
+    y += s(28);
+  }
+
+  // Streak or insight
+  const insight = (streakNoteEl && streakNoteEl.textContent) || (statExplorationSoWhatEl && statExplorationSoWhatEl.textContent);
+  if (insight) {
+    ctx.fillStyle = accent;
+    ctx.font = '500 ' + s(13) + 'px "DM Sans", system-ui, sans-serif';
+    ctx.fillText(insight, cardX + pad, y);
+  }
+
+  // Footer
+  ctx.fillStyle = muted;
+  ctx.font = s(11) + 'px "DM Sans", system-ui, sans-serif';
+  ctx.fillText('slipup.io', cardX + pad, cardH + cardY - s(20));
+
   canvas.toBlob(function(blob) {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
@@ -1359,7 +1441,11 @@ function pushEntryToShared(entry) {
 
 function setPeriod(period) {
   currentPeriod = period;
-  periodTabs.forEach(t => t.classList.toggle('active', t.dataset.period === period));
+  periodTabs.forEach(t => {
+    const isActive = t.dataset.period === period;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
   renderStats();
   renderList();
 }
@@ -1806,7 +1892,7 @@ function renderSharedEntriesList() {
     badge.textContent = label;
     const note = document.createElement('span');
     note.className = 'note' + (row.note ? '' : ' empty');
-    note.textContent = row.note || '(no note)';
+    note.textContent = row.note || "I couldn't tell";
     const theme = document.createElement('span');
     theme.className = 'theme';
     const tRaw = row.theme || 'calm';

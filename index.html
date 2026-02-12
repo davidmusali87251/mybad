@@ -10,12 +10,13 @@
   {"@context":"https://schema.org","@type":"WebApplication","name":"SlipUp","description":"Log daily mistakes, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.","url":"https://www.slipup.io/","applicationCategory":"LifestyleApplication"}
   </script>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=6">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
+  <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
     <a href="index.html" class="top-bar-brand">SlipUp</a>
     <div class="top-bar-actions">
@@ -35,7 +36,7 @@
     </header>
 
     <p class="phase-label">1 – Personal</p>
-    <section class="add-section">
+    <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What happened?</label>
         <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
@@ -75,10 +76,10 @@
       </div>
     </section>
 
-    <section class="period-tabs">
-      <button type="button" class="tab active" data-period="day">Today</button>
-      <button type="button" class="tab" data-period="week">This week</button>
-      <button type="button" class="tab" data-period="month">This month</button>
+    <section class="period-tabs" role="tablist" aria-label="Time period">
+      <button type="button" class="tab active" role="tab" aria-selected="true" data-period="day">Today</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-period="week">This week</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-period="month">This month</button>
     </section>
 
     <section class="stats">
@@ -109,8 +110,8 @@
     </section>
 
     <section class="insights-section" id="insights-section">
-      <h2>What we noticed</h2>
-      <p class="insights-intro">A few highlights from your data.</p>
+      <h2>SlipUp's insights</h2>
+      <p class="insights-intro">A few highlights from your SlipUp.</p>
       <div class="insight-block insight-weekly-digest" id="weekly-digest-block">
         <span class="insight-label">This week in one sentence</span>
         <p class="insight-text" id="weekly-digest"></p>
@@ -317,10 +318,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js"></script>
+  <script src="config.js?v=6"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=6"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
