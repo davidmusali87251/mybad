@@ -1427,14 +1427,14 @@ async function shareAnonymously() {
 function quickAdd(type) {
   if (isAtLimit()) return;
   const scope = type === 'observed' ? 'observed' : 'personal';
-  const entry = { at: Date.now(), note: '', type, scope };
+  const entry = { at: Date.now(), note: '', type, scope, theme: getCurrentTheme() };
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
   updateUpgradeUI();
   renderStats();
   renderList();
-  if (SHARING_ENABLED) pushEntryToShared({ note: '', type });
+  if (SHARING_ENABLED) pushEntryToShared({ note: '', type, theme: entry.theme });
 }
 
 function repeatLastNote() {
@@ -1444,7 +1444,8 @@ function repeatLastNote() {
     at: Date.now(),
     note: base.note || '',
     type: base.type || 'avoidable',
-    scope: normalizeScope(base)
+    scope: normalizeScope(base),
+    theme: getCurrentTheme()
   };
   entries.push(entry);
   lastEntry = entry;
@@ -1452,7 +1453,7 @@ function repeatLastNote() {
   updateUpgradeUI();
   renderStats();
   renderList();
-  if (SHARING_ENABLED) pushEntryToShared({ note: entry.note, type: entry.type });
+  if (SHARING_ENABLED) pushEntryToShared({ note: entry.note, type: entry.type, theme: entry.theme });
 }
 
 function exportCsv() {
