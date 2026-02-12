@@ -24,7 +24,7 @@ const SHARING_ENABLED = SUPABASE_URL && SUPABASE_ANON_KEY;
 const FREE_ENTRY_LIMIT = 10;
 const UNLOCKED_KEY = 'mistake-tracker-unlocked';
 const PAYMENT_LINK_CLICKED_KEY = 'mistake-tracker-payment-link-clicked';
-// Theme used when the entry was logged (calm / focus / warm)
+// Theme used when the entry was logged (calm / focus / stressed / curious / tired)
 const THEME_KEY = 'mistake-tracker-theme';
 // Optional extra analytics table (daily_summaries); separate from STATS_TABLE
 const DAILY_SUMMARIES_TABLE = (CONFIG.SUPABASE_DAILY_SUMMARIES_TABLE || '').trim() || 'daily_summaries';
@@ -75,6 +75,11 @@ const emptyState = document.getElementById('empty-state');
 const statsNote = document.getElementById('stats-note');
 const historyFilters = document.getElementById('history-filters');
 const exportCsvBtn = document.getElementById('btn-export-csv');
+const exportJsonBtn = document.getElementById('btn-export-json');
+const lineChartWrap = document.getElementById('line-chart-wrap');
+const lineChartSvg = document.getElementById('line-chart-svg');
+const lineChartLegend = document.getElementById('line-chart-legend');
+const lineChartEmpty = document.getElementById('line-chart-empty');
 const shareSection = document.getElementById('share-section');
 const btnShare = document.getElementById('btn-share');
 const shareStatus = document.getElementById('share-status');
@@ -88,13 +93,19 @@ const sharedEntriesList = document.getElementById('shared-entries-list');
 const sharedEntriesEmpty = document.getElementById('shared-entries-empty');
 const sharedEntriesError = document.getElementById('shared-entries-error');
 const btnRefreshEntries = document.getElementById('btn-refresh-entries');
+const btnSharedEntriesToggle = document.getElementById('btn-shared-entries-toggle');
+const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const communityEntriesTrend = document.getElementById('community-entries-trend');
+const communityEntriesRange = document.getElementById('community-entries-range');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
 const reflectionAvoidableCounter = document.getElementById('reflection-avoidable-counter');
 const reflectionFertileCounter = document.getElementById('reflection-fertile-counter');
 const yesterdayReflection = document.getElementById('yesterday-reflection');
+const reflectionHistoryBody = document.getElementById('reflection-history-body');
+const reflectionHistorySection = document.getElementById('reflection-history');
+const btnExportReflections = document.getElementById('btn-export-reflections');
 const communityMetrics = document.getElementById('community-metrics');
 const limitMessage = document.getElementById('limit-message');
 const upgradeCards = document.getElementById('upgrade-cards');
@@ -105,7 +116,30 @@ const btnUnlockAfterPay = document.getElementById('btn-unlock-after-pay');
 const btnBuyUnlocked = document.getElementById('btn-buy-unlocked');
 
 const REFLECTIONS_KEY = MODE === 'inside' ? 'mistake-tracker-reflections-inside' : 'mistake-tracker-reflections';
+const MICRO_GOAL_KEY = MODE === 'inside' ? 'mistake-tracker-micro-goal-inside' : 'mistake-tracker-micro-goal';
+const REMINDER_KEY = MODE === 'inside' ? 'mistake-tracker-reminder-inside' : 'mistake-tracker-reminder';
+const ADD_TO_HOME_DISMISSED_KEY = 'mistake-tracker-add-to-home-dismissed';
 let paypalButtonRendered = false;
+
+const microGoalInput = document.getElementById('micro-goal-input');
+const microGoalResult = document.getElementById('micro-goal-result');
+const weeklyDigest = document.getElementById('weekly-digest');
+const dayVsAverage = document.getElementById('day-vs-average');
+const timeOfDay = document.getElementById('time-of-day');
+const topPatterns = document.getElementById('top-patterns');
+const topPatternsTitle = document.getElementById('top-patterns-title');
+const morePatterns = document.getElementById('more-patterns');
+const btnShareImage = document.getElementById('btn-share-image');
+const addToHomeBanner = document.getElementById('add-to-home-banner');
+const addToHomeDismiss = document.getElementById('add-to-home-dismiss');
+const reminderCheckbox = document.getElementById('reminder-checkbox');
+
+// How many rows to fetch for "Everyone's recent entries".
+// Default: last 10. Toggle button can switch to a larger slice (e.g. last 50).
+let sharedEntriesLimit = 10;
+let lastSharedEntries = [];
+let sharedEntriesTypeFilter = 'all';
+let sharedEntriesThemeFilter = 'all';
 
 function isUnlocked() {
   return localStorage.getItem(UNLOCKED_KEY) === 'true';
@@ -170,6 +204,8 @@ function updateUpgradeUI() {
   if (btnUnlockAfterPay) {
     btnUnlockAfterPay.disabled = !hasClickedPaymentLink();
   }
+  if (exportCsvBtn) exportCsvBtn.disabled = !unlocked;
+  if (exportJsonBtn) exportJsonBtn.disabled = !unlocked;
 }
 
 function loadPayPalButton() {
@@ -210,10 +246,12 @@ function normalizeScope(entry) {
   return s === 'observed' || s === 'team' ? s : 'personal';
 }
 
+// Theme used when the entry was logged (calm / focus / stressed / curious / tired).
+// Stored in localStorage under THEME_KEY and controlled by the Mood button on the page.
 function getCurrentTheme() {
   try {
     const t = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || 'calm';
-    return t === 'focus' || t === 'warm' ? t : 'calm';
+    return (t === 'focus' || t === 'stressed' || t === 'curious' || t === 'tired') ? t : 'calm';
   } catch {
     return 'calm';
   }
@@ -227,23 +265,19 @@ function loadEntries() {
       ? parsed.map(e => ({
           ...e,
           scope: normalizeScope(e),
-          theme: e.theme || 'calm'
+          // Normalize older theme values (e.g. "warm") into the current set.
+          theme: (e.theme === 'focus' ||
+                  e.theme === 'stressed' ||
+                  e.theme === 'curious' ||
+                  e.theme === 'tired')
+            ? e.theme
+            : 'calm'
         }))
       : [];
   } catch {
     entries = [];
   }
 }
-
-function getCurrentTheme() {
-  try {
-    const t = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || 'calm';
-    return t === 'focus' || t === 'warm' ? t : 'calm';
-  } catch {
-    return 'calm';
-  }
-}
-
 function saveEntries() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
@@ -287,6 +321,7 @@ function renderReflection() {
 
   updateReflectionCounters();
   renderYesterdayReflection();
+  renderReflectionHistory();
 }
 
 function updateReflection(field, value) {
@@ -303,6 +338,7 @@ function updateReflection(field, value) {
       reflectionNote.textContent = 'Saved locally for today. Tomorrow you’ll see a fresh page.';
     }
   }
+  renderReflectionHistory();
 }
 
 function renderYesterdayReflection() {
@@ -335,6 +371,88 @@ function updateReflectionCounters() {
     const len = (reflectionFertile.value || '').length;
     reflectionFertileCounter.textContent = len + ' character' + (len === 1 ? '' : 's');
   }
+}
+
+function renderReflectionHistory() {
+  if (!reflectionHistoryBody || !reflectionHistorySection) return;
+  const all = loadReflections();
+  const keys = Object.keys(all)
+    .map(function (k) { return Number(k); })
+    .filter(function (n) { return !isNaN(n); })
+    .sort(function (a, b) { return b - a; });
+
+  reflectionHistoryBody.innerHTML = '';
+
+  // Only show rows that actually have some text, up to the last 7 days with content.
+  var shown = 0;
+  for (var i = 0; i < keys.length && shown < 7; i++) {
+    var ts = keys[i];
+    var day = all[String(ts)] || {};
+    if (!day.avoidable && !day.fertile) continue;
+    shown++;
+    var d = new Date(ts);
+    var dayLabel = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    var tr = document.createElement('tr');
+    var tdDay = document.createElement('td');
+    tdDay.textContent = dayLabel;
+    var tdAvoid = document.createElement('td');
+    tdAvoid.textContent = day.avoidable || '—';
+    var tdFertile = document.createElement('td');
+    tdFertile.textContent = day.fertile || '—';
+    tr.appendChild(tdDay);
+    tr.appendChild(tdAvoid);
+    tr.appendChild(tdFertile);
+    reflectionHistoryBody.appendChild(tr);
+  }
+
+  if (shown === 0) {
+    reflectionHistorySection.classList.add('hidden');
+  } else {
+    reflectionHistorySection.classList.remove('hidden');
+  }
+}
+
+function exportReflectionsCsv() {
+  const all = loadReflections();
+  const keys = Object.keys(all)
+    .map(function (k) { return Number(k); })
+    .filter(function (n) { return !isNaN(n); })
+    .sort(function (a, b) { return a - b; }); // oldest first
+  const rows = [];
+  const header = MODE === 'inside'
+    ? ['date', 'heat_or_avoidable', 'shift_support_or_fertile']
+    : ['date', 'avoidable', 'fertile'];
+  rows.push(header);
+  keys.forEach(function (ts) {
+    const day = all[String(ts)] || {};
+    if (!day.avoidable && !day.fertile) return;
+    const d = new Date(ts);
+    const iso = d.toISOString().slice(0, 10);
+    rows.push([iso, day.avoidable || '', day.fertile || '']);
+  });
+  if (rows.length === 1) return;
+
+  const csv = rows.map(function (cols) {
+    return cols.map(function (c) {
+      const v = c == null ? '' : String(c);
+      if (/[",\n]/.test(v)) {
+        return '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    }).join(',');
+  }).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const prefix = MODE === 'inside' ? 'slipup-inside-reflections-' : 'slipup-reflections-';
+  const today = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = prefix + today + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function getStartOfDay(d) {
@@ -392,9 +510,11 @@ function renderStats() {
   const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
   const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
   const observedCount = filtered.filter(e => e.type === 'observed').length;
-  const byTheme = { calm: 0, focus: 0, warm: 0 };
+  // Track top mood theme based on the current 5-mode set.
+  const byTheme = { calm: 0, focus: 0, stressed: 0, curious: 0, tired: 0 };
   filtered.forEach(e => {
-    const t = e.theme || 'calm';
+    const raw = e.theme || 'calm';
+    const t = (raw === 'focus' || raw === 'stressed' || raw === 'curious' || raw === 'tired') ? raw : 'calm';
     if (byTheme[t] != null) byTheme[t] += 1;
   });
   let topTheme = null;
@@ -436,7 +556,11 @@ function renderStats() {
         avoidableCount + " avoidable (aim to reduce) · " +
         fertileCount + " fertile (valuable experiments)";
       if (topTheme && topThemeCount > 0) {
-        const label = topTheme === 'focus' ? 'focus' : topTheme === 'warm' ? 'warm' : 'calm';
+        let label = 'calm';
+        if (topTheme === 'focus') label = 'focus';
+        else if (topTheme === 'stressed') label = 'stressed';
+        else if (topTheme === 'curious') label = 'curious';
+        else if (topTheme === 'tired') label = 'tired';
         text += " · Most entries in “" + label + "” theme.";
       }
       statsNote.textContent = text;
@@ -471,8 +595,11 @@ function renderStats() {
     }
   }
   renderTrends();
+  renderLineChart();
   renderProgress();
   renderAutoReflection();
+  renderMicroGoal();
+  renderInsights();
 }
 
 function getExplorationSoWhat(pct) {
@@ -531,7 +658,14 @@ function renderList() {
     const theme = document.createElement('span');
     theme.className = 'theme';
     const t = entry.theme || 'calm';
-    theme.textContent = t === 'focus' ? 'FOCUS' : t === 'warm' ? 'WARM' : 'CALM';
+    let themeLabel = 'CALM';
+    if (t === 'focus') themeLabel = 'FOCUS';
+    else if (t === 'stressed') themeLabel = 'STRESSED';
+    else if (t === 'curious') themeLabel = 'CURIOUS';
+    else if (t === 'tired') themeLabel = 'TIRED';
+    // Older value from earlier versions; map to CURIOUS for continuity.
+    else if (t === 'warm') themeLabel = 'CURIOUS';
+    theme.textContent = themeLabel;
     const time = document.createElement('span');
     time.className = 'time';
     time.textContent = formatTime(entry.at);
@@ -569,7 +703,7 @@ function getThisWeekAndLastWeek() {
     const totalPrimary = avoidable + fertile;
     const observed = list.length - totalPrimary;
     const exploration = totalPrimary > 0 ? Math.round((fertile / totalPrimary) * 100) : null;
-    return { total: totalPrimary, fertile, avoidable, observed, exploration };
+    return { total: list.length, fertile, avoidable, observed, exploration };
   };
   return { thisWeek: toStats(inThisWeek), lastWeek: toStats(inLastWeek) };
 }
@@ -645,6 +779,28 @@ function getDayCountsLastN(n) {
   return result;
 }
 
+function getDayCountsForChart(n) {
+  const now = Date.now();
+  const dayMs = 86400000;
+  const result = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const dayStart = getStartOfDay(now - i * dayMs);
+    const dayEnd = dayStart + dayMs;
+    const dayEntries = entries.filter(e => e.at >= dayStart && e.at < dayEnd);
+    const avoidable = dayEntries.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+    const fertile = dayEntries.filter(e => (e.type || 'avoidable') === 'fertile').length;
+    const observed = dayEntries.filter(e => e.type === 'observed').length;
+    result.push({
+      dayStart,
+      avoidable,
+      fertile,
+      observed,
+      total: avoidable + fertile + observed
+    });
+  }
+  return result;
+}
+
 function renderTrends() {
   if (!trendsChart || !trendsEmpty) return;
   const days = getDayCountsLastN(7);
@@ -711,6 +867,74 @@ function renderTrends() {
   }
 }
 
+function renderLineChart() {
+  if (!lineChartWrap || !lineChartSvg || !lineChartLegend || !lineChartEmpty) return;
+  const days = getDayCountsForChart(14);
+  const hasAny = days.some(d => d.total > 0);
+  lineChartEmpty.classList.toggle('hidden', hasAny);
+  lineChartWrap.classList.toggle('hidden', !hasAny);
+  if (!hasAny) {
+    lineChartSvg.innerHTML = '';
+    lineChartLegend.innerHTML = '';
+    return;
+  }
+  const pad = { top: 10, right: 10, bottom: 25, left: 35 };
+  const w = 400;
+  const h = 180;
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+  const maxVal = Math.max(1, ...days.map(d => Math.max(d.avoidable, d.fertile, d.observed, 1)));
+  const scaleY = (v) => pad.top + chartH - (v / maxVal) * chartH;
+  const scaleX = (i) => pad.left + (i / (days.length - 1 || 1)) * chartW;
+
+  const pts = (key) =>
+    days
+      .map((d, i) => scaleX(i) + ',' + scaleY(d[key]))
+      .join(' ');
+
+  const avoidableColor = '#e04e5a';
+  const fertileColor = '#4a9c6d';
+  const observedColor = '#5a8ed6';
+
+  lineChartSvg.innerHTML =
+    '<polyline fill="none" stroke="' +
+    avoidableColor +
+    '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' +
+    pts('avoidable') +
+    '"></polyline>' +
+    '<polyline fill="none" stroke="' +
+    fertileColor +
+    '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' +
+    pts('fertile') +
+    '"></polyline>' +
+    '<polyline fill="none" stroke="' +
+    observedColor +
+    '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' +
+    pts('observed') +
+    '"></polyline>';
+
+  const labels =
+    MODE === 'inside'
+      ? { avoidable: 'Heat', fertile: 'Shift', observed: 'Support' }
+      : { avoidable: 'Avoidable', fertile: 'Fertile', observed: 'Observed' };
+  lineChartLegend.innerHTML =
+    '<span class="legend-item"><span class="legend-swatch" style="background:' +
+    avoidableColor +
+    '"></span><span class="legend-label">' +
+    labels.avoidable +
+    '</span></span>' +
+    '<span class="legend-item"><span class="legend-swatch" style="background:' +
+    fertileColor +
+    '"></span><span class="legend-label">' +
+    labels.fertile +
+    '</span></span>' +
+    '<span class="legend-item"><span class="legend-swatch" style="background:' +
+    observedColor +
+    '"></span><span class="legend-label">' +
+    labels.observed +
+    '</span></span>';
+}
+
 const AUTO_REFLECTION_PHRASES = {
   oneFertile: [
     "One fertile mistake today—you're stretching.",
@@ -775,6 +999,219 @@ function renderAutoReflection() {
   }
   autoReflectionEl.textContent = text;
   autoReflectionEl.classList.remove('hidden');
+}
+
+function loadMicroGoal() {
+  try {
+    const key = getTodayKey();
+    const raw = localStorage.getItem(MICRO_GOAL_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    return data[key] || '';
+  } catch {
+    return '';
+  }
+}
+
+function saveMicroGoal(value) {
+  try {
+    const key = getTodayKey();
+    const raw = localStorage.getItem(MICRO_GOAL_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    data[key] = (value || '').trim();
+    localStorage.setItem(MICRO_GOAL_KEY, JSON.stringify(data));
+  } catch (_) {}
+}
+
+function renderMicroGoal() {
+  if (!microGoalInput || !microGoalResult) return;
+  microGoalInput.value = loadMicroGoal();
+  const goal = (microGoalInput.value || '').trim();
+  if (!goal) {
+    microGoalResult.textContent = '';
+    return;
+  }
+  const todayStart = getStartOfDay(Date.now());
+  const todayEnd = todayStart + 86400000;
+  const todayEntries = entries.filter(e => e.at >= todayStart && e.at < todayEnd);
+  const avoidable = todayEntries.filter(e => (e.type || 'avoidable') === 'avoidable').length;
+  const fertile = todayEntries.filter(e => (e.type || 'avoidable') === 'fertile').length;
+  const lower = goal.toLowerCase();
+  let result = 'Today: ' + avoidable + ' avoidable, ' + fertile + ' fertile.';
+  const underMatch = lower.match(/(?:under|less than|below)\s*(\d+)/) || lower.match(/(\d+)\s*(?:or\s*)?(?:fewer|less)/);
+  if (underMatch) {
+    const cap = parseInt(underMatch[1], 10);
+    if (avoidable <= cap) {
+      result += ' You aimed to keep avoidable under ' + cap + ' — on track.';
+    } else {
+      result += ' You aimed for under ' + cap + ' avoidable — over by ' + (avoidable - cap) + '.';
+    }
+  } else if (/\b(?:one|1)\s*fertile/.test(lower) || /fertile\s*(?:experiment|risk)/.test(lower)) {
+    if (fertile >= 1) {
+      result += ' You aimed for at least one fertile — done.';
+    } else {
+      result += ' You aimed for a fertile experiment — not yet.';
+    }
+  } else {
+    result += ' Goal: ' + goal;
+  }
+  microGoalResult.textContent = result;
+}
+
+function renderInsights() {
+  const aLabel = MODE === 'inside' ? 'heat' : 'avoidable';
+  const fLabel = MODE === 'inside' ? 'shift' : 'fertile';
+  const oLabel = MODE === 'inside' ? 'support' : 'observed';
+
+  if (weeklyDigest) {
+    const { thisWeek } = getThisWeekAndLastWeek();
+    if (thisWeek.total === 0) {
+      weeklyDigest.textContent = 'No entries this week yet.';
+    } else {
+      const parts = [];
+      if (thisWeek.avoidable) parts.push(thisWeek.avoidable + ' ' + aLabel);
+      if (thisWeek.fertile) parts.push(thisWeek.fertile + ' ' + fLabel);
+      if (thisWeek.observed) parts.push(thisWeek.observed + ' ' + oLabel);
+      let sent = 'This week: ' + parts.join(', ') + '.';
+      if (thisWeek.exploration != null) {
+        sent += ' ' + thisWeek.exploration + '% ' + (MODE === 'inside' ? 'shift' : 'exploration') + '.';
+      }
+      weeklyDigest.textContent = sent;
+    }
+  }
+
+  if (dayVsAverage) {
+    const todayStart = getStartOfDay(Date.now());
+    const todayEnd = todayStart + 86400000;
+    const todayEntries = entries.filter(e => e.at >= todayStart && e.at < todayEnd);
+    const todayCount = todayEntries.length;
+    const last7 = getDayCountsLastN(7);
+    const total7 = last7.reduce((s, d) => s + d.total, 0);
+    const avgPerDay = total7 > 0 ? (total7 / 7).toFixed(1) : 0;
+    if (todayCount === 0 && total7 === 0) {
+      dayVsAverage.textContent = 'No entries yet.';
+    } else if (total7 === 0) {
+      dayVsAverage.textContent = 'Today: ' + todayCount + '. Your first day of logging.';
+    } else {
+      const diff = todayCount - parseFloat(avgPerDay);
+      if (Math.abs(diff) < 0.5) {
+        dayVsAverage.textContent = 'Today: ' + todayCount + '. About average (' + avgPerDay + ' per day lately).';
+      } else if (diff > 0) {
+        dayVsAverage.textContent = 'Today: ' + todayCount + '. Above your recent average (' + avgPerDay + ' per day).';
+      } else {
+        dayVsAverage.textContent = 'Today: ' + todayCount + '. Below your recent average (' + avgPerDay + ' per day).';
+      }
+    }
+  }
+
+  if (timeOfDay) {
+    if (entries.length === 0) {
+      timeOfDay.textContent = 'No entries yet.';
+    } else {
+      const hours = entries.map(e => new Date(e.at).getHours());
+      const morning = hours.filter(h => h >= 5 && h < 12).length;
+      const afternoon = hours.filter(h => h >= 12 && h < 17).length;
+      const evening = hours.filter(h => h >= 17 || h < 2).length;
+      const max = Math.max(morning, afternoon, evening);
+      if (max === 0) {
+        timeOfDay.textContent = 'You log across the day.';
+      } else if (morning === max) {
+        timeOfDay.textContent = 'You mostly log in the morning.';
+      } else if (afternoon === max) {
+        timeOfDay.textContent = 'You mostly log in the afternoon.';
+      } else {
+        timeOfDay.textContent = 'You mostly log in the evening.';
+      }
+    }
+  }
+
+  if (topPatterns && topPatternsTitle) {
+    const noteCounts = {};
+    entries.forEach(e => {
+      const n = (e.note || '').trim().toLowerCase();
+      if (n.length >= 3) {
+        noteCounts[n] = (noteCounts[n] || 0) + 1;
+      }
+    });
+    const sorted = Object.entries(noteCounts)
+      .filter(([, c]) => c >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    if (sorted.length === 0) {
+      topPatternsTitle.textContent = '';
+      topPatterns.innerHTML = '';
+    } else {
+      topPatternsTitle.textContent = 'Notes you repeat:';
+      topPatterns.innerHTML = '';
+      sorted.forEach(([note, count]) => {
+        const li = document.createElement('li');
+        li.className = 'entry-item';
+        li.innerHTML = '<span class="note">' + escapeHtml(note) + '</span><span class="time">' + count + '×</span>';
+        topPatterns.appendChild(li);
+      });
+    }
+  }
+
+  if (morePatterns) {
+    const themes = { calm: 0, focus: 0, stressed: 0, curious: 0, tired: 0 };
+    entries.forEach(e => {
+      const t = (e.theme === 'focus' || e.theme === 'stressed' || e.theme === 'curious' || e.theme === 'tired') ? e.theme : 'calm';
+      themes[t] = (themes[t] || 0) + 1;
+    });
+    const chips = Object.entries(themes)
+      .filter(([, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([theme, c]) => '<span class="insight-chip">' + theme + ' (' + c + ')</span>')
+      .join('');
+    morePatterns.innerHTML = chips || '<span class="insight-chip">No patterns yet</span>';
+  }
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function shareAsImage() {
+  const statCountEl = document.getElementById('stat-count');
+  const statLabelEl = document.getElementById('stat-label');
+  const statAvgEl = document.getElementById('stat-avg');
+  const statExplorationEl = document.getElementById('stat-exploration');
+  if (!statCountEl || !statLabelEl) return;
+  const w = 340;
+  const h = 200;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.fillStyle = '#0f0f12';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#e4e4e7';
+  ctx.font = 'bold 28px DM Sans, sans-serif';
+  ctx.fillText('SlipUp', 20, 40);
+  ctx.font = '14px DM Sans, sans-serif';
+  ctx.fillStyle = '#a1a1aa';
+  ctx.fillText(statCountEl.textContent + ' ' + (statLabelEl.textContent || ''), 20, 70);
+  if (statAvgEl) ctx.fillText('Avg ' + statAvgEl.textContent + '/day', 20, 92);
+  if (statExplorationEl && statExplorationEl.textContent !== '—') {
+    ctx.fillText(statExplorationEl.textContent + ' exploration', 20, 114);
+  }
+  ctx.fillStyle = '#71717a';
+  ctx.font = '11px DM Sans, sans-serif';
+  ctx.fillText('slipup.io', 20, h - 15);
+  canvas.toBlob(function(blob) {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'slipup-stats-' + new Date().toISOString().slice(0, 10) + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 'image/png');
 }
 
 function getCurrentStreak() {
@@ -1032,7 +1469,30 @@ function exportCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'mistakes.csv';
+  a.download = MODE === 'inside' ? 'slipup-inside-mistakes.csv' : 'mistakes.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportJson() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    mode: MODE,
+    entries: entries.map(e => ({
+      at: e.at,
+      type: e.type || 'avoidable',
+      note: e.note || '',
+      theme: e.theme || 'calm'
+    }))
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = MODE === 'inside' ? 'slipup-inside-backup.json' : 'slipup-backup.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1169,10 +1629,16 @@ async function fetchSharedEntries() {
       .select('id, note, type, theme, created_at')
       .eq('mode', MODE)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(sharedEntriesLimit);
     if (error) throw error;
     sharedEntriesList.innerHTML = '';
     const list = data || [];
+    lastSharedEntries = list;
+    if (communityEntriesRange) {
+      const label = sharedEntriesLimit === 10 ? 'last 10' : 'last 50';
+      const noun = MODE === 'inside' ? 'shared moments' : 'shared entries';
+      communityEntriesRange.textContent = 'Showing ' + label + ' ' + noun + ' (most recent first).';
+    }
     sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
     sharedEntriesEmpty.textContent = list.length === 0 ? "No shared entries yet. Add a mistake to share yours." : "";
 
@@ -1209,38 +1675,7 @@ async function fetchSharedEntries() {
       }
     }
 
-    list.forEach(row => {
-      const li = document.createElement('li');
-      li.className = 'entry-item';
-      const badge = document.createElement('span');
-      const type = row.type || 'avoidable';
-      let badgeClass = 'badge-avoidable';
-      let label = 'AVOIDABLE';
-      if (type === 'fertile') {
-        badgeClass = 'badge-fertile';
-        label = 'FERTILE';
-      } else if (type === 'observed') {
-        badgeClass = 'badge-observed';
-        label = 'OBSERVED';
-      }
-      badge.className = 'badge ' + badgeClass;
-      badge.textContent = label;
-      const note = document.createElement('span');
-      note.className = 'note' + (row.note ? '' : ' empty');
-      note.textContent = row.note || '(no note)';
-      const theme = document.createElement('span');
-      theme.className = 'theme';
-      const t = row.theme || 'calm';
-      theme.textContent = t === 'focus' ? 'FOCUS' : t === 'warm' ? 'WARM' : 'CALM';
-      const time = document.createElement('span');
-      time.className = 'time';
-      time.textContent = formatTimeFromISO(row.created_at);
-      li.appendChild(badge);
-      li.appendChild(note);
-      li.appendChild(theme);
-      li.appendChild(time);
-      sharedEntriesList.appendChild(li);
-    });
+    renderSharedEntriesList();
   } catch (err) {
     const raw = err && (err.message || err.error_description || err.msg) || '';
     const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
@@ -1256,6 +1691,110 @@ async function fetchSharedEntries() {
       sharedEntriesEmpty.classList.remove('hidden');
     }
   }
+}
+
+function renderSharedEntriesList() {
+  if (!sharedEntriesList) return;
+  sharedEntriesList.innerHTML = '';
+  const source = Array.isArray(lastSharedEntries) ? lastSharedEntries : [];
+  const filtered = source.filter(row => {
+    const type = (row.type || 'avoidable');
+    const themeRaw = (row.theme || 'calm');
+    const theme = (themeRaw === 'focus' || themeRaw === 'stressed' || themeRaw === 'curious' || themeRaw === 'tired')
+      ? themeRaw
+      : 'calm';
+    const typeOk = sharedEntriesTypeFilter === 'all' || type === sharedEntriesTypeFilter;
+    const themeOk = sharedEntriesThemeFilter === 'all' || theme === sharedEntriesThemeFilter;
+    return typeOk && themeOk;
+  });
+
+  if (!filtered.length) {
+    if (sharedEntriesEmpty) {
+      sharedEntriesEmpty.textContent = 'No shared entries match these filters.';
+      sharedEntriesEmpty.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (sharedEntriesEmpty && source.length > 0) {
+    sharedEntriesEmpty.classList.add('hidden');
+  }
+
+  filtered.forEach(row => {
+    const li = document.createElement('li');
+    li.className = 'entry-item';
+    const badge = document.createElement('span');
+    const type = row.type || 'avoidable';
+    let badgeClass = 'badge-avoidable';
+    let label = 'AVOIDABLE';
+    if (type === 'fertile') {
+      badgeClass = 'badge-fertile';
+      label = 'FERTILE';
+    } else if (type === 'observed') {
+      badgeClass = 'badge-observed';
+      label = 'OBSERVED';
+    }
+    badge.className = 'badge ' + badgeClass;
+    badge.textContent = label;
+    const note = document.createElement('span');
+    note.className = 'note' + (row.note ? '' : ' empty');
+    note.textContent = row.note || '(no note)';
+    const theme = document.createElement('span');
+    theme.className = 'theme';
+    const tRaw = row.theme || 'calm';
+    const t = (tRaw === 'focus' || tRaw === 'stressed' || tRaw === 'curious' || tRaw === 'tired') ? tRaw : 'calm';
+    let themeLabel = 'CALM';
+    if (t === 'focus') themeLabel = 'FOCUS';
+    else if (t === 'stressed') themeLabel = 'STRESSED';
+    else if (t === 'curious') themeLabel = 'CURIOUS';
+    else if (t === 'tired') themeLabel = 'TIRED';
+    theme.textContent = themeLabel;
+    const time = document.createElement('span');
+    time.className = 'time';
+    time.textContent = formatTimeFromISO(row.created_at);
+    li.appendChild(badge);
+    li.appendChild(note);
+    li.appendChild(theme);
+    li.appendChild(time);
+    sharedEntriesList.appendChild(li);
+  });
+}
+
+function toggleSharedEntriesView() {
+  if (!btnSharedEntriesToggle) return;
+  // Switch between a short recent slice and a larger window.
+  if (sharedEntriesLimit === 10) {
+    sharedEntriesLimit = 50;
+    btnSharedEntriesToggle.textContent = 'Show recent (last 10)';
+  } else {
+    sharedEntriesLimit = 10;
+    btnSharedEntriesToggle.textContent = 'Show more (last 50)';
+  }
+  fetchSharedEntries();
+}
+
+function handleSharedEntriesFilterClick(e) {
+  if (!sharedEntriesFilters) return;
+  const target = e.target.closest('button.filter-chip');
+  if (!target || !sharedEntriesFilters.contains(target)) return;
+
+  if (target.hasAttribute('data-filter-type')) {
+    const value = target.getAttribute('data-filter-type') || 'all';
+    sharedEntriesTypeFilter = value;
+    const typeButtons = sharedEntriesFilters.querySelectorAll('button[data-filter-type]');
+    typeButtons.forEach(btn => {
+      btn.classList.toggle('active', btn === target);
+    });
+  } else if (target.hasAttribute('data-filter-theme')) {
+    const value = target.getAttribute('data-filter-theme') || 'all';
+    sharedEntriesThemeFilter = value;
+    const themeButtons = sharedEntriesFilters.querySelectorAll('button[data-filter-theme]');
+    themeButtons.forEach(btn => {
+      btn.classList.toggle('active', btn === target);
+    });
+  }
+
+  renderSharedEntriesList();
 }
 
 function showCommunityEntriesSetupMessage() {
@@ -1275,6 +1814,11 @@ function initSharing() {
   if (SHARING_ENABLED && communityEntriesSection) {
     communityEntriesSection.classList.remove('hidden');
     if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', fetchSharedEntries);
+    if (btnSharedEntriesToggle) btnSharedEntriesToggle.addEventListener('click', toggleSharedEntriesView);
+     if (sharedEntriesFilters) sharedEntriesFilters.addEventListener('click', handleSharedEntriesFilterClick);
+    // Start with the recent slice (last 10).
+    sharedEntriesLimit = 10;
+    if (btnSharedEntriesToggle) btnSharedEntriesToggle.textContent = 'Show more (last 50)';
     fetchSharedEntries();
   } else if (communityEntriesSection) {
     communityEntriesSection.classList.add('hidden');
@@ -1292,6 +1836,70 @@ function initReflection() {
   });
   reflectionAvoidable.addEventListener('input', updateReflectionCounters);
   reflectionFertile.addEventListener('input', updateReflectionCounters);
+}
+
+function initMicroGoal() {
+  if (!microGoalInput) return;
+  microGoalInput.addEventListener('blur', () => {
+    saveMicroGoal(microGoalInput.value);
+    renderMicroGoal();
+  });
+  microGoalInput.addEventListener('input', () => renderMicroGoal());
+}
+
+function initAddToHomeBanner() {
+  if (!addToHomeBanner || !addToHomeDismiss) return;
+  if (localStorage.getItem(ADD_TO_HOME_DISMISSED_KEY) === 'true') return;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  if (isStandalone) return;
+  const showBanner = () => {
+    addToHomeBanner.classList.remove('hidden');
+  };
+  if ('beforeinstallprompt' in window) {
+    window.addEventListener('beforeinstallprompt', showBanner, { once: true });
+  } else {
+    const isPWA = document.querySelector('link[rel="manifest"]') && 'serviceWorker' in navigator;
+    if (isPWA) setTimeout(showBanner, 2000);
+  }
+  addToHomeDismiss.addEventListener('click', () => {
+    addToHomeBanner.classList.add('hidden');
+    try { localStorage.setItem(ADD_TO_HOME_DISMISSED_KEY, 'true'); } catch (_) {}
+  });
+}
+
+function initReminder() {
+  if (!reminderCheckbox) return;
+  try {
+    reminderCheckbox.checked = localStorage.getItem(REMINDER_KEY) === 'true';
+  } catch (_) {}
+  reminderCheckbox.addEventListener('change', () => {
+    const enabled = reminderCheckbox.checked;
+    try { localStorage.setItem(REMINDER_KEY, enabled ? 'true' : 'false'); } catch (_) {}
+    if (enabled && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    if (enabled && 'Notification' in window && Notification.permission === 'granted') {
+      scheduleReminder();
+    }
+  });
+  if (reminderCheckbox.checked && 'Notification' in window && Notification.permission === 'granted') {
+    scheduleReminder();
+  }
+}
+
+function scheduleReminder() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(20, 0, 0, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+  const ms = target - now;
+  setTimeout(() => {
+    if (localStorage.getItem(REMINDER_KEY) !== 'true') return;
+    new Notification('SlipUp', { body: 'Time for your evening check-in. How did today go?' });
+    scheduleReminder();
+  }, ms);
 }
 
 if (addBtn) addBtn.addEventListener('click', addMistake);
@@ -1341,8 +1949,15 @@ if (historyFilters) {
   });
 }
 
+if (btnExportReflections) {
+  btnExportReflections.addEventListener('click', exportReflectionsCsv);
+}
+
 if (exportCsvBtn) {
-  exportCsvBtn.addEventListener('click', exportCsv);
+  exportCsvBtn.addEventListener('click', () => { if (isUnlocked()) exportCsv(); });
+}
+if (exportJsonBtn) {
+  exportJsonBtn.addEventListener('click', () => { if (isUnlocked()) exportJson(); });
 }
 
 periodTabs.forEach(tab => {
@@ -1355,6 +1970,10 @@ renderStats();
 renderList();
 initSharing();
 initReflection();
+initMicroGoal();
+initAddToHomeBanner();
+initReminder();
+if (btnShareImage) btnShareImage.addEventListener('click', shareAsImage);
 
 if (btnBuy && PAYMENT_URL) {
   btnBuy.href = PAYMENT_URL;

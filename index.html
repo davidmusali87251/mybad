@@ -207,9 +207,31 @@
     <section class="community-entries-section" id="community-entries-section">
       <h2>Everyone's recent entries</h2>
       <p class="section-hint">Anonymous entries from all users. Add a mistake above to contribute.</p>
-      <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
+      <div class="community-entries-actions">
+        <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
+        <button type="button" id="btn-shared-entries-toggle" class="btn-refresh btn-refresh-secondary">Show more (last 50)</button>
+      </div>
       <p class="community-comparison" id="community-comparison"></p>
       <p class="community-trend" id="community-entries-trend"></p>
+      <p class="community-range" id="community-entries-range">Showing last 10 shared entries (most recent first).</p>
+      <div class="community-entries-filters" id="shared-entries-filters">
+        <div class="community-filter-row">
+          <span class="community-filters-label">Type</span>
+          <button type="button" class="filter-chip active" data-filter-type="all">All</button>
+          <button type="button" class="filter-chip" data-filter-type="avoidable">Avoidable</button>
+          <button type="button" class="filter-chip" data-filter-type="fertile">Fertile</button>
+          <button type="button" class="filter-chip" data-filter-type="observed">Observed</button>
+        </div>
+        <div class="community-filter-row">
+          <span class="community-filters-label">Mood</span>
+          <button type="button" class="filter-chip active" data-filter-theme="all">All</button>
+          <button type="button" class="filter-chip" data-filter-theme="calm">Calm</button>
+          <button type="button" class="filter-chip" data-filter-theme="focus">Focus</button>
+          <button type="button" class="filter-chip" data-filter-theme="stressed">Stressed</button>
+          <button type="button" class="filter-chip" data-filter-theme="curious">Curious</button>
+          <button type="button" class="filter-chip" data-filter-theme="tired">Tired</button>
+        </div>
+      </div>
       <ul class="entry-list" id="shared-entries-list"></ul>
       <p class="empty-state" id="shared-entries-empty">No shared entries yet. Add a mistake to share yours.</p>
       <p class="community-error hidden" id="shared-entries-error"></p>
@@ -238,6 +260,23 @@
       </div>
       <p class="reflection-note" id="reflection-note"></p>
       <div class="yesterday-reflection" id="yesterday-reflection"></div>
+      <div class="reflection-history" id="reflection-history">
+        <h3 class="reflection-history-title">Recent reflections (this device)</h3>
+        <p class="reflection-history-hint">Saved locally; a simple table to glance back over the last days. You can export this below.</p>
+        <div class="reflection-history-table-wrap">
+          <table class="reflection-history-table" aria-label="Recent reflections">
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                <th scope="col">Avoidable</th>
+                <th scope="col">Fertile</th>
+              </tr>
+            </thead>
+            <tbody id="reflection-history-body"></tbody>
+          </table>
+        </div>
+        <button type="button" id="btn-export-reflections" class="btn-export-reflections">Export reflections (CSV)</button>
+      </div>
     </section>
 
     <section class="share-section" id="share-section">

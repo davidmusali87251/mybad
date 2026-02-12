@@ -10,7 +10,6 @@ const STATIC_ASSETS = [
   './refund.html',
   './styles.css',
   './app.js',
-  './config.js',
   './manifest.json',
   './icon.svg',
   './icon-maskable.svg'

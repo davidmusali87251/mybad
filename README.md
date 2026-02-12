@@ -4,7 +4,7 @@
 
 A simple web app to count and track mistakes by **day**, **week**, and **month**.
 
-**Live:** [https://www.slipup.io](https://www.slipup.io) (or [GitHub Pages demo](https://davidmusali87251.github.io/mybad/) if different)
+**Live:** [https://www.slipup.io](https://www.slipup.io)
 
 Design and constraints are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -13,7 +13,7 @@ Design and constraints are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Phase 1 – Personal** ✓  
   Error log, classification (Avoidable / Fertile / Observed), automatic reflection, simple statistics (counts, exploration index, streaks, trends, week-over-week).
 
-- **Phase 2 – Social** (in progress)  
+- **Phase 2 – Social** (first version live; expanding)  
   View anonymous entries and shared stats from others, category “Observed” (patterns in others/the system), collective comparison (your exploration vs recent shares), social trend summary.
 
 ## Features
@@ -27,6 +27,15 @@ Design and constraints are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Persistent** — Data is stored in your browser (localStorage).
 - **Share anonymously** — Share your current period stats so anyone can see (no account, no name).
 - **Others' results** — See recent anonymous shares from all users.
+
+### SlipUp Inside (groups)
+
+SlipUp Inside reuses the same app shell but switches copy and stats to fit **group check‑ins** (e.g. units, programs):
+
+- **Heat / Shift / Support** instead of Avoidable / Fertile / Observed.
+- **Shift index** instead of exploration index (shift ÷ (heat + shift)).
+- Anonymous sharing uses the same `shared_what_happened` table with `mode = 'inside'`, plus a separate `shared_stats_inside` table for group stats (see SQL above).
+- The mood system is the same (calm, focus, stressed, curious, tired), and reflections + entries are stored separately per mode on the same browser.
 
 ## How to run
 

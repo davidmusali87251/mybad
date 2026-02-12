@@ -5,21 +5,28 @@
 - Repo: mistake-tracker (GitHub: davidmusali87251/mybad). Live: www.slipup.io.
 
 ## Key files
-- **app.js** — Core logic: entries (add, filter, localStorage), stats, sharing (Supabase), theme/mode, reflection, streaks, daily_summaries insert on share.
+- **app.js** — Core logic: entries (add, filter, localStorage), stats, sharing (Supabase), theme/mode, reflection, streaks. Export CSV/JSON gated by unlock (I've paid). Line chart (14-day).
 - **index.html** — Personal mistake tracker UI (add card, type pills, mood row, stats, recent entries, share, others' results).
 - **inside.html** — SlipUp Inside (group check-ins): same add/stats/entries pattern; mode `inside`; shares to same Supabase with mode filter.
 - **landing.html** — Marketing/landing (Why SlipUp, Roadmap, footer links).
 - **styles.css** — Global theme (violet accent, modes: calm/focus/stressed/curious/tired), layout, components (btn-add, type-pill, btn-mode, entry-item left border by type, stat cards, empty-state icon), body gradients (::before, ::after).
 - **config.example.js** — Template only. Real config: local `config.js` (gitignored) or **GitHub Secrets** at deploy. Never commit `config.js`.
-- **.github/workflows/main.yml** — Single deploy workflow (build config from Secrets, deploy to GitHub Pages). No other deploy workflow.
+- **.github/workflows/main.yml** — Single deploy workflow (build config from Secrets incl. PayPal, deploy to GitHub Pages).
+- **sw.js** — PWA service worker; pre-caches HTML/CSS/JS (config.js excluded to avoid install fail when missing locally).
 
 ## Config (for agent)
 - **Local:** Copy `config.example.js` → `config.js`; set `SUPABASE_URL`, `SUPABASE_ANON_KEY`. Optional: `SUPABASE_STATS_TABLE`, `SUPABASE_ENTRIES_TABLE`, `PAYMENT_URL`, `PAYPAL_*`.
 - **Deploy:** Config is built from repo **Secrets** (SUPABASE_URL, SUPABASE_ANON_KEY, etc.). No `config.js` in repo.
 - **Tables:** Defaults: `shared_stats`, `shared_what_happened`. Optional override via config; app also writes to `daily_summaries` when sharing (if using that table). Inside uses `shared_stats_inside` and `shared_what_happened` with `mode = 'inside'`.
 
+## Premium / export gating
+- Export CSV and Export JSON: disabled until user clicks $5 purchase link, then "I've paid". Handled in updateUpgradeUI(); exports personal entries only.
+
+## Implemented (previously stub)
+- micro-goal-section, insights-section, btn-share-image, add-to-home-banner, reminder-checkbox — all now have handlers.
+
 ## Data & conventions
-- **Entry:** timestamp, type (avoidable|fertile|observed), note, theme (calm|focus|stressed|curious|tired), optional visibility. Stored in localStorage; optionally pushed to Supabase on share.
+- **Entry:** timestamp, type (avoidable|fertile|observed), note, theme. Stored in localStorage; pushed to Supabase on add when sharing enabled.
 - **Theme/mode:** Stored in localStorage (THEME_KEY); applied as body class (e.g. `theme-focus`). Same THEME_ORDER and mode button on index, inside, privacy, terms, refund.
 - **Legal pages:** privacy.html, terms.html, refund.html — each has inline theme script and footer.
 
