@@ -1954,6 +1954,32 @@ body.theme-tired .add-card {
   display: none;
 }
 
+.community-entries-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.community-entries-header h2 {
+  margin-bottom: 0;
+}
+
+.btn-shared-total {
+  flex-shrink: 0;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  cursor: default;
+  white-space: nowrap;
+}
+
 .share-section h2,
 .community-section h2,
 .community-entries-section h2 {

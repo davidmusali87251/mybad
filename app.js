@@ -9,6 +9,7 @@ const CONFIG = (typeof window !== 'undefined' && window.MISTAKE_TRACKER_CONFIG) 
 const STATS_TABLE = (CONFIG.SUPABASE_STATS_TABLE || '').trim() ||
   (MODE === 'inside' ? 'shared_stats_inside' : 'shared_stats');
 const ENTRIES_TABLE = (CONFIG.SUPABASE_ENTRIES_TABLE || '').trim() || 'shared_what_happened';
+const CHART_TABLE = (CONFIG.SUPABASE_CHART_TABLE || '').trim() || 'shared_chart_counts';
 const EVENTS_TABLE = 'slipup_events';
 
 let entries = [];
@@ -96,6 +97,7 @@ const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const communityEntriesTrend = document.getElementById('community-entries-trend');
 const communityEntriesRange = document.getElementById('community-entries-range');
 const globalCountChart = document.getElementById('global-count-chart');
+const btnSharedTotal = document.getElementById('btn-shared-total');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
@@ -1832,6 +1834,11 @@ async function fetchSharedEntries() {
     }
 
     renderGlobalCountChart(avoidable, fertile, observed);
+    if (btnSharedTotal) {
+      const total = avoidable + fertile + observed;
+      btnSharedTotal.textContent = total + ' shared';
+      btnSharedTotal.setAttribute('aria-label', (MODE === 'inside' ? 'Total shared moments: ' : 'Total shared entries: ') + total);
+    }
     renderSharedEntriesList();
   } catch (err) {
     const raw = err && (err.message || err.error_description || err.msg) || '';
@@ -1839,6 +1846,7 @@ async function fetchSharedEntries() {
     if (communityComparison) communityComparison.textContent = '';
     if (communityEntriesTrend) communityEntriesTrend.textContent = '';
     renderGlobalCountChart(0, 0, 0);
+    if (btnSharedTotal) btnSharedTotal.textContent = '0 shared';
     if (sharedEntriesError) {
       sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
       sharedEntriesError.classList.remove('hidden');

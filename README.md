@@ -186,6 +186,22 @@ alter table shared_what_happened add column if not exists theme text not null de
 
 Then reload the app. After this, "Others' results" will group shares by anonymous user.
 
+### Global counting chart table (`shared_chart_counts`)
+
+The **Avoidable ↓ · Fertile ↔ or ↑** chart in "Everyone's recent entries" aggregates counts from shared entries. To store these in a dedicated Supabase table (for dashboards, reporting, or future use), run the script:
+
+1. In Supabase: **SQL Editor** → **New query**
+2. Open `supabase-global-chart.sql` from this project and paste its contents
+3. Run the query
+
+This creates:
+
+- **`shared_chart_counts`** — `mode`, `window_size` (10 or 50), `avoidable`, `fertile`, `observed`, `total`, `updated_at`
+- A trigger on `shared_what_happened` that keeps the table in sync when entries are added or removed
+- RLS allowing anonymous **select** only (writes happen via the trigger)
+
+The app still derives chart data from the entries list. The table is available for direct queries or future optimization.
+
 ### Group "Others' results" by same anonymous user
 
 To group shared stats by anonymous user (one row per person, still no names), add the column and run once in **SQL Editor**:
