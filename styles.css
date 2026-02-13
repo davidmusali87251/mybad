@@ -2185,6 +2185,33 @@ body.theme-tired .add-card {
   color: var(--danger);
 }
 
+.btn-add-from-community {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+.btn-add-from-community:hover {
+  background: var(--accent-dim);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--accent-glow-strong);
+}
+
+.btn-add-from-community:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .btn-refresh {
   padding: 0.4rem 0.75rem;
   margin-bottom: 0.75rem;
@@ -2354,4 +2381,82 @@ body.theme-tired .add-card {
   color: var(--text-muted);
   margin-bottom: 0.5rem;
   font-style: italic;
+}
+
+/* ---- Mobile / phone: updates, touch, safe area, no zoom on input ---- */
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area for notched phones and home indicator */
+.top-bar {
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+  padding-top: max(0.6rem, env(safe-area-inset-top));
+}
+
+.app {
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+.page-footer {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+/* iOS: prevent zoom on focus when input font-size would be < 16px */
+@media (max-width: 480px) {
+  .add-card input#mistake-note,
+  .add-card input.micro-goal-input {
+    font-size: 16px;
+  }
+}
+
+/* Touch targets at least 44px for key actions (accessibility) */
+@media (pointer: coarse) {
+  .tab {
+    min-height: 44px;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  .btn-add {
+    min-height: 44px;
+  }
+  .btn-mode,
+  .top-bar-theme {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem 0.85rem;
+  }
+  .top-bar-home,
+  #top-bar-add {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-quick {
+    min-height: 44px;
+    padding: 0.5rem 0.85rem;
+  }
+  .btn-share,
+  .btn-add-from-community {
+    min-height: 44px;
+    padding: 0.6rem 1.25rem;
+  }
+  .global-info-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .type-pill {
+    min-height: 44px;
+  }
 }

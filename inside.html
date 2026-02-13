@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0b1013">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css?v=7">
@@ -17,7 +19,7 @@
     <a href="index.html" class="top-bar-brand">SlipUp</a>
     <div class="top-bar-actions">
       <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?">Calm</button>
-      <a href="index.html" class="top-bar-home">Home</a>
+      <a href="index.html" class="top-bar-home" id="top-bar-add">+ Add</a>
     </div>
   </header>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
@@ -212,6 +214,7 @@
         <button type="button" id="btn-shared-total" class="btn-shared-total" title="Total shared moments in this view" aria-label="Total shared moments">0 shared</button>
       </div>
       <p class="section-hint">Heat ↓ · Shift ↔ or ↑. Anonymous moments from all users. Add a moment above to contribute.</p>
+      <button type="button" id="btn-add-from-community" class="btn-add-from-community" aria-label="Scroll to add a moment">+ Add</button>
       <div class="global-count-chart-wrap" id="global-count-chart" aria-label="Global count of shared moments by type" aria-hidden="true"></div>
       <div class="community-entries-actions">
         <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>

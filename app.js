@@ -101,6 +101,8 @@ const sharedEntriesEmpty = document.getElementById('shared-entries-empty');
 const sharedEntriesError = document.getElementById('shared-entries-error');
 const btnRefreshEntries = document.getElementById('btn-refresh-entries');
 const btnSharedEntriesToggle = document.getElementById('btn-shared-entries-toggle');
+const btnAddFromCommunity = document.getElementById('btn-add-from-community');
+const topBarAdd = document.getElementById('top-bar-add');
 const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const communityEntriesTrend = document.getElementById('community-entries-trend');
 const communityEntriesRange = document.getElementById('community-entries-range');
@@ -2044,6 +2046,25 @@ function initSharing() {
     if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', fetchSharedEntries);
     if (btnSharedEntriesToggle) btnSharedEntriesToggle.addEventListener('click', toggleSharedEntriesView);
      if (sharedEntriesFilters) sharedEntriesFilters.addEventListener('click', handleSharedEntriesFilterClick);
+    if (btnAddFromCommunity) {
+      btnAddFromCommunity.addEventListener('click', function () {
+        const main = document.getElementById('main');
+        if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (addNoteInput) {
+          setTimeout(function () { addNoteInput.focus(); }, 300);
+        }
+      });
+    }
+    if (topBarAdd) {
+      topBarAdd.addEventListener('click', function (e) {
+        e.preventDefault();
+        const main = document.getElementById('main');
+        if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (addNoteInput) {
+          setTimeout(function () { addNoteInput.focus(); }, 300);
+        }
+      });
+    }
     // Start with the recent slice (last 10).
     sharedEntriesLimit = 10;
     if (btnSharedEntriesToggle) btnSharedEntriesToggle.textContent = 'Show more (last 50)';
