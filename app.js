@@ -1828,46 +1828,22 @@ async function fetchSharedEntries() {
       .limit(sharedEntriesLimit);
     if (error) throw error;
 
-    // 2) Fetch actual total count (not capped by limit) for "X shared" and global chart
+    // 2) Fetch total count (not capped by limit) for "X shared" button only
     let globalTotal = 0;
-    let chartAvoidable = 0;
-    let chartFertile = 0;
-    let chartObserved = 0;
     try {
       const { count: totalCount } = await client
         .from(ENTRIES_TABLE)
         .select('*', { count: 'exact', head: true })
         .eq('mode', MODE);
       globalTotal = typeof totalCount === 'number' ? totalCount : 0;
-
-      // Try shared_chart_counts for global breakdown (trigger keeps it fresh)
-      const { data: chartRow } = await client
-        .from(CHART_TABLE)
-        .select('avoidable, fertile, observed, total')
-        .eq('mode', MODE)
-        .eq('window_size', sharedEntriesLimit)
-        .maybeSingle();
-      if (chartRow && (chartRow.avoidable + chartRow.fertile + chartRow.observed) > 0) {
-        chartAvoidable = chartRow.avoidable || 0;
-        chartFertile = chartRow.fertile || 0;
-        chartObserved = chartRow.observed || 0;
-      }
     } catch (_) {
-      /* ignore: use list-based counts as fallback */
+      /* ignore */
     }
     sharedEntriesList.innerHTML = '';
     const list = data || [];
     lastSharedEntries = list;
-    if (communityEntriesRange) {
-      const label = sharedEntriesLimit === 10 ? 'last 10' : 'last 50';
-      const noun = MODE === 'inside' ? 'shared moments' : 'shared entries';
-      communityEntriesRange.textContent = 'Showing ' + label + ' ' + noun + ' (most recent first).';
-    }
-    sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
-    sharedEntriesEmpty.textContent = list.length === 0
-      ? (MODE === 'inside' ? "No shared moments yet. Add one to share yours." : "No shared entries yet. Add a mistake to share yours.")
-      : "";
 
+    // Single source of truth: counts from the list we just fetched (chart + trend + labels stay in sync)
     let avoidable = 0;
     let fertile = 0;
     let observed = 0;
@@ -1877,11 +1853,20 @@ async function fetchSharedEntries() {
       else if (t === 'observed') observed += 1;
       else avoidable += 1;
     });
-    // Use chart table counts if available, else list-based
-    const useChartCounts = (chartAvoidable + chartFertile + chartObserved) > 0;
-    const displayAvoidable = useChartCounts ? chartAvoidable : avoidable;
-    const displayFertile = useChartCounts ? chartFertile : fertile;
-    const displayObserved = useChartCounts ? chartObserved : observed;
+
+    if (communityEntriesRange) {
+      const label = sharedEntriesLimit === 10 ? 'last 10' : 'last 50';
+      const noun = MODE === 'inside' ? 'shared moments' : 'shared entries';
+      communityEntriesRange.textContent = 'Showing ' + label + ' ' + noun + ' (most recent first).';
+    }
+    sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
+    sharedEntriesEmpty.textContent = list.length === 0
+      ? (MODE === 'inside' ? "No shared moments yet. Add one to share yours." : "No shared entries yet. Add a mistake to share yours.")
+      : "";
+    if (sharedEntriesError) {
+      sharedEntriesError.classList.add('hidden');
+      sharedEntriesError.textContent = '';
+    }
     const primaryTotal = avoidable + fertile;
     const sharedFertilePct = primaryTotal > 0 ? Math.round((fertile / primaryTotal) * 100) : null;
     const myStats = getThisWeekAndLastWeek();
@@ -1909,7 +1894,8 @@ async function fetchSharedEntries() {
       }
     }
 
-    renderGlobalCountChart(displayAvoidable, displayFertile, displayObserved);
+    // Chart and trend both use same list-based counts (avoidable, fertile, observed)
+    renderGlobalCountChart(avoidable, fertile, observed);
     if (btnSharedTotal) {
       const total = globalTotal > 0 ? globalTotal : (avoidable + fertile + observed);
       btnSharedTotal.textContent = total + ' shared';
