@@ -1,4 +1,4 @@
-const CACHE_NAME = 'slip-track-v6';
+const CACHE_NAME = 'slip-track-v12';
 
 const STATIC_ASSETS = [
   './',

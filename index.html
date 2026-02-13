@@ -12,7 +12,8 @@
   {"@context":"https://schema.org","@type":"WebApplication","name":"SlipUp","description":"Log daily mistakes, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.","url":"https://www.slipup.io/","applicationCategory":"LifestyleApplication"}
   </script>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=12">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -31,11 +32,14 @@
     <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
   </div>
   <div class="app">
-    <header class="header">
-      <h1>SlipUp</h1>
-      <p class="tagline">Count & reflect by day, week, month</p>
-      <p class="tagline-sub">Reduce useless mistakes. Keep the ones that grow you.</p>
-      <a href="landing.html" class="header-about">What is this?</a>
+    <header class="app-hero" id="main-hero">
+      <div class="app-hero-inner">
+        <h1 class="app-hero-title">SlipUp</h1>
+        <p class="app-hero-tagline">Count & reflect by day, week, month</p>
+        <p class="app-hero-sub">Reduce useless mistakes. Keep the ones that grow you.</p>
+        <a href="landing.html" class="app-hero-about">What is this?</a>
+      </div>
+      <div class="app-hero-glow" aria-hidden="true"></div>
     </header>
 
     <p class="phase-label">1 – Personal</p>
@@ -347,10 +351,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=7"></script>
+  <script src="config.js?v=12"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=12"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

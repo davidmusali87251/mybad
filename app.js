@@ -101,9 +101,9 @@ const sharedEntriesEmpty = document.getElementById('shared-entries-empty');
 const sharedEntriesError = document.getElementById('shared-entries-error');
 const btnRefreshEntries = document.getElementById('btn-refresh-entries');
 const btnSharedEntriesToggle = document.getElementById('btn-shared-entries-toggle');
+const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const btnAddFromCommunity = document.getElementById('btn-add-from-community');
 const topBarAdd = document.getElementById('top-bar-add');
-const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const communityEntriesTrend = document.getElementById('community-entries-trend');
 const communityEntriesRange = document.getElementById('community-entries-range');
 const globalCountChart = document.getElementById('global-count-chart');
@@ -970,9 +970,9 @@ function renderLineChart() {
       .map((d, i) => scaleX(i) + ',' + scaleY(d[key]))
       .join(' ');
 
-  const avoidableColor = '#e04e5a';
-  const fertileColor = '#4a9c6d';
-  const observedColor = '#5a8ed6';
+  const avoidableColor = '#d49282';
+  const fertileColor = '#5a9c8e';
+  const observedColor = '#7d8aaf';
 
   lineChartSvg.innerHTML =
     '<polyline fill="none" stroke="' +
@@ -1515,7 +1515,15 @@ function getSupabase() {
   if (!SUPABASE_ANON_KEY.startsWith('eyJ')) {
     throw new Error('Invalid Supabase anon key. Use the anon public key from Supabase → Settings → API (JWT starting with eyJ...). Set in config.js locally or in repo Secrets for deploy.');
   }
-  return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: {
+      fetch: (url, opts) => {
+        const method = (opts && opts.method || 'GET').toUpperCase();
+        const cacheBust = method === 'GET' ? (url + (url.includes('?') ? '&' : '?') + '_=' + Date.now()) : url;
+        return fetch(cacheBust, { ...opts, cache: 'no-store' });
+      }
+    }
+  });
 }
 
 function getCurrentStatsForShare() {
@@ -1810,6 +1818,8 @@ async function fetchSharedEntries() {
   }
   try {
     const client = getSupabase();
+
+    // 1) Fetch entries for the list (last 10 or 50)
     const { data, error } = await client
       .from(ENTRIES_TABLE)
       .select('id, note, type, theme, created_at')
@@ -1817,6 +1827,34 @@ async function fetchSharedEntries() {
       .order('created_at', { ascending: false })
       .limit(sharedEntriesLimit);
     if (error) throw error;
+
+    // 2) Fetch actual total count (not capped by limit) for "X shared" and global chart
+    let globalTotal = 0;
+    let chartAvoidable = 0;
+    let chartFertile = 0;
+    let chartObserved = 0;
+    try {
+      const { count: totalCount } = await client
+        .from(ENTRIES_TABLE)
+        .select('*', { count: 'exact', head: true })
+        .eq('mode', MODE);
+      globalTotal = typeof totalCount === 'number' ? totalCount : 0;
+
+      // Try shared_chart_counts for global breakdown (trigger keeps it fresh)
+      const { data: chartRow } = await client
+        .from(CHART_TABLE)
+        .select('avoidable, fertile, observed, total')
+        .eq('mode', MODE)
+        .eq('window_size', sharedEntriesLimit)
+        .maybeSingle();
+      if (chartRow && (chartRow.avoidable + chartRow.fertile + chartRow.observed) > 0) {
+        chartAvoidable = chartRow.avoidable || 0;
+        chartFertile = chartRow.fertile || 0;
+        chartObserved = chartRow.observed || 0;
+      }
+    } catch (_) {
+      /* ignore: use list-based counts as fallback */
+    }
     sharedEntriesList.innerHTML = '';
     const list = data || [];
     lastSharedEntries = list;
@@ -1839,6 +1877,11 @@ async function fetchSharedEntries() {
       else if (t === 'observed') observed += 1;
       else avoidable += 1;
     });
+    // Use chart table counts if available, else list-based
+    const useChartCounts = (chartAvoidable + chartFertile + chartObserved) > 0;
+    const displayAvoidable = useChartCounts ? chartAvoidable : avoidable;
+    const displayFertile = useChartCounts ? chartFertile : fertile;
+    const displayObserved = useChartCounts ? chartObserved : observed;
     const primaryTotal = avoidable + fertile;
     const sharedFertilePct = primaryTotal > 0 ? Math.round((fertile / primaryTotal) * 100) : null;
     const myStats = getThisWeekAndLastWeek();
@@ -1866,9 +1909,9 @@ async function fetchSharedEntries() {
       }
     }
 
-    renderGlobalCountChart(avoidable, fertile, observed);
+    renderGlobalCountChart(displayAvoidable, displayFertile, displayObserved);
     if (btnSharedTotal) {
-      const total = avoidable + fertile + observed;
+      const total = globalTotal > 0 ? globalTotal : (avoidable + fertile + observed);
       btnSharedTotal.textContent = total + ' shared';
       btnSharedTotal.setAttribute('aria-label', (MODE === 'inside' ? 'Total shared moments: ' : 'Total shared entries: ') + total);
     }
@@ -2048,24 +2091,12 @@ function initSharing() {
     communityEntriesSection.classList.remove('hidden');
     if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', fetchSharedEntries);
     if (btnSharedEntriesToggle) btnSharedEntriesToggle.addEventListener('click', toggleSharedEntriesView);
-     if (sharedEntriesFilters) sharedEntriesFilters.addEventListener('click', handleSharedEntriesFilterClick);
+    if (sharedEntriesFilters) sharedEntriesFilters.addEventListener('click', handleSharedEntriesFilterClick);
     if (btnAddFromCommunity) {
       btnAddFromCommunity.addEventListener('click', function () {
         const main = document.getElementById('main');
         if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        if (addNoteInput) {
-          setTimeout(function () { addNoteInput.focus(); }, 300);
-        }
-      });
-    }
-    if (topBarAdd) {
-      topBarAdd.addEventListener('click', function (e) {
-        e.preventDefault();
-        const main = document.getElementById('main');
-        if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        if (addNoteInput) {
-          setTimeout(function () { addNoteInput.focus(); }, 300);
-        }
+        if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
       });
     }
     // Start with the recent slice (last 10).
@@ -2165,6 +2196,7 @@ if (addNoteInput) {
     if (addNoteInput.value.length > MISTAKE_NOTE_MAXLEN) addNoteInput.value = addNoteInput.value.slice(0, MISTAKE_NOTE_MAXLEN);
     updateAddButtonState();
   });
+  addNoteInput.addEventListener('keyup', updateAddButtonState);
   addNoteInput.addEventListener('paste', () => {
     setTimeout(() => {
       if (addNoteInput.value.length > MISTAKE_NOTE_MAXLEN) addNoteInput.value = addNoteInput.value.slice(0, MISTAKE_NOTE_MAXLEN);
@@ -2177,9 +2209,7 @@ updateAddButtonState();
 const btnCantTell = document.getElementById('btn-cant-tell');
 if (btnCantTell) btnCantTell.addEventListener('click', () => quickAdd(getSelectedType()));
 if (emptyState && emptyState.classList.contains('empty-state-add')) {
-  emptyState.addEventListener('click', function () {
-    quickAdd(getSelectedType());
-  });
+  emptyState.addEventListener('click', function () { quickAdd(getSelectedType()); });
   emptyState.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -2332,6 +2362,14 @@ initReflection();
 initMicroGoal();
 initAddToHomeBanner();
 initReminder();
+if (topBarAdd) {
+  topBarAdd.addEventListener('click', function (e) {
+    e.preventDefault();
+    const main = document.getElementById('main');
+    if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
+  });
+}
 if (btnShareImage) btnShareImage.addEventListener('click', shareAsImage);
 
 if (btnBuy && PAYMENT_URL) {
