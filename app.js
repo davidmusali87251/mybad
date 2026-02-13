@@ -746,7 +746,10 @@ function renderList() {
     entryList.appendChild(li);
   });
 
-  if (emptyState) emptyState.classList.toggle('hidden', show.length > 0);
+  if (emptyState) {
+    emptyState.classList.toggle('hidden', show.length > 0);
+    if (emptyState.classList.contains('empty-state-add')) emptyState.disabled = isAtLimit();
+  }
   if (firstTimeNudge) firstTimeNudge.classList.toggle('hidden', entries.length > 0);
 }
 
@@ -2173,6 +2176,17 @@ updateAddButtonState();
 
 const btnCantTell = document.getElementById('btn-cant-tell');
 if (btnCantTell) btnCantTell.addEventListener('click', () => quickAdd(getSelectedType()));
+if (emptyState && emptyState.classList.contains('empty-state-add')) {
+  emptyState.addEventListener('click', function () {
+    quickAdd(getSelectedType());
+  });
+  emptyState.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      quickAdd(getSelectedType());
+    }
+  });
+}
 
 function updateTypeHint() {
   const type = getSelectedType();
