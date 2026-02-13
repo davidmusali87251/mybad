@@ -647,6 +647,156 @@ body.theme-tired .add-card {
   color: var(--text-muted);
 }
 
+/* Bias Check – only for Observed type */
+.bias-check-row {
+  margin-bottom: 0.75rem;
+}
+
+.bias-check-row.hidden {
+  display: none;
+}
+
+.btn-bias-check {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bg);
+  background: #5a8ed6;
+  border: 1px solid #5a8ed6;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-bias-check:hover {
+  background: #6a9ee6;
+  transform: translateY(-1px);
+}
+
+/* Bias Check modal overlay */
+.bias-check-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(11, 16, 19, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.bias-check-overlay.hidden {
+  display: none;
+}
+
+.bias-check-panel {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.bias-check-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.bias-check-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.bias-check-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.bias-check-option:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-dim);
+}
+
+.bias-check-option input {
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.bias-check-reflection {
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--accent-tint);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-style: italic;
+}
+
+.bias-check-reflection.hidden {
+  display: none;
+}
+
+.bias-check-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-bias-close {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-bias-close:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-dim);
+}
+
+/* Custom note tooltip (works in PWA where native title doesn't) */
+.note-tooltip {
+  position: fixed;
+  z-index: 9999;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.4;
+  white-space: normal;
+  max-width: 300px;
+  pointer-events: none;
+}
+
+.note-tooltip.hidden {
+  display: none;
+}
+
 .type-pill:has(input:checked) {
   border-color: var(--accent);
   background: var(--accent-tint);

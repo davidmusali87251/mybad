@@ -45,6 +45,14 @@ const TYPE_PHRASES = {
   fertile: 'What did I try? What did I learn?',
   observed: 'For learning, not blaming. What did I see? What lesson applies to me?'
 };
+
+const BIAS_REFLECTIONS = {
+  harm: 'This may be a useful observed mistake. Ask yourself what you can learn from it.',
+  failed: 'This may be a useful observed mistake. Ask yourself what you can learn from it.',
+  different: 'This might not be a mistake. It could be a difference in values, style, or perspective.',
+  triggered: 'This might not be a mistake. It could be a difference in values, style, or perspective.',
+  unsure: "Not every observed mistake needs a conclusion. Sometimes awareness is enough."
+};
 const TYPE_PLACEHOLDERS = {
   avoidable: 'e.g. Forgot to save, spoke harshly…',
   fertile: 'e.g. Tried a new approach, missed the mark…',
@@ -98,6 +106,12 @@ const communityEntriesTrend = document.getElementById('community-entries-trend')
 const communityEntriesRange = document.getElementById('community-entries-range');
 const globalCountChart = document.getElementById('global-count-chart');
 const btnSharedTotal = document.getElementById('btn-shared-total');
+const biasCheckRow = document.getElementById('bias-check-row');
+const btnBiasCheck = document.getElementById('btn-bias-check');
+const biasCheckOverlay = document.getElementById('bias-check-overlay');
+const biasCheckReflection = document.getElementById('bias-check-reflection');
+const biasCheckOptions = document.getElementById('bias-check-options');
+const btnBiasCheckClose = document.getElementById('btn-bias-check-close');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
@@ -705,7 +719,10 @@ function renderList() {
     const note = document.createElement('span');
     note.className = 'note' + (entry.note ? '' : ' empty');
     note.textContent = entry.note || "I couldn't tell";
-    if (entry.note) note.title = entry.note;
+    if (entry.note) {
+      note.title = entry.note;
+      note.dataset.fullNote = entry.note;
+    }
     const theme = document.createElement('span');
     theme.className = 'theme';
     const t = entry.theme || 'calm';
@@ -1214,7 +1231,18 @@ function renderInsights() {
       sorted.forEach(([note, count]) => {
         const li = document.createElement('li');
         li.className = 'entry-item';
-        li.innerHTML = '<span class="note">' + escapeHtml(note) + '</span><span class="time">' + count + '×</span>';
+        const noteSpan = document.createElement('span');
+        noteSpan.className = 'note';
+        noteSpan.textContent = note;
+        if (note) {
+          noteSpan.title = note;
+          noteSpan.dataset.fullNote = note;
+        }
+        li.appendChild(noteSpan);
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'time';
+        timeSpan.textContent = count + '×';
+        li.appendChild(timeSpan);
         topPatterns.appendChild(li);
       });
     }
@@ -1935,7 +1963,10 @@ function renderSharedEntriesList() {
     const note = document.createElement('span');
     note.className = 'note' + (row.note ? '' : ' empty');
     note.textContent = row.note || "I couldn't tell";
-    if (row.note) note.title = row.note;
+    if (row.note) {
+      note.title = row.note;
+      note.dataset.fullNote = row.note;
+    }
     const theme = document.createElement('span');
     theme.className = 'theme';
     const tRaw = row.theme || 'calm';
@@ -2100,12 +2131,22 @@ function scheduleReminder() {
 }
 
 if (addBtn) addBtn.addEventListener('click', addMistake);
+const MISTAKE_NOTE_MAXLEN = 19;
 if (addNoteInput) {
+  addNoteInput.setAttribute('maxlength', String(MISTAKE_NOTE_MAXLEN));
   addNoteInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') addMistake();
   });
-  addNoteInput.addEventListener('input', updateAddButtonState);
-  addNoteInput.addEventListener('paste', () => setTimeout(updateAddButtonState, 0));
+  addNoteInput.addEventListener('input', () => {
+    if (addNoteInput.value.length > MISTAKE_NOTE_MAXLEN) addNoteInput.value = addNoteInput.value.slice(0, MISTAKE_NOTE_MAXLEN);
+    updateAddButtonState();
+  });
+  addNoteInput.addEventListener('paste', () => {
+    setTimeout(() => {
+      if (addNoteInput.value.length > MISTAKE_NOTE_MAXLEN) addNoteInput.value = addNoteInput.value.slice(0, MISTAKE_NOTE_MAXLEN);
+      updateAddButtonState();
+    }, 0);
+  });
 }
 updateAddButtonState();
 
@@ -2118,6 +2159,33 @@ function updateTypeHint() {
   const placeholder = TYPE_PLACEHOLDERS[type] || TYPE_PLACEHOLDERS.avoidable;
   if (typeHint) typeHint.textContent = phrase;
   if (addNoteInput) addNoteInput.placeholder = placeholder;
+  if (biasCheckRow) biasCheckRow.classList.toggle('hidden', type !== 'observed');
+}
+
+function openBiasCheck() {
+  if (!biasCheckOverlay || !biasCheckOptions || !biasCheckReflection) return;
+  biasCheckOverlay.classList.remove('hidden');
+  biasCheckOverlay.setAttribute('aria-hidden', 'false');
+  biasCheckOptions.querySelectorAll('input[name="bias-reason"]').forEach(r => { r.checked = false; });
+  biasCheckReflection.textContent = '';
+  biasCheckReflection.classList.add('hidden');
+  if (btnBiasCheckClose) btnBiasCheckClose.focus();
+}
+
+function closeBiasCheck() {
+  if (!biasCheckOverlay) return;
+  biasCheckOverlay.classList.add('hidden');
+  biasCheckOverlay.setAttribute('aria-hidden', 'true');
+  if (btnBiasCheck) btnBiasCheck.focus();
+}
+
+function handleBiasOptionChange(value) {
+  if (!biasCheckReflection) return;
+  const msg = BIAS_REFLECTIONS[value];
+  if (msg) {
+    biasCheckReflection.textContent = msg;
+    biasCheckReflection.classList.remove('hidden');
+  }
 }
 
 if (typeInputs && typeInputs.length) {
@@ -2126,6 +2194,69 @@ if (typeInputs && typeInputs.length) {
   });
 }
 if (typeHint) updateTypeHint();
+if (biasCheckRow) updateTypeHint();
+
+if (btnBiasCheck) btnBiasCheck.addEventListener('click', openBiasCheck);
+if (btnBiasCheckClose) btnBiasCheckClose.addEventListener('click', closeBiasCheck);
+if (biasCheckOverlay) {
+  biasCheckOverlay.addEventListener('click', function(e) {
+    if (e.target === biasCheckOverlay) closeBiasCheck();
+  });
+}
+if (biasCheckOptions) {
+  biasCheckOptions.addEventListener('change', function(e) {
+    const input = e.target;
+    if (input && input.name === 'bias-reason' && input.value) handleBiasOptionChange(input.value);
+  });
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && biasCheckOverlay && !biasCheckOverlay.classList.contains('hidden')) closeBiasCheck();
+});
+
+/* Custom tooltip for .note (native title often doesn't work in PWA standalone) */
+(function initNoteTooltip() {
+  const tooltip = document.createElement('div');
+  tooltip.id = 'note-tooltip';
+  tooltip.className = 'note-tooltip hidden';
+  tooltip.setAttribute('role', 'tooltip');
+  document.body.appendChild(tooltip);
+  let hideTimeout;
+  function showTooltip(note) {
+    if (!note || note.classList.contains('empty')) return;
+    const text = note.dataset.fullNote || note.title || '';
+    if (!text) return;
+    clearTimeout(hideTimeout);
+    tooltip.textContent = text;
+    tooltip.classList.remove('hidden');
+    const rect = note.getBoundingClientRect();
+    tooltip.style.left = rect.left + 'px';
+    tooltip.style.top = (rect.top + 6) + 'px';
+    tooltip.style.maxWidth = Math.min(300, window.innerWidth - 32) + 'px';
+    tooltip.style.transform = 'translateY(-100%)';
+    requestAnimationFrame(() => {
+      const tr = tooltip.getBoundingClientRect();
+      if (tr.top < 8) {
+        tooltip.style.transform = '';
+        tooltip.style.top = (rect.bottom + 6) + 'px';
+      }
+      if (tr.left + tr.width > window.innerWidth - 8) tooltip.style.left = Math.max(8, window.innerWidth - tr.width - 12) + 'px';
+    });
+  }
+  function hideTooltip() {
+    hideTimeout = setTimeout(() => tooltip.classList.add('hidden'), 80);
+  }
+  function onMouseOver(e) {
+    const note = e.target && e.target.closest ? e.target.closest('.entry-item .note') : null;
+    if (note && !note.classList.contains('empty')) showTooltip(note);
+  }
+  function onMouseOut(e) {
+    const note = e.target && e.target.closest ? e.target.closest('.entry-item .note') : null;
+    const to = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('.entry-item .note') : null;
+    if (note && !to) hideTooltip();
+  }
+  document.addEventListener('mouseover', onMouseOver);
+  document.addEventListener('mouseout', onMouseOut);
+})();
 
 if (historyFilters) {
   historyFilters.addEventListener('click', e => {

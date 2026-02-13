@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b1013">
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -63,6 +63,10 @@
           </div>
         </div>
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
+
+        <div class="bias-check-row hidden" id="bias-check-row">
+          <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
+        </div>
 
         <button type="button" id="add-mistake" class="btn-add" disabled>+ Add moment</button>
         <div class="quick-add-row">
@@ -318,14 +322,31 @@
     </footer>
   </div>
 
+  <div class="bias-check-overlay hidden" id="bias-check-overlay" role="dialog" aria-modal="true" aria-labelledby="bias-check-title" aria-hidden="true">
+    <div class="bias-check-panel">
+      <h3 class="bias-check-title" id="bias-check-title">Why do you see this as a mistake?</h3>
+      <div class="bias-check-options" id="bias-check-options">
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="harm"><span>Because it caused real harm</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>Because it failed</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="different"><span>Because it's different from what I would do</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="triggered"><span>Because I felt annoyed or triggered</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="unsure"><span>I'm not sure</span></label>
+      </div>
+      <p class="bias-check-reflection hidden" id="bias-check-reflection"></p>
+      <div class="bias-check-actions">
+        <button type="button" id="btn-bias-check-close" class="btn-bias-close">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=6"></script>
+  <script src="config.js?v=7"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
