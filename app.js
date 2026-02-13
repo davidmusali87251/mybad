@@ -1518,9 +1518,9 @@ function getSupabase() {
   return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
       fetch: (url, opts) => {
-        const method = (opts && opts.method || 'GET').toUpperCase();
-        const cacheBust = method === 'GET' ? (url + (url.includes('?') ? '&' : '?') + '_=' + Date.now()) : url;
-        return fetch(cacheBust, { ...opts, cache: 'no-store' });
+        // Do not add cache-bust query params: PostgREST treats unknown params as column filters,
+        // which caused "failed to parse filter (1771012233100)" when _=Date.now() was appended.
+        return fetch(url, { ...opts, cache: 'no-store' });
       }
     }
   });
