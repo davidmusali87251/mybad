@@ -2271,7 +2271,8 @@ body.theme-tired .btn-bias-check {
   content: '';
 }
 
-.insight-block:not(:has(.insight-text:not(:empty))):not(:has(.insight-subtitle:not(:empty))):not(:has(.insight-list li)):not(:has(.insight-chip:not(.insight-chip--empty)))) .insight-label {
+/* stylelint-disable-next-line selector-pseudo-class-no-unknown -- :has() is valid CSS L4; treat lint warning as acceptable */
+.insight-block:not(:has(.insight-text:not(:empty))):not(:has(.insight-subtitle:not(:empty))):not(:has(.insight-list li)):not(:has(.insight-chip:not(.insight-chip--empty))) .insight-label {
   margin-bottom: 0;
 }
 

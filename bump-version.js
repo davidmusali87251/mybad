@@ -34,6 +34,8 @@ function bumpHtml(htmlPath, newV) {
 function bumpSw(swPath, oldV, newV) {
   let content = fs.readFileSync(swPath, 'utf8');
   content = content.replace(`slip-track-v${oldV}`, `slip-track-v${newV}`);
+  content = content.replace(/\.\/styles\.css(\?v=\d+)?/g, `./styles.css?v=${newV}`);
+  content = content.replace(/\.\/app\.js(\?v=\d+)?/g, `./app.js?v=${newV}`);
   fs.writeFileSync(swPath, content, 'utf8');
   console.log('  ' + path.basename(swPath));
 }

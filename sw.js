@@ -1,4 +1,4 @@
-const CACHE_NAME = 'slip-track-v12';
+const CACHE_NAME = 'slip-track-v13';
 
 const STATIC_ASSETS = [
   './',
@@ -8,8 +8,8 @@ const STATIC_ASSETS = [
   './privacy.html',
   './terms.html',
   './refund.html',
-  './styles.css',
-  './app.js',
+  './styles.css?v=13',
+  './app.js?v=13',
   './manifest.json',
   './icon.svg',
   './icon-maskable.svg'
