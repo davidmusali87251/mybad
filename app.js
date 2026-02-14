@@ -11,6 +11,7 @@ const STATS_TABLE = (CONFIG.SUPABASE_STATS_TABLE || '').trim() ||
 const ENTRIES_TABLE = (CONFIG.SUPABASE_ENTRIES_TABLE || '').trim() || 'shared_what_happened';
 const CHART_TABLE = (CONFIG.SUPABASE_CHART_TABLE || '').trim() || 'shared_chart_counts';
 const EVENTS_TABLE = 'slipup_events';
+const STREAK_REFLECTIONS_TABLE = (CONFIG.SUPABASE_STREAK_REFLECTIONS_TABLE || '').trim() || 'streak_reflections';
 
 let entries = [];
 let currentPeriod = 'day';
@@ -54,6 +55,19 @@ const BIAS_REFLECTIONS = {
   unsure: "Not every observed mistake needs a conclusion. Sometimes awareness is enough."
 };
 const BIAS_LABELS = { harm: 'harm', failed: 'failed', different: 'different', triggered: 'triggered', unsure: 'unsure' };
+
+const STREAK_REFLECTION_STORAGE_KEY = MODE === 'inside' ? 'slipup-streak-reflection-inside' : 'slipup-streak-reflection';
+const STREAK_REFLECTION_QUESTION = "2 days in a row — what helped you show up?";
+const STREAK_REFLECTION_LINES = {
+  discipline: 'This seems intentional.',
+  responsibility: 'A sense of duty was present.',
+  pressure: 'External force played a role.',
+  curiosity: 'Interest moved the action.',
+  fear: 'Fear can also move action.',
+  commitment: 'Something important was at stake.',
+  'not-sure': "The cause isn't always visible."
+};
+
 const TYPE_PLACEHOLDERS = {
   avoidable: 'e.g. Forgot to save, spoke harshly…',
   fertile: 'e.g. Tried a new approach, missed the mark…',
@@ -81,6 +95,7 @@ const entryList = document.getElementById('entry-list');
 const emptyState = document.getElementById('empty-state');
 const firstTimeNudge = document.getElementById('first-time-nudge');
 const statsNote = document.getElementById('stats-note');
+const statsInsightChart = document.getElementById('stats-insight-chart');
 const historyFilters = document.getElementById('history-filters');
 const exportCsvBtn = document.getElementById('btn-export-csv');
 const exportJsonBtn = document.getElementById('btn-export-json');
@@ -91,7 +106,8 @@ const lineChartEmpty = document.getElementById('line-chart-empty');
 const shareSection = document.getElementById('share-section');
 const btnShare = document.getElementById('btn-share');
 const shareStatus = document.getElementById('share-status');
-const sharedList = document.getElementById('shared-list');
+const sharedListChart = document.getElementById('shared-list-chart');
+const communityMetricsChart = document.getElementById('community-metrics-chart');
 const sharedEmpty = document.getElementById('shared-empty');
 const btnRefreshFeed = document.getElementById('btn-refresh-feed');
 const communityError = document.getElementById('community-error');
@@ -105,6 +121,7 @@ const btnSharedEntriesToggle = document.getElementById('btn-shared-entries-toggl
 const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const btnAddFromCommunity = document.getElementById('btn-add-from-community');
 const topBarAdd = document.getElementById('top-bar-add');
+const topBarSlipups = document.getElementById('top-bar-slipups');
 const communityEntriesTrend = document.getElementById('community-entries-trend');
 const communityEntriesRange = document.getElementById('community-entries-range');
 const globalCountChart = document.getElementById('global-count-chart');
@@ -127,7 +144,6 @@ const yesterdayReflection = document.getElementById('yesterday-reflection');
 const reflectionHistoryBody = document.getElementById('reflection-history-body');
 const reflectionHistorySection = document.getElementById('reflection-history');
 const btnExportReflections = document.getElementById('btn-export-reflections');
-const communityMetrics = document.getElementById('community-metrics');
 const limitMessage = document.getElementById('limit-message');
 const upgradeCards = document.getElementById('upgrade-cards');
 const unlockedBadge = document.getElementById('unlocked-badge');
@@ -145,14 +161,17 @@ let paypalButtonRendered = false;
 const microGoalInput = document.getElementById('micro-goal-input');
 const microGoalResult = document.getElementById('micro-goal-result');
 const weeklyDigest = document.getElementById('weekly-digest');
+const weeklyDigestChart = document.getElementById('weekly-digest-chart');
 const dayVsAverage = document.getElementById('day-vs-average');
+const dayVsAverageChart = document.getElementById('day-vs-average-chart');
 const timeOfDay = document.getElementById('time-of-day');
-const topPatterns = document.getElementById('top-patterns');
-const topPatternsTitle = document.getElementById('top-patterns-title');
-const morePatterns = document.getElementById('more-patterns');
+const timeOfDayChart = document.getElementById('time-of-day-chart');
+const topPatternsChart = document.getElementById('top-patterns-chart');
+const morePatternsChart = document.getElementById('more-patterns-chart');
 const biasCheckInsight = document.getElementById('bias-check-insight');
 const biasCheckInsightBlock = document.getElementById('bias-check-insight-block');
 const biasCheckCountBtn = document.getElementById('bias-check-count-btn');
+const biasCheckCountGlobalBtn = document.getElementById('bias-check-count-global-btn');
 const btnShareImage = document.getElementById('btn-share-image');
 const addToHomeBanner = document.getElementById('add-to-home-banner');
 const addToHomeDismiss = document.getElementById('add-to-home-dismiss');
@@ -166,6 +185,8 @@ let sharedEntriesTypeFilter = 'all';
 let sharedEntriesThemeFilter = 'all';
 /** Set when user clicks Save in Bias Check; applied to next observed entry. */
 let lastBiasCheckReason = null;
+/** Global observed count from shared feed (set by fetchSharedEntries). */
+let lastGlobalObservedCount = 0;
 
 function isUnlocked() {
   return localStorage.getItem(UNLOCKED_KEY) === 'true';
@@ -546,7 +567,7 @@ function renderStats() {
 
   const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
   const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
-  const observedCount = filtered.filter(e => e.type === 'observed').length;
+  const observedCount = filtered.filter(e => (e.type || 'avoidable') === 'observed').length;
   // Track top mood theme based on the current 5-mode set.
   const byTheme = { calm: 0, focus: 0, stressed: 0, curious: 0, tired: 0 };
   filtered.forEach(e => {
@@ -583,35 +604,51 @@ function renderStats() {
   if (statsBreakdown) {
     if (count === 0) {
       statsBreakdown.textContent = '';
+      statsBreakdown.innerHTML = '';
     } else {
-      const parts = [];
-      if (avoidableCount) parts.push(avoidableCount + ' ' + labels.avoidable);
-      if (fertileCount) parts.push(fertileCount + ' ' + labels.fertile);
-      if (observedCount) parts.push(observedCount + ' ' + labels.observed);
-      statsBreakdown.textContent = parts.join(' · ');
+      const seg = function (type, n, label) {
+        if (n === 0) return '';
+        return '<span class="stats-breakdown-seg stats-breakdown-seg--' + type + '">' + n + ' ' + escapeHtml(label) + '</span>';
+      };
+      const partList = [
+        seg('avoidable', avoidableCount, labels.avoidable),
+        seg('fertile', fertileCount, labels.fertile),
+        seg('observed', observedCount, labels.observed)
+      ].filter(Boolean);
+      statsBreakdown.innerHTML = partList.join('<span class="stats-breakdown-sep"> · </span>');
     }
+  }
+
+  if (statsInsightChart) {
+    renderStatsInsightChart(avoidableCount, fertileCount, observedCount);
   }
 
   if (statsNote) {
     if (count === 0) {
       statsNote.textContent = MODE === 'inside'
-        ? "No moments yet this period. Add one when you're ready."
-        : "No mistakes logged yet. That's fine — add one when something comes up.";
+        ? "No moments yet. Add one when you're ready."
+        : "Nothing logged yet. Add one when something comes up.";
     } else {
       const parts = [];
       if (avoidableCount > 0) {
-        parts.push(avoidableCount + ' ' + labels.avoidable + ' ' + reduceHint);
+        parts.push(avoidableCount === 1
+          ? '1 ' + labels.avoidable + ' to learn from'
+          : avoidableCount + ' ' + labels.avoidable + ' ' + reduceHint);
       }
       if (fertileCount > 0) {
-        parts.push(fertileCount + ' ' + labels.fertile + ' ' + fertileHint);
+        parts.push(fertileCount === 1
+          ? '1 ' + labels.fertile + ' — nice'
+          : fertileCount + ' ' + labels.fertile + ' ' + fertileHint);
       }
       if (avoidableCount === 0 && fertileCount === 0 && observedCount > 0) {
-        parts.push(observedCount + ' ' + labels.observed + ' noticed');
+        parts.push(observedCount === 1
+          ? '1 ' + labels.observed + ' moment noticed'
+          : observedCount + ' ' + labels.observed + ' moments noticed');
       }
       if (topTheme && topThemeCount > 0) {
         const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'stressed', curious: 'curious', tired: 'tired' };
         const themeLabel = themeLabels[topTheme] || topTheme;
-        parts.push('mostly ' + themeLabel + ' when logging');
+        parts.push('you were mostly ' + themeLabel);
       }
       statsNote.textContent = parts.join(' · ');
     }
@@ -621,14 +658,29 @@ function renderStats() {
     const streak = getCurrentStreak();
     if (streak <= 0) {
       streakNote.textContent = '';
+      streakNote.innerHTML = '';
     } else if (streak === 1) {
-      streakNote.textContent = MODE === 'inside'
-        ? "1 day in a row — nice start."
-        : "1 day in a row — nice start.";
+      streakNote.textContent = "Day one — you started.";
+      streakNote.innerHTML = '';
+    } else if (streak === 2) {
+      const triggerBtn = '<button type="button" class="streak-reflection-trigger">what helped you show up?</button>';
+      try {
+        const stored = localStorage.getItem(STREAK_REFLECTION_STORAGE_KEY);
+        const parsed = stored ? JSON.parse(stored) : null;
+        if (parsed && parsed.streak === 2 && parsed.line) {
+          streakNote.innerHTML = '2 days in a row — ' + triggerBtn + ' ' + escapeHtml(parsed.line);
+        } else {
+          streakNote.innerHTML = '2 days in a row — ' + triggerBtn;
+        }
+      } catch (_) {
+        streakNote.innerHTML = '2 days in a row — ' + triggerBtn;
+      }
     } else if (streak < 7) {
-      streakNote.textContent = streak + " days in a row — keep it going.";
+      streakNote.textContent = streak + " days running — momentum building.";
+      streakNote.innerHTML = '';
     } else {
-      streakNote.textContent = streak + "-day streak — you're building a habit.";
+      streakNote.textContent = streak + "-day streak — that's a real habit.";
+      streakNote.innerHTML = '';
     }
   }
 
@@ -683,6 +735,33 @@ function getExplorationSoWhat(pct) {
   if (pct >= 10) return 'Aim for more fertile mistakes.';
   if (pct > 0) return 'One small experiment can help.';
   return 'Try one stretch today.';
+}
+
+function renderStatsInsightChart(avoidableCount, fertileCount, observedCount) {
+  if (!statsInsightChart) return;
+  const total = avoidableCount + fertileCount + observedCount;
+  if (total === 0) {
+    statsInsightChart.innerHTML = '';
+    statsInsightChart.classList.add('hidden');
+    return;
+  }
+  statsInsightChart.classList.remove('hidden');
+  const a = avoidableCount / total;
+  const f = fertileCount / total;
+  const o = observedCount / total;
+  const labels = MODE === 'inside' ? { avoidable: 'heat', fertile: 'shift', observed: 'support' } : { avoidable: 'avoidable', fertile: 'fertile', observed: 'observed' };
+  const seg = function (type, ratio, count) {
+    if (count === 0) return '';
+    const pct = Math.round(ratio * 100);
+    const title = count + ' ' + labels[type];
+    return '<span class="stats-insight-chart-seg stats-insight-chart-seg--' + type + '" style="flex-grow:' + ratio + ';min-width:' + (pct > 0 ? '2px' : '0') + '" title="' + escapeHtml(title) + '" role="presentation"></span>';
+  };
+  statsInsightChart.innerHTML =
+    '<div class="stats-insight-chart-bar" role="img" aria-label="' + escapeHtml(total + ' in this period: ' + avoidableCount + ' ' + labels.avoidable + ', ' + fertileCount + ' ' + labels.fertile + ', ' + observedCount + ' ' + labels.observed) + '">' +
+      seg('avoidable', a, avoidableCount) +
+      seg('fertile', f, fertileCount) +
+      seg('observed', o, observedCount) +
+    '</div>';
 }
 
 function formatTime(ts) {
@@ -964,7 +1043,7 @@ function renderLineChart() {
     lineChartLegend.innerHTML = '';
     return;
   }
-  const pad = { top: 10, right: 10, bottom: 25, left: 35 };
+  const pad = { top: 18, right: 12, bottom: 32, left: 38 };
   const w = 400;
   const h = 180;
   const chartW = w - pad.left - pad.right;
@@ -973,31 +1052,87 @@ function renderLineChart() {
   const scaleY = (v) => pad.top + chartH - (v / maxVal) * chartH;
   const scaleX = (i) => pad.left + (i / (days.length - 1 || 1)) * chartW;
 
-  const pts = (key) =>
-    days
-      .map((d, i) => scaleX(i) + ',' + scaleY(d[key]))
-      .join(' ');
+  const avoidableColor = '#c99a7a';
+  const fertileColor = '#6ba88a';
+  const observedColor = '#8b9bb8';
+  const gridColor = 'rgba(255,255,255,0.06)';
+  const labelColor = 'rgba(255,255,255,0.4)';
+  const strokeW = 2.5;
+  const dotR = 3.5;
 
-  const avoidableColor = '#d49282';
-  const fertileColor = '#5a9c8e';
-  const observedColor = '#7d8aaf';
+  const series = [
+    { key: 'avoidable', color: avoidableColor },
+    { key: 'fertile', color: fertileColor },
+    { key: 'observed', color: observedColor }
+  ];
 
-  lineChartSvg.innerHTML =
-    '<polyline fill="none" stroke="' +
-    avoidableColor +
-    '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' +
-    pts('avoidable') +
-    '"></polyline>' +
-    '<polyline fill="none" stroke="' +
-    fertileColor +
-    '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' +
-    pts('fertile') +
-    '"></polyline>' +
-    '<polyline fill="none" stroke="' +
-    observedColor +
-    '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' +
-    pts('observed') +
-    '"></polyline>';
+  let svg = '';
+
+  // Horizontal grid lines (4 lines)
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (chartH * i) / 4;
+    const val = Math.round(maxVal * (1 - i / 4));
+    svg += '<line x1="' + pad.left + '" y1="' + y + '" x2="' + (pad.left + chartW) + '" y2="' + y + '" stroke="' + gridColor + '" stroke-width="0.5" stroke-dasharray="4 4"/>';
+    if (val > 0) {
+      svg += '<text x="' + (pad.left - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="9" fill="' + labelColor + '" font-family="DM Sans, sans-serif">' + val + '</text>';
+    }
+  }
+
+  // Vertical grid (every 2 days) + day labels
+  const labelIndices = [0, 6, 12, 13];
+  labelIndices.forEach((i) => {
+    if (i >= days.length) return;
+    const x = scaleX(i);
+    if (i > 0 && i < days.length - 1) {
+      svg += '<line x1="' + x + '" y1="' + pad.top + '" x2="' + x + '" y2="' + (pad.top + chartH) + '" stroke="' + gridColor + '" stroke-width="0.5" stroke-dasharray="4 4"/>';
+    }
+    const d = new Date(days[i].dayStart);
+    const label = i === 0 ? '14d ago' : i === days.length - 1 ? 'Today' : (14 - i) + 'd';
+    svg += '<text x="' + x + '" y="' + (h - 8) + '" text-anchor="middle" font-size="9" fill="' + labelColor + '" font-family="DM Sans, sans-serif">' + label + '</text>';
+  });
+
+  // Chart area background
+  svg += '<rect x="' + pad.left + '" y="' + pad.top + '" width="' + chartW + '" height="' + chartH + '" fill="rgba(255,255,255,0.02)" rx="4"/>';
+
+  // Lines + dots; value shown only on hover
+  series.forEach((s) => {
+    const pts = days.map((d, i) => scaleX(i) + ',' + scaleY(d[s.key]));
+    svg += '<polyline fill="none" stroke="' + s.color + '" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-linejoin="round" points="' + pts.join(' ') + '"></polyline>';
+    days.forEach((d, i) => {
+      const v = d[s.key];
+      if (v === 0) return;
+      const cx = scaleX(i);
+      const cy = scaleY(v);
+      svg += '<g class="chart-point" style="cursor:pointer"><circle cx="' + cx + '" cy="' + cy + '" r="' + dotR + '" fill="' + s.color + '" stroke="var(--bg)" stroke-width="1.5"/><text class="chart-point-value" x="' + cx + '" y="' + (cy - 10) + '" text-anchor="middle" font-size="9" font-weight="600" fill="' + s.color + '" font-family="DM Sans, sans-serif">' + v + '</text></g>';
+    });
+  });
+
+  lineChartSvg.innerHTML = svg;
+
+  // Tap/click to show value (touch has no hover)
+  lineChartSvg.querySelectorAll('.chart-point').forEach((g) => {
+    const txt = g.querySelector('.chart-point-value');
+    if (!txt) return;
+    const show = () => {
+      lineChartSvg.querySelectorAll('.chart-point-value').forEach((t) => {
+        if (t !== txt) t.classList.remove('visible');
+      });
+      txt.classList.add('visible');
+    };
+    const hide = () => txt.classList.remove('visible');
+    g.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (txt.classList.contains('visible')) hide();
+      else show();
+    });
+    g.addEventListener('mouseenter', show);
+    g.addEventListener('mouseleave', hide);
+  });
+  lineChartSvg.addEventListener('click', (e) => {
+    if (!e.target.closest('.chart-point')) {
+      lineChartSvg.querySelectorAll('.chart-point-value').forEach((t) => t.classList.remove('visible'));
+    }
+  });
 
   const labels =
     MODE === 'inside'
@@ -1161,119 +1296,157 @@ function renderInsights() {
   const fLabel = MODE === 'inside' ? 'shift' : 'fertile';
   const oLabel = MODE === 'inside' ? 'support' : 'observed';
 
-  if (weeklyDigest) {
+  if (weeklyDigestChart || weeklyDigest) {
     const { thisWeek } = getThisWeekAndLastWeek();
-    if (thisWeek.total === 0) {
-      weeklyDigest.textContent = 'No entries this week yet.';
-    } else {
-      const parts = [];
-      if (thisWeek.avoidable) parts.push(thisWeek.avoidable + ' ' + aLabel);
-      if (thisWeek.fertile) parts.push(thisWeek.fertile + ' ' + fLabel);
-      if (thisWeek.observed) parts.push(thisWeek.observed + ' ' + oLabel);
-      let sent = 'This week: ' + parts.join(', ') + '.';
-      if (thisWeek.exploration != null) {
-        sent += ' ' + thisWeek.exploration + '% ' + (MODE === 'inside' ? 'shift' : 'exploration') + '.';
+    const total = thisWeek.avoidable + thisWeek.fertile + thisWeek.observed;
+    if (total === 0) {
+      if (weeklyDigestChart) {
+        weeklyDigestChart.innerHTML = '';
+        weeklyDigestChart.classList.add('hidden');
       }
-      weeklyDigest.textContent = sent;
+      if (weeklyDigest) weeklyDigest.textContent = 'Log a few entries to see your week chart here.';
+    } else {
+      const explLabel = MODE === 'inside' ? 'shift' : 'exploration';
+      const expl = thisWeek.exploration != null ? thisWeek.exploration : 0;
+      if (weeklyDigestChart) {
+        weeklyDigestChart.classList.remove('hidden');
+        const a = total > 0 ? thisWeek.avoidable / total : 0;
+        const f = total > 0 ? thisWeek.fertile / total : 0;
+        const o = total > 0 ? thisWeek.observed / total : 0;
+        const seg = (type, ratio, count) => {
+          if (count === 0) return '';
+          const pct = Math.round(ratio * 100);
+          return '<span class="insight-weekly-seg insight-weekly-seg--' + type + '" style="flex:' + ratio + ' 1 0%;min-width:' + (pct > 0 ? '4px' : '0') + '" title="' + count + ' ' + (type === 'avoidable' ? aLabel : type === 'fertile' ? fLabel : oLabel) + '"></span>';
+        };
+        weeklyDigestChart.innerHTML =
+          '<div class="insight-weekly-bar" role="img" aria-label="This week: ' + thisWeek.avoidable + ' ' + aLabel + ', ' + thisWeek.fertile + ' ' + fLabel + ', ' + thisWeek.observed + ' ' + oLabel + '">' +
+            seg('avoidable', a, thisWeek.avoidable) +
+            seg('fertile', f, thisWeek.fertile) +
+            seg('observed', o, thisWeek.observed) +
+          '</div>' +
+          '<div class="insight-weekly-meta">' +
+            '<span class="insight-weekly-total">' + total + ' total</span>' +
+            (thisWeek.avoidable || thisWeek.fertile ? '<span class="insight-weekly-expl" title="' + explLabel + '">' + expl + '% ' + explLabel + '</span>' : '') +
+          '</div>';
+      }
+      if (weeklyDigest) {
+        if (thisWeek.exploration != null && (thisWeek.avoidable || thisWeek.fertile)) {
+          weeklyDigest.textContent = thisWeek.exploration >= 40 ? 'Good mix of fertile risks.' : 'Room to add more experiments.';
+        } else {
+          weeklyDigest.textContent = 'Keep logging to see your exploration trend.';
+        }
+      }
     }
   }
 
-  if (dayVsAverage) {
+  if (dayVsAverageChart || dayVsAverage) {
     const todayStart = getStartOfDay(Date.now());
     const todayEnd = todayStart + 86400000;
     const todayEntries = entries.filter(e => e.at >= todayStart && e.at < todayEnd);
     const todayCount = todayEntries.length;
     const last7 = getDayCountsLastN(7);
     const total7 = last7.reduce((s, d) => s + d.total, 0);
-    const avgPerDay = total7 > 0 ? (total7 / 7).toFixed(1) : 0;
+    const avgPerDay = total7 > 0 ? parseFloat((total7 / 7).toFixed(1)) : 0;
+    const maxVal = Math.max(todayCount, avgPerDay, 1);
     if (todayCount === 0 && total7 === 0) {
-      dayVsAverage.textContent = 'No entries yet.';
-    } else if (total7 === 0) {
-      dayVsAverage.textContent = 'Today: ' + todayCount + '. Your first day of logging.';
+      if (dayVsAverageChart) dayVsAverageChart.innerHTML = '';
+      if (dayVsAverage) dayVsAverage.textContent = 'Start logging to see how today compares.';
     } else {
-      const diff = todayCount - parseFloat(avgPerDay);
-      if (Math.abs(diff) < 0.5) {
-        dayVsAverage.textContent = 'Today: ' + todayCount + '. About average (' + avgPerDay + ' per day lately).';
-      } else if (diff > 0) {
-        dayVsAverage.textContent = 'Today: ' + todayCount + '. Above your recent average (' + avgPerDay + ' per day).';
-      } else {
-        dayVsAverage.textContent = 'Today: ' + todayCount + '. Below your recent average (' + avgPerDay + ' per day).';
+      if (dayVsAverageChart) {
+        const todayW = (todayCount / maxVal) * 100;
+        const avgW = (avgPerDay / maxVal) * 100;
+        dayVsAverageChart.innerHTML =
+          '<div class="insight-compare"><div class="insight-compare-row"><span class="insight-compare-label">Today</span><div class="insight-compare-bar-wrap"><div class="insight-compare-bar insight-compare-bar--today" style="width:' + todayW + '%"></div></div><span class="insight-compare-val">' + todayCount + '</span></div>' +
+          '<div class="insight-compare-row"><span class="insight-compare-label">Avg</span><div class="insight-compare-bar-wrap"><div class="insight-compare-bar insight-compare-bar--avg" style="width:' + avgW + '%"></div></div><span class="insight-compare-val">' + (avgPerDay > 0 ? avgPerDay : '—') + '</span></div></div>';
+      }
+      if (dayVsAverage) {
+        if (total7 === 0) dayVsAverage.textContent = todayCount + ' today — your first day. Keep going.';
+        else {
+          const diff = todayCount - avgPerDay;
+          if (Math.abs(diff) < 0.5) dayVsAverage.textContent = 'About your usual pace.';
+          else if (diff > 0) dayVsAverage.textContent = 'Above average — notice any triggers?';
+          else dayVsAverage.textContent = 'Below average — lighter day.';
+        }
       }
     }
   }
 
-  if (timeOfDay) {
+  if (timeOfDayChart || timeOfDay) {
     if (entries.length === 0) {
-      timeOfDay.textContent = 'No entries yet.';
+      if (timeOfDayChart) timeOfDayChart.innerHTML = '';
+      if (timeOfDay) timeOfDay.textContent = 'Log at different times to see your patterns.';
     } else {
       const hours = entries.map(e => new Date(e.at).getHours());
       const morning = hours.filter(h => h >= 5 && h < 12).length;
       const afternoon = hours.filter(h => h >= 12 && h < 17).length;
       const evening = hours.filter(h => h >= 17 || h < 2).length;
+      const total = morning + afternoon + evening;
       const max = Math.max(morning, afternoon, evening);
-      if (max === 0) {
-        timeOfDay.textContent = 'You log across the day.';
-      } else if (morning === max) {
-        timeOfDay.textContent = 'You mostly log in the morning.';
-      } else if (afternoon === max) {
-        timeOfDay.textContent = 'You mostly log in the afternoon.';
-      } else {
-        timeOfDay.textContent = 'You mostly log in the evening.';
+      if (timeOfDayChart && total > 0) {
+        const mR = morning / total; const aR = afternoon / total; const eR = evening / total;
+        const seg = (count, ratio, label) => '<span class="insight-time-seg insight-time-seg--' + label + '" style="flex:' + ratio + ' 1 0%" title="' + count + ' ' + label + '"></span>';
+        timeOfDayChart.innerHTML = '<div class="insight-time-bar">' + seg(morning, mR, 'morning') + seg(afternoon, aR, 'afternoon') + seg(evening, eR, 'evening') + '</div><div class="insight-time-legend"><span>AM</span><span>PM</span><span>Eve</span></div>';
+      }
+      if (timeOfDay) {
+        if (max === 0) timeOfDay.textContent = 'No clear peak yet.';
+        else if (morning === max) timeOfDay.textContent = 'Morning peak — good for reflection.';
+        else if (afternoon === max) timeOfDay.textContent = 'Afternoon peak.';
+        else timeOfDay.textContent = 'Evening peak — end-of-day review.';
       }
     }
   }
 
-  if (topPatterns && topPatternsTitle) {
-    const noteCounts = {};
+  if (topPatternsChart) {
+    const STOP_WORDS = new Set(['a', 'an', 'the', 'is', 'it', 'to', 'of', 'in', 'on', 'at', 'by', 'for', 'with', 'i', 'me', 'my', 'we', 'be', 'so', 'no', 'or', 'and', 'but', 'if', 'as', 'up', 'do', 'go', 'get', 'got']);
+    const bigramCounts = {};
+    const bigramInNotes = {};
     entries.forEach(e => {
-      const n = (e.note || '').trim().toLowerCase();
-      if (n.length >= 3) {
-        noteCounts[n] = (noteCounts[n] || 0) + 1;
+      const note = (e.note || '').trim().toLowerCase();
+      if (note.length < 3) return;
+      const words = note.replace(/[^\w\s'-]/g, ' ').split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+      const seen = new Set();
+      for (let i = 0; i < words.length - 1; i++) {
+        const bigram = words[i] + ' ' + words[i + 1];
+        if (seen.has(bigram)) continue;
+        seen.add(bigram);
+        bigramCounts[bigram] = (bigramCounts[bigram] || 0) + 1;
+        if (!bigramInNotes[bigram]) bigramInNotes[bigram] = [];
+        if (bigramInNotes[bigram].indexOf(note) === -1) bigramInNotes[bigram].push(note);
       }
     });
-    const sorted = Object.entries(noteCounts)
-      .filter(([, c]) => c >= 2)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
+    const sorted = Object.entries(bigramCounts).filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 8);
     if (sorted.length === 0) {
-      topPatternsTitle.textContent = '';
-      topPatterns.innerHTML = '';
+      topPatternsChart.innerHTML = '<p class="insight-chart-empty">Two-word phrases you use in 2+ notes will appear here. E.g. "speak loud" in multiple entries.</p>';
     } else {
-      topPatternsTitle.textContent = 'Notes you repeat:';
-      topPatterns.innerHTML = '';
-      sorted.forEach(([note, count]) => {
-        const li = document.createElement('li');
-        li.className = 'entry-item';
-        const noteSpan = document.createElement('span');
-        noteSpan.className = 'note';
-        noteSpan.textContent = note;
-        if (note) {
-          noteSpan.title = note;
-          noteSpan.dataset.fullNote = note;
-        }
-        li.appendChild(noteSpan);
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'time';
-        timeSpan.textContent = count + '×';
-        li.appendChild(timeSpan);
-        topPatterns.appendChild(li);
-      });
+      const maxC = sorted[0][1];
+      const rows = sorted.map(([phrase, count]) => {
+        const w = (count / maxC) * 100;
+        const short = phrase.length > 22 ? phrase.slice(0, 19) + '…' : phrase;
+        const notes = (bigramInNotes[phrase] || []).slice(0, 3).join(' · ');
+        const title = notes ? '"' + phrase + '" in: ' + notes : phrase + ' (2+ notes)';
+        return '<div class="insight-pattern-row"><span class="insight-pattern-label" title="' + escapeHtml(title) + '">' + escapeHtml(short) + '</span><div class="insight-pattern-bar-wrap"><div class="insight-pattern-bar" style="width:' + w + '%"></div></div><span class="insight-pattern-count">' + count + '×</span></div>';
+      }).join('');
+      topPatternsChart.innerHTML = '<div class="insight-patterns-chart">' + rows + '</div>';
     }
   }
 
-  if (morePatterns) {
+  if (morePatternsChart) {
     const themes = { calm: 0, focus: 0, stressed: 0, curious: 0, tired: 0 };
     entries.forEach(e => {
       const t = (e.theme === 'focus' || e.theme === 'stressed' || e.theme === 'curious' || e.theme === 'tired') ? e.theme : 'calm';
       themes[t] = (themes[t] || 0) + 1;
     });
-    const chips = Object.entries(themes)
-      .filter(([, c]) => c > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([theme, c]) => '<span class="insight-chip">' + theme + ' (' + c + ')</span>')
-      .join('');
-    morePatterns.innerHTML = chips || '<span class="insight-chip">No patterns yet</span>';
+    const sorted = Object.entries(themes).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) {
+      morePatternsChart.innerHTML = '<p class="insight-chart-empty">Log with different moods to see patterns.</p>';
+    } else {
+      const maxC = sorted[0][1];
+      const rows = sorted.map(([theme, count]) => {
+        const w = (count / maxC) * 100;
+        return '<div class="insight-mood-row"><span class="insight-mood-label insight-mood-label--' + theme + '">' + theme + '</span><div class="insight-mood-bar-wrap"><div class="insight-mood-bar-seg insight-mood-bar-seg--' + theme + '" style="width:' + w + '%"></div></div><span class="insight-mood-count">' + count + '</span></div>';
+      }).join('');
+      morePatternsChart.innerHTML = '<div class="insight-mood-chart">' + rows + '</div>';
+    }
   }
 
   if (biasCheckInsight && biasCheckInsightBlock) {
@@ -1283,12 +1456,21 @@ function renderInsights() {
 
     if (biasCheckCountBtn) {
       biasCheckCountBtn.textContent = observed.length;
-      biasCheckCountBtn.setAttribute('aria-label', (MODE === 'inside' ? 'Support' : 'Observed') + ' in this period: ' + observed.length);
-      biasCheckCountBtn.title = (MODE === 'inside' ? 'Support' : 'Observed') + ' in this period: ' + observed.length;
+      biasCheckCountBtn.setAttribute('data-label', 'You');
+      biasCheckCountBtn.setAttribute('aria-label', (MODE === 'inside' ? 'Support' : 'Observed') + ' in this period (yours): ' + observed.length);
+      biasCheckCountBtn.title = (MODE === 'inside' ? 'Support' : 'Observed') + ' in this period (yours): ' + observed.length;
+    }
+    if (biasCheckCountGlobalBtn) {
+      const g = lastGlobalObservedCount;
+      biasCheckCountGlobalBtn.textContent = typeof g === 'number' ? g : '—';
+      biasCheckCountGlobalBtn.setAttribute('data-label', 'All');
+      biasCheckCountGlobalBtn.setAttribute('aria-label', 'Observed from everyone\'s shared entries: ' + (typeof g === 'number' ? g : '—'));
+      biasCheckCountGlobalBtn.title = 'Observed from everyone\'s shared entries: ' + (typeof g === 'number' ? g : '—');
     }
 
     if (observed.length > 0) {
-      const pills = observed.slice(0, 3).map(function (e) {
+      const observedSorted = observed.slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+      const pills = observedSorted.slice(0, 3).map(function (e) {
         const note = (e.note || '').trim() || "I couldn't tell";
         const short = note.length > 20 ? note.slice(0, 17) + '…' : note;
         const biasLabel = (e.biasReason && BIAS_LABELS[e.biasReason]) ? ' <span class="bias-check-choice">' + BIAS_LABELS[e.biasReason] + '</span>' : '';
@@ -1579,6 +1761,23 @@ function getCurrentStatsForShare() {
   return { period: currentPeriod, count, avg_per_day: avg };
 }
 
+function saveStreakReflectionToSupabase(choice) {
+  if (!SHARING_ENABLED || !choice) return;
+  try {
+    const client = getSupabase();
+    client.from(STREAK_REFLECTIONS_TABLE).insert({
+      anonymous_id: getOrCreateAnonId(),
+      mode: MODE,
+      choice: choice,
+      streak: 2
+    }).then(({ error }) => {
+      if (error) console.warn('SlipUp: streak reflection save failed', { table: STREAK_REFLECTIONS_TABLE, error });
+    });
+  } catch (e) {
+    console.warn('SlipUp: streak reflection save failed', e);
+  }
+}
+
 async function shareAnonymously() {
   if (!SHARING_ENABLED) {
     if (shareStatus) {
@@ -1763,18 +1962,18 @@ async function fetchSharedStats() {
       communityError.textContent = 'Could not load: ' + (isUnregisteredKey ? 'Unregistered API key' : (raw || 'Unknown error'));
       communityError.classList.remove('hidden');
     }
-    if (communityMetrics) communityMetrics.textContent = '';
-    sharedList.innerHTML = '';
+    if (communityMetricsChart) communityMetricsChart.innerHTML = '';
+    if (sharedListChart) sharedListChart.innerHTML = '';
     sharedEmpty.classList.remove('hidden');
     return;
   }
   sharedEmpty.classList.toggle('hidden', (data && data.length) > 0);
   if (!data || data.length === 0) {
-    sharedList.innerHTML = '';
+    if (sharedListChart) sharedListChart.innerHTML = '';
     sharedEmpty.textContent = MODE === 'inside'
       ? "No shared results yet. Share your period above!"
       : "No shared results yet. Share yours above!";
-    if (communityMetrics) communityMetrics.textContent = '';
+    if (communityMetricsChart) communityMetricsChart.innerHTML = '';
     return;
   }
   const limited = data.slice(0, MAX_OTHER_RESULTS);
@@ -1791,25 +1990,24 @@ async function fetchSharedStats() {
     const bMax = Math.max(...byAnon[b].map(r => new Date(r.created_at).getTime()));
     return bMax - aMax;
   });
-  sharedList.innerHTML = '';
+  const allRows = groupKeys.flatMap(anonKey => (byAnon[anonKey] || []));
+  const maxCount = allRows.length > 0 ? Math.max(...allRows.map(r => r.count)) : 1;
+  let chartHtml = '';
   groupKeys.forEach(anonKey => {
     const rows = byAnon[anonKey] || [];
-    const groupLabel = document.createElement('li');
-    groupLabel.className = 'shared-group-label';
     const shareCount = rows.length;
-    groupLabel.textContent = shareCount === 1 ? "Someone's share" : "Someone's shares (" + shareCount + ")";
-    sharedList.appendChild(groupLabel);
+    chartHtml += '<div class="shared-group-chart"><div class="shared-group-label">' + (shareCount === 1 ? "Someone's share" : "Someone's shares (" + shareCount + ")") + '</div><div class="shared-chart-rows">';
     rows.forEach(row => {
-      const li = document.createElement('li');
-      li.className = 'shared-item';
       const periodLabel = getPeriodLabel(row.period);
       const timeStr = row.created_at ? new Date(row.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
-      const avgStr = row.avg_per_day != null ? row.avg_per_day : '—';
-      li.innerHTML = '<span class="shared-stat"><strong>' + row.count + '</strong> ' + periodLabel + '</span><span class="shared-meta">avg ' + avgStr + '/day · ' + timeStr + '</span>';
-      sharedList.appendChild(li);
+      const avgStr = row.avg_per_day != null ? String(row.avg_per_day) : '—';
+      const w = (row.count / maxCount) * 100;
+      chartHtml += '<div class="shared-chart-row"><span class="shared-chart-label">' + periodLabel + '</span><div class="shared-chart-bar-wrap"><div class="shared-chart-bar" style="width:' + w + '%"></div></div><span class="shared-chart-meta">' + row.count + ' · ' + avgStr + '/day · ' + timeStr + '</span></div>';
     });
+    chartHtml += '</div></div>';
   });
-  if (communityMetrics) {
+  if (sharedListChart) sharedListChart.innerHTML = chartHtml;
+  if (communityMetricsChart) {
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 86400000;
     const recentRows = limited.filter(row => {
@@ -1825,25 +2023,21 @@ async function fetchSharedStats() {
     const shareCount = recentRows.length;
     const peopleCount = Object.keys(uniquePeople).length;
     if (shareCount === 0) {
-      communityMetrics.textContent = '';
+      communityMetricsChart.innerHTML = '';
     } else {
-      communityMetrics.textContent =
-        'Last 7 days: ' +
-        shareCount +
-        ' share' +
-        (shareCount === 1 ? '' : 's') +
-        ' from ' +
-        peopleCount +
-        ' person' +
-        (peopleCount === 1 ? '' : 's') +
-        ' (approximate).';
+      communityMetricsChart.innerHTML =
+        '<div class="community-metrics-bars">' +
+        '<div class="community-metric-row"><span class="community-metric-label">Shares</span><div class="community-metric-bar-wrap"><div class="community-metric-bar community-metric-bar--shares" style="width:' + Math.min(100, (shareCount / 20) * 100) + '%"></div></div><span class="community-metric-val">' + shareCount + '</span></div>' +
+        '<div class="community-metric-row"><span class="community-metric-label">People</span><div class="community-metric-bar-wrap"><div class="community-metric-bar community-metric-bar--people" style="width:' + Math.min(100, (peopleCount / 10) * 100) + '%"></div></div><span class="community-metric-val">' + peopleCount + '</span></div>' +
+        '</div>' +
+        '<p class="community-metrics-note">Last 7 days (approximate)</p>';
     }
   }
 }
 
 function showCommunitySetupMessage() {
-  if (!sharedList || !sharedEmpty) return;
-  sharedList.innerHTML = '';
+  if (!sharedListChart || !sharedEmpty) return;
+  sharedListChart.innerHTML = '';
   sharedEmpty.textContent = "Set up Supabase (config.js locally or repo Secrets for deploy) to share and see others' results. See README.";
   sharedEmpty.classList.remove('hidden');
 }
@@ -1952,12 +2146,24 @@ async function fetchSharedEntries() {
       }
     }
 
+    lastGlobalObservedCount = globalObserved;
+    if (biasCheckCountGlobalBtn) {
+      biasCheckCountGlobalBtn.textContent = globalObserved;
+      biasCheckCountGlobalBtn.setAttribute('data-label', 'All');
+      biasCheckCountGlobalBtn.setAttribute('aria-label', 'Observed from everyone\'s shared entries: ' + globalObserved);
+      biasCheckCountGlobalBtn.title = 'Observed from everyone\'s shared entries: ' + globalObserved;
+    }
+    renderInsights();
     // Chart shows global totals (all shared entries by type); trend shows current list slice
     renderGlobalCountChart(globalAvoidable, globalFertile, globalObserved);
+    const total = globalTotal > 0 ? globalTotal : (avoidable + fertile + observed);
     if (btnSharedTotal) {
-      const total = globalTotal > 0 ? globalTotal : (avoidable + fertile + observed);
-      btnSharedTotal.textContent = total + ' shared';
-      btnSharedTotal.setAttribute('aria-label', (MODE === 'inside' ? 'Total shared moments: ' : 'Total shared entries: ') + total);
+      btnSharedTotal.textContent = '🌍 ' + total + ' slip-ups';
+      btnSharedTotal.setAttribute('aria-label', 'World slip-ups: ' + total);
+    }
+    if (topBarSlipups) {
+      topBarSlipups.textContent = '🌍 ' + total + ' slip-ups';
+      topBarSlipups.setAttribute('aria-label', 'World slip-ups: ' + total);
     }
     renderSharedEntriesList();
   } catch (err) {
@@ -1966,7 +2172,8 @@ async function fetchSharedEntries() {
     if (communityComparison) communityComparison.textContent = '';
     if (communityEntriesTrend) communityEntriesTrend.textContent = '';
     renderGlobalCountChart(0, 0, 0);
-    if (btnSharedTotal) btnSharedTotal.textContent = '0 shared';
+    if (btnSharedTotal) btnSharedTotal.textContent = '🌍 0 slip-ups';
+    if (topBarSlipups) topBarSlipups.textContent = '🌍 0 slip-ups';
     if (sharedEntriesError) {
       sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
       sharedEntriesError.classList.remove('hidden');
@@ -2416,6 +2623,14 @@ document.addEventListener('keydown', function(e) {
   }
   document.addEventListener('mouseover', onMouseOver);
   document.addEventListener('mouseout', onMouseOut);
+  document.addEventListener('click', (e) => {
+    const note = e.target && e.target.closest ? e.target.closest('.entry-item .note') : null;
+    if (note && !note.classList.contains('empty')) {
+      showTooltip(note);
+    } else {
+      hideTooltip();
+    }
+  });
 })();
 
 if (historyFilters) {
@@ -2448,6 +2663,55 @@ periodTabs.forEach(tab => {
   if (tab) tab.addEventListener('click', () => setPeriod(tab.dataset.period));
 });
 
+function ensureStreakReflectionPanel() {
+  let panel = document.getElementById('streak-reflection-panel');
+  if (panel) return panel;
+  const parent = streakNote && streakNote.parentNode;
+  if (!parent) return null;
+  panel = document.createElement('div');
+  panel.id = 'streak-reflection-panel';
+  panel.className = 'streak-reflection-panel';
+  panel.setAttribute('hidden', '');
+  panel.innerHTML =
+    '<p class="streak-reflection-prompt">What moved you?</p>' +
+    '<div class="streak-reflection-options">' +
+    Object.keys(STREAK_REFLECTION_LINES).map(function (key) {
+      const label = key === 'not-sure' ? 'Not sure' : key.charAt(0).toUpperCase() + key.slice(1);
+      return '<button type="button" class="streak-reflection-option" data-reflection="' + key + '">' + label + '</button>';
+    }).join('') +
+    '</div>';
+  parent.appendChild(panel);
+  panel.addEventListener('click', function (e) {
+    const btn = e.target && e.target.closest('.streak-reflection-option');
+    if (!btn) return;
+    const key = btn.getAttribute('data-reflection');
+    const line = key && STREAK_REFLECTION_LINES[key];
+    if (!line || !streakNote) return;
+    const triggerBtn = '<button type="button" class="streak-reflection-trigger">what helped you show up?</button>';
+    streakNote.innerHTML = '2 days in a row — ' + triggerBtn + ' ' + escapeHtml(line);
+    panel.setAttribute('hidden', '');
+    try {
+      localStorage.setItem(STREAK_REFLECTION_STORAGE_KEY, JSON.stringify({ streak: 2, line: line }));
+    } catch (_) {}
+    saveStreakReflectionToSupabase(key);
+  });
+  return panel;
+}
+
+function openStreakReflectionPanel() {
+  const panel = ensureStreakReflectionPanel();
+  if (panel) panel.removeAttribute('hidden');
+}
+
+if (streakNote) {
+  streakNote.addEventListener('click', function (e) {
+    if (e.target && e.target.closest('.streak-reflection-trigger')) {
+      e.preventDefault();
+      openStreakReflectionPanel();
+    }
+  });
+}
+
 loadEntries();
 updateUpgradeUI();
 renderStats();
@@ -2457,12 +2721,35 @@ initReflection();
 initMicroGoal();
 initAddToHomeBanner();
 initReminder();
+const btnSettings = document.getElementById('btn-settings');
+const settingsDropdown = document.getElementById('settings-dropdown');
+if (btnSettings && settingsDropdown) {
+  btnSettings.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const open = settingsDropdown.classList.toggle('open');
+    btnSettings.setAttribute('aria-expanded', open);
+    settingsDropdown.setAttribute('aria-hidden', !open);
+  });
+  settingsDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+  document.addEventListener('click', function () {
+    if (settingsDropdown.classList.contains('open')) {
+      settingsDropdown.classList.remove('open');
+      btnSettings.setAttribute('aria-expanded', 'false');
+      settingsDropdown.setAttribute('aria-hidden', 'true');
+    }
+  });
+}
 if (topBarAdd) {
   topBarAdd.addEventListener('click', function (e) {
     e.preventDefault();
     const main = document.getElementById('main');
     if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
+  });
+}
+if (topBarSlipups && communityEntriesSection) {
+  topBarSlipups.addEventListener('click', function () {
+    communityEntriesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
 if (btnShareImage) btnShareImage.addEventListener('click', shareAsImage);

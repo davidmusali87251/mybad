@@ -17,8 +17,18 @@
 <body>
   <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
-    <a href="index.html" class="top-bar-brand">SlipUp</a>
+    <div class="top-bar-left">
+      <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
+      <a href="index.html" class="top-bar-brand">SlipUp</a>
+    </div>
+    <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
+      <label class="setting-row">
+        <input type="checkbox" id="reminder-checkbox">
+        <span>Notify me for evening check-in (8pm)</span>
+      </label>
+    </div>
     <div class="top-bar-actions">
+      <button type="button" id="top-bar-slipups" class="top-bar-slipups" title="The world's slip-up chart" aria-label="World slip-ups: 0">🌍 0 slip-ups</button>
       <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?">Calm</button>
       <a href="index.html" class="top-bar-home" id="top-bar-add">+ Add</a>
     </div>
@@ -102,9 +112,12 @@
         <span class="stat-so-what" id="stat-exploration-so-what"></span>
       </div>
     </section>
-    <p class="stats-note" id="stats-note"></p>
-    <p class="stats-breakdown" id="stats-breakdown"></p>
-    <p class="streak-note" id="streak-note"></p>
+    <div class="stats-insight-block">
+      <p class="stats-note" id="stats-note"></p>
+      <p class="stats-breakdown" id="stats-breakdown"></p>
+      <div class="stats-insight-chart" id="stats-insight-chart" aria-hidden="true"></div>
+      <p class="streak-note" id="streak-note"></p>
+    </div>
     <p class="headline-stat" id="headline-stat"></p>
 
     <section class="micro-goal-section" id="micro-goal-section">
@@ -114,33 +127,38 @@
     </section>
 
     <section class="insights-section" id="insights-section">
-      <h2>SlipUp's insights</h2>
-      <p class="insights-intro">A few highlights from your SlipUp.</p>
-      <div class="insight-block insight-weekly-digest" id="weekly-digest-block">
-        <span class="insight-label">This week in one sentence</span>
-        <p class="insight-text" id="weekly-digest"></p>
+      <div class="insights-header">
+        <h2>What your Slip-ups say</h2>
+        <p class="insights-intro">Patterns from your check-ins — spot heat spikes and celebrate shifts.</p>
       </div>
-      <div class="insight-block">
-        <span class="insight-label">Today</span>
-        <p class="insight-text" id="day-vs-average"></p>
+      <div class="insight-block insight-block--featured insight-weekly-digest" id="weekly-digest-block">
+        <span class="insight-label">This week</span>
+        <div class="insight-weekly-chart" id="weekly-digest-chart" aria-hidden="true"></div>
+        <p class="insight-text insight-weekly-summary" id="weekly-digest"></p>
       </div>
-      <div class="insight-block">
+      <div class="insight-block insight-block--today">
+        <span class="insight-label">Today vs your average</span>
+        <div class="insight-chart" id="day-vs-average-chart"></div>
+        <p class="insight-text insight-chart-summary" id="day-vs-average"></p>
+      </div>
+      <div class="insight-block insight-block--time">
         <span class="insight-label">When you log</span>
-        <p class="insight-text" id="time-of-day"></p>
+        <div class="insight-chart" id="time-of-day-chart"></div>
+        <p class="insight-text insight-chart-summary" id="time-of-day"></p>
       </div>
-      <div class="insight-block">
+      <div class="insight-block insight-block--patterns">
         <span class="insight-label">Repeating notes</span>
-        <p class="insight-subtitle" id="top-patterns-title"></p>
-        <ul class="entry-list insight-list" id="top-patterns"></ul>
+        <div class="insight-chart" id="top-patterns-chart"></div>
       </div>
-      <div class="insight-block insight-patterns">
-        <span class="insight-label">More patterns</span>
-        <div class="insight-chips" id="more-patterns"></div>
+      <div class="insight-block insight-block--mood insight-patterns">
+        <span class="insight-label">Your mood when logging</span>
+        <div class="insight-chart" id="more-patterns-chart"></div>
       </div>
       <div class="insight-block insight-block-bias-check" id="bias-check-insight-block">
         <div class="bias-check-insight-header">
           <span class="insight-label">Observed &amp; Bias Check</span>
-          <span class="bias-check-count-btn" id="bias-check-count-btn" aria-label="Support in this period" title="Support in this period">0</span>
+          <span class="bias-check-count-btn" id="bias-check-count-btn" aria-label="Support in this period (yours)" title="Support in this period (yours)">0</span>
+          <span class="bias-check-count-btn bias-check-count-btn--global" id="bias-check-count-global-btn" aria-label="Observed from everyone's shared entries" title="Observed from everyone's shared entries">—</span>
         </div>
         <div class="bias-check-insight-content" id="bias-check-insight"></div>
       </div>
@@ -219,7 +237,7 @@
     <section class="community-entries-section" id="community-entries-section">
       <div class="community-entries-header">
         <h2>Everyone's recent moments</h2>
-        <button type="button" id="btn-shared-total" class="btn-shared-total" title="Total shared moments in this view" aria-label="Total shared moments">0 shared</button>
+        <button type="button" id="btn-shared-total" class="btn-shared-total" title="The world's slip-up chart" aria-label="World slip-ups: 0">🌍 0 slip-ups</button>
       </div>
       <p class="section-hint">Heat ↓ · Shift ↔ or ↑. Anonymous moments from all users. Add a moment above to contribute.</p>
       <button type="button" id="btn-add-from-community" class="btn-add-from-community" aria-label="Scroll to add a moment">+ Add</button>
@@ -256,30 +274,26 @@
 
     <section class="reflection-section">
       <h2>Today’s reflection</h2>
-      <p class="reflection-hint">
-        This is a space to notice what raised the heat and what cooled it down, and where support or shifts showed up.
-      </p>
+      <p class="reflection-hint">Notice the heat, notice the shifts. One line each.</p>
       <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
       <div class="auto-reflection" id="auto-reflection"></div>
       <div class="reflection-grid">
-        <div class="reflection-card">
+        <div class="reflection-card reflection-card--avoidable">
           <h3>Heat</h3>
-          <p class="reflection-subtitle">What set things off today? What would you like to handle differently next time?</p>
-          <textarea id="reflection-avoidable" rows="3" placeholder="e.g. Argument over TV, comment that stuck with me..."></textarea>
+          <textarea id="reflection-avoidable" rows="2" placeholder="What set things off? What to handle differently..."></textarea>
           <p class="char-counter" id="reflection-avoidable-counter"></p>
         </div>
-        <div class="reflection-card">
-          <h3>Shift & Support</h3>
-          <p class="reflection-subtitle">Where did you choose differently or get/give support?</p>
-          <textarea id="reflection-fertile" rows="3" placeholder="e.g. Took a walk instead of snapping back, checked in on someone..."></textarea>
+        <div class="reflection-card reflection-card--fertile">
+          <h3>Shift</h3>
+          <textarea id="reflection-fertile" rows="2" placeholder="Chose differently? Got or gave support..."></textarea>
           <p class="char-counter" id="reflection-fertile-counter"></p>
         </div>
       </div>
       <p class="reflection-note" id="reflection-note"></p>
       <div class="yesterday-reflection" id="yesterday-reflection"></div>
-      <div class="reflection-history" id="reflection-history">
-        <h3 class="reflection-history-title">Recent reflections (this device)</h3>
-        <p class="reflection-history-hint">Saved locally; a simple table for the last few days of check-ins. You can export this below.</p>
+      <details class="reflection-history" id="reflection-history">
+        <summary class="reflection-history-summary">Recent reflections</summary>
+        <p class="reflection-history-hint">Saved on this device.</p>
         <div class="reflection-history-table-wrap">
           <table class="reflection-history-table" aria-label="Recent reflections">
             <thead>
@@ -293,31 +307,33 @@
           </table>
         </div>
         <button type="button" id="btn-export-reflections" class="btn-export-reflections">Export reflections (CSV)</button>
-      </div>
+      </details>
     </section>
 
     <section class="share-section" id="share-section">
       <h2>Share anonymously (optional)</h2>
-      <p class="share-hint">If enabled, you can share your current period stats so others can see patterns (no names, no accounts).</p>
+      <p class="share-hint">Pick a period above, then share. Your stats go to the world chart — no account, fully anonymous.</p>
+      <div class="share-period-tabs">
+        <span class="share-period-label">Share period:</span>
+        <div class="period-tabs" role="tablist" aria-label="Period to share">
+          <button type="button" class="tab" role="tab" data-period="day">Today</button>
+          <button type="button" class="tab" role="tab" data-period="week">This week</button>
+          <button type="button" class="tab" role="tab" data-period="month">This month</button>
+        </div>
+      </div>
       <button type="button" id="btn-share" class="btn-share">Share my period</button>
       <button type="button" id="btn-share-image" class="btn-share btn-share-image">Share as image</button>
       <p class="share-status" id="share-status"></p>
     </section>
 
-    <section class="settings-section" id="settings-section">
-      <h2>Settings</h2>
-      <label class="setting-row">
-        <input type="checkbox" id="reminder-checkbox">
-        <span>Notify me for evening check-in (8pm)</span>
-      </label>
-    </section>
-
     <section class="community-section" id="community-section">
       <h2>Others’ results</h2>
       <p class="community-hint">Recent anonymous shares (heat, shifts, support).</p>
-      <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
-      <p class="community-metrics" id="community-metrics"></p>
-      <ul class="shared-list" id="shared-list"></ul>
+      <div class="community-header">
+        <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
+        <div class="community-metrics-chart" id="community-metrics-chart"></div>
+      </div>
+      <div class="shared-list-chart" id="shared-list-chart"></div>
       <p class="empty-state" id="shared-empty">No shared results yet.</p>
       <p class="community-error hidden" id="community-error"></p>
     </section>

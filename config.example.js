@@ -17,6 +17,7 @@ window.MISTAKE_TRACKER_CONFIG = {
   SUPABASE_ENTRIES_TABLE: '',    // e.g. 'shared_entries' for "Everyone's recent entries"
   SUPABASE_CHART_TABLE: '',    // Optional: 'shared_chart_counts' for global chart (run supabase-global-chart.sql first)
   SUPABASE_DAILY_SUMMARIES_TABLE: '',  // Optional: extra analytics table when sharing (default: daily_summaries)
+  SUPABASE_STREAK_REFLECTIONS_TABLE: '',  // Optional: 'streak_reflections' for "what helped you show up?" choices (run supabase-streak-reflections.sql first)
   // Optional: URL for "Unlock full version" (e.g. Stripe, Gumroad). Leave empty to hide buy link.
   PAYMENT_URL: '',
   // Optional: PayPal hosted button.
