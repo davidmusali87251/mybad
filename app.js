@@ -53,6 +53,7 @@ const BIAS_REFLECTIONS = {
   triggered: 'This might not be a mistake. It could be a difference in values, style, or perspective.',
   unsure: "Not every observed mistake needs a conclusion. Sometimes awareness is enough."
 };
+const BIAS_LABELS = { harm: 'harm', failed: 'failed', different: 'different', triggered: 'triggered', unsure: 'unsure' };
 const TYPE_PLACEHOLDERS = {
   avoidable: 'e.g. Forgot to save, spoke harshly…',
   fertile: 'e.g. Tried a new approach, missed the mark…',
@@ -111,6 +112,8 @@ const btnSharedTotal = document.getElementById('btn-shared-total');
 const biasCheckRow = document.getElementById('bias-check-row');
 const btnBiasCheck = document.getElementById('btn-bias-check');
 const biasCheckOverlay = document.getElementById('bias-check-overlay');
+const biasCheckPanelStat = document.getElementById('bias-check-panel-stat');
+const biasCheckPanelIntent = document.getElementById('bias-check-panel-intent');
 const biasCheckReflection = document.getElementById('bias-check-reflection');
 const biasCheckOptions = document.getElementById('bias-check-options');
 const btnBiasCheckClose = document.getElementById('btn-bias-check-close');
@@ -147,6 +150,9 @@ const timeOfDay = document.getElementById('time-of-day');
 const topPatterns = document.getElementById('top-patterns');
 const topPatternsTitle = document.getElementById('top-patterns-title');
 const morePatterns = document.getElementById('more-patterns');
+const biasCheckInsight = document.getElementById('bias-check-insight');
+const biasCheckInsightBlock = document.getElementById('bias-check-insight-block');
+const biasCheckCountBtn = document.getElementById('bias-check-count-btn');
 const btnShareImage = document.getElementById('btn-share-image');
 const addToHomeBanner = document.getElementById('add-to-home-banner');
 const addToHomeDismiss = document.getElementById('add-to-home-dismiss');
@@ -158,6 +164,8 @@ let sharedEntriesLimit = 10;
 let lastSharedEntries = [];
 let sharedEntriesTypeFilter = 'all';
 let sharedEntriesThemeFilter = 'all';
+/** Set when user clicks Save in Bias Check; applied to next observed entry. */
+let lastBiasCheckReason = null;
 
 function isUnlocked() {
   return localStorage.getItem(UNLOCKED_KEY) === 'true';
@@ -1267,6 +1275,39 @@ function renderInsights() {
       .join('');
     morePatterns.innerHTML = chips || '<span class="insight-chip">No patterns yet</span>';
   }
+
+  if (biasCheckInsight && biasCheckInsightBlock) {
+    const filtered = filterByPeriod(currentPeriod);
+    const observed = filtered.filter(e => (e.type || 'avoidable') === 'observed');
+    const oLabel = MODE === 'inside' ? 'support' : 'observed';
+
+    if (biasCheckCountBtn) {
+      biasCheckCountBtn.textContent = observed.length;
+      biasCheckCountBtn.setAttribute('aria-label', (MODE === 'inside' ? 'Support' : 'Observed') + ' in this period: ' + observed.length);
+      biasCheckCountBtn.title = (MODE === 'inside' ? 'Support' : 'Observed') + ' in this period: ' + observed.length;
+    }
+
+    if (observed.length > 0) {
+      const pills = observed.slice(0, 3).map(function (e) {
+        const note = (e.note || '').trim() || "I couldn't tell";
+        const short = note.length > 20 ? note.slice(0, 17) + '…' : note;
+        const biasLabel = (e.biasReason && BIAS_LABELS[e.biasReason]) ? ' <span class="bias-check-choice">' + BIAS_LABELS[e.biasReason] + '</span>' : '';
+        return '<span class="bias-check-note-pill" title="' + escapeHtml(note) + '">' + escapeHtml(short) + biasLabel + '</span>';
+      }).join(' ');
+      biasCheckInsight.innerHTML =
+        '<div class="bias-check-insight-row">' +
+          '<div class="bias-check-data">' + observed.length + ' ' + oLabel + (pills ? ' · ' + pills : '') + '</div>' +
+          '<div class="bias-check-share-line">Share to add to everyone\'s feed. Use <strong>Bias Check</strong> when adding.</div>' +
+        '</div>';
+    } else {
+      biasCheckInsight.innerHTML =
+        '<div class="bias-check-insight-row">' +
+          '<div class="bias-check-data">No ' + oLabel + ' yet.</div>' +
+          '<div class="bias-check-share-line">Observed entries can be shared. Use Bias Check when adding.</div>' +
+        '</div>';
+    }
+    biasCheckInsightBlock.classList.remove('hidden');
+  }
 }
 
 function escapeHtml(s) {
@@ -1421,6 +1462,10 @@ function addMistake() {
   const type = getSelectedType();
   const scope = type === 'observed' ? 'observed' : 'personal';
   const entry = { at: Date.now(), note, type, scope, theme: getCurrentTheme() };
+  if (type === 'observed' && lastBiasCheckReason) {
+    entry.biasReason = lastBiasCheckReason;
+    lastBiasCheckReason = null;
+  }
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
@@ -1430,7 +1475,7 @@ function addMistake() {
   if (addNoteInput) addNoteInput.focus();
   renderStats();
   renderList();
-  if (SHARING_ENABLED) pushEntryToShared({ note, type });
+  if (SHARING_ENABLED) pushEntryToShared({ note, type, theme: entry.theme });
 }
 
 function pushEntryToShared(entry) {
@@ -1619,6 +1664,10 @@ function quickAdd(type) {
   if (isAtLimit()) return;
   const scope = type === 'observed' ? 'observed' : 'personal';
   const entry = { at: Date.now(), note: '', type, scope, theme: getCurrentTheme() };
+  if (type === 'observed' && lastBiasCheckReason) {
+    entry.biasReason = lastBiasCheckReason;
+    lastBiasCheckReason = null;
+  }
   entries.push(entry);
   lastEntry = entry;
   saveEntries();
@@ -1828,14 +1877,23 @@ async function fetchSharedEntries() {
       .limit(sharedEntriesLimit);
     if (error) throw error;
 
-    // 2) Fetch total count (not capped by limit) for "X shared" button only
+    // 2) Fetch global totals: overall count + counts by type (for "X shared" and chart)
     let globalTotal = 0;
+    let globalAvoidable = 0;
+    let globalFertile = 0;
+    let globalObserved = 0;
     try {
-      const { count: totalCount } = await client
-        .from(ENTRIES_TABLE)
-        .select('*', { count: 'exact', head: true })
-        .eq('mode', MODE);
-      globalTotal = typeof totalCount === 'number' ? totalCount : 0;
+      const [totalRes, avoidRes, fertRes, obsRes] = await Promise.all([
+        client.from(ENTRIES_TABLE).select('*', { count: 'exact', head: true }).eq('mode', MODE),
+        client.from(ENTRIES_TABLE).select('*', { count: 'exact', head: true }).eq('mode', MODE).eq('type', 'avoidable'),
+        client.from(ENTRIES_TABLE).select('*', { count: 'exact', head: true }).eq('mode', MODE).eq('type', 'fertile'),
+        client.from(ENTRIES_TABLE).select('*', { count: 'exact', head: true }).eq('mode', MODE).eq('type', 'observed')
+      ]);
+      const getCount = (r) => (r && typeof r.count === 'number' ? r.count : 0);
+      globalTotal = getCount(totalRes);
+      globalAvoidable = getCount(avoidRes);
+      globalFertile = getCount(fertRes);
+      globalObserved = getCount(obsRes);
     } catch (_) {
       /* ignore */
     }
@@ -1843,7 +1901,7 @@ async function fetchSharedEntries() {
     const list = data || [];
     lastSharedEntries = list;
 
-    // Single source of truth: counts from the list we just fetched (chart + trend + labels stay in sync)
+    // List-based counts for trend text only ("Last X shared entries: a avoidable · f fertile · o observed")
     let avoidable = 0;
     let fertile = 0;
     let observed = 0;
@@ -1894,8 +1952,8 @@ async function fetchSharedEntries() {
       }
     }
 
-    // Chart and trend both use same list-based counts (avoidable, fertile, observed)
-    renderGlobalCountChart(avoidable, fertile, observed);
+    // Chart shows global totals (all shared entries by type); trend shows current list slice
+    renderGlobalCountChart(globalAvoidable, globalFertile, globalObserved);
     if (btnSharedTotal) {
       const total = globalTotal > 0 ? globalTotal : (avoidable + fertile + observed);
       btnSharedTotal.textContent = total + ' shared';
@@ -1932,13 +1990,16 @@ function renderGlobalCountChart(avoidable, fertile, observed) {
   }
   globalCountChart.classList.remove('hidden');
   globalCountChart.setAttribute('aria-hidden', 'false');
+  globalCountChart.setAttribute('aria-label', (MODE === 'inside' ? 'Global count of shared moments' : 'Global count of shared entries') + ' by type (all time)');
   const aLab = MODE === 'inside' ? 'Heat' : 'Avoidable';
   const fLab = MODE === 'inside' ? 'Shift' : 'Fertile';
   const oLab = MODE === 'inside' ? 'Support' : 'Observed';
   const aFlex = Math.max(avoidable, 1);
   const fFlex = Math.max(fertile, 1);
   const oFlex = Math.max(observed, 1);
+  const caption = MODE === 'inside' ? 'All shared moments (global)' : 'All shared entries (global)';
   globalCountChart.innerHTML =
+    '<p class="global-count-chart-caption">' + caption + '</p>' +
     '<div class="global-count-chart-bar" role="img">' +
       '<span class="global-count-segment global-count-avoidable" style="flex:' + aFlex + '" title="' + aLab + ': ' + avoidable + '"></span>' +
       '<span class="global-count-segment global-count-fertile" style="flex:' + fFlex + '" title="' + fLab + ': ' + fertile + '"></span>' +
@@ -2035,28 +2096,48 @@ function toggleSharedEntriesView() {
   fetchSharedEntries();
 }
 
-function handleSharedEntriesFilterClick(e) {
-  if (!sharedEntriesFilters) return;
-  const target = e.target.closest('button.filter-chip');
-  if (!target || !sharedEntriesFilters.contains(target)) return;
-
-  if (target.hasAttribute('data-filter-type')) {
-    const value = target.getAttribute('data-filter-type') || 'all';
-    sharedEntriesTypeFilter = value;
+function applySharedEntriesTypeFilter(value) {
+  sharedEntriesTypeFilter = value || 'all';
+  if (sharedEntriesFilters) {
     const typeButtons = sharedEntriesFilters.querySelectorAll('button[data-filter-type]');
     typeButtons.forEach(btn => {
-      btn.classList.toggle('active', btn === target);
-    });
-  } else if (target.hasAttribute('data-filter-theme')) {
-    const value = target.getAttribute('data-filter-theme') || 'all';
-    sharedEntriesThemeFilter = value;
-    const themeButtons = sharedEntriesFilters.querySelectorAll('button[data-filter-theme]');
-    themeButtons.forEach(btn => {
-      btn.classList.toggle('active', btn === target);
+      btn.classList.toggle('active', (btn.getAttribute('data-filter-type') || 'all') === sharedEntriesTypeFilter);
+      btn.setAttribute('aria-pressed', btn.classList.contains('active') ? 'true' : 'false');
     });
   }
-
+  if (globalCountChart) {
+    globalCountChart.querySelectorAll('.global-count-label-btn').forEach(btn => {
+      const type = btn.getAttribute('data-filter-type');
+      const active = type === sharedEntriesTypeFilter;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
   renderSharedEntriesList();
+}
+
+function handleSharedEntriesFilterClick(e) {
+  const target = e.target.closest('button[data-filter-type], button[data-filter-theme]');
+  if (!target) return;
+  if (sharedEntriesFilters && sharedEntriesFilters.contains(target)) {
+    if (target.hasAttribute('data-filter-type')) {
+      applySharedEntriesTypeFilter(target.getAttribute('data-filter-type') || 'all');
+      return;
+    }
+    if (target.hasAttribute('data-filter-theme')) {
+      const value = target.getAttribute('data-filter-theme') || 'all';
+      sharedEntriesThemeFilter = value;
+      const themeButtons = sharedEntriesFilters.querySelectorAll('button[data-filter-theme]');
+      themeButtons.forEach(btn => {
+        btn.classList.toggle('active', btn === target);
+      });
+      renderSharedEntriesList();
+      return;
+    }
+  }
+  if (target.classList.contains('global-count-label-btn') && target.hasAttribute('data-filter-type')) {
+    applySharedEntriesTypeFilter(target.getAttribute('data-filter-type'));
+  }
 }
 
 function showCommunityEntriesSetupMessage() {
@@ -2078,6 +2159,14 @@ function initSharing() {
     if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', fetchSharedEntries);
     if (btnSharedEntriesToggle) btnSharedEntriesToggle.addEventListener('click', toggleSharedEntriesView);
     if (sharedEntriesFilters) sharedEntriesFilters.addEventListener('click', handleSharedEntriesFilterClick);
+    if (globalCountChart) {
+      globalCountChart.addEventListener('click', function (e) {
+        const btn = e.target.closest('.global-count-label-btn');
+        if (!btn || !btn.hasAttribute('data-filter-type')) return;
+        const type = btn.getAttribute('data-filter-type');
+        applySharedEntriesTypeFilter(type === sharedEntriesTypeFilter ? 'all' : type);
+      });
+    }
     if (btnAddFromCommunity) {
       btnAddFromCommunity.addEventListener('click', function () {
         const main = document.getElementById('main');
@@ -2195,11 +2284,19 @@ updateAddButtonState();
 const btnCantTell = document.getElementById('btn-cant-tell');
 if (btnCantTell) btnCantTell.addEventListener('click', () => quickAdd(getSelectedType()));
 if (emptyState && emptyState.classList.contains('empty-state-add')) {
-  emptyState.addEventListener('click', function () { quickAdd(getSelectedType()); });
+  emptyState.addEventListener('click', function () {
+    if (emptyState.disabled) return;
+    const main = document.getElementById('main');
+    if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
+  });
   emptyState.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      quickAdd(getSelectedType());
+      if (emptyState.disabled) return;
+      const main = document.getElementById('main');
+      if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
     }
   });
 }
@@ -2220,11 +2317,23 @@ function openBiasCheck() {
   biasCheckOptions.querySelectorAll('input[name="bias-reason"]').forEach(r => { r.checked = false; });
   biasCheckReflection.textContent = '';
   biasCheckReflection.classList.add('hidden');
+
+  if (biasCheckPanelStat) {
+    const note = (addNoteInput && addNoteInput.value) ? addNoteInput.value.trim() : '';
+    const theme = getCurrentTheme();
+    const typeLabel = MODE === 'inside' ? 'Support' : 'Observed';
+    biasCheckPanelStat.textContent = note
+      ? typeLabel + ': «' + note + '» · ' + theme.charAt(0).toUpperCase() + theme.slice(1)
+      : typeLabel + ' entry · ' + theme.charAt(0).toUpperCase() + theme.slice(1);
+    biasCheckPanelStat.classList.toggle('bias-check-panel-stat--empty', !note);
+  }
   if (btnBiasCheckClose) btnBiasCheckClose.focus();
 }
 
 function closeBiasCheck() {
   if (!biasCheckOverlay) return;
+  const checked = biasCheckOptions && biasCheckOptions.querySelector('input[name="bias-reason"]:checked');
+  lastBiasCheckReason = (checked && checked.value) || null;
   biasCheckOverlay.classList.add('hidden');
   biasCheckOverlay.setAttribute('aria-hidden', 'true');
   if (btnBiasCheck) btnBiasCheck.focus();

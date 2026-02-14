@@ -137,6 +137,13 @@
         <span class="insight-label">More patterns</span>
         <div class="insight-chips" id="more-patterns"></div>
       </div>
+      <div class="insight-block insight-block-bias-check" id="bias-check-insight-block">
+        <div class="bias-check-insight-header">
+          <span class="insight-label">Observed &amp; Bias Check</span>
+          <span class="bias-check-count-btn" id="bias-check-count-btn" aria-label="Support in this period" title="Support in this period">0</span>
+        </div>
+        <div class="bias-check-insight-content" id="bias-check-insight"></div>
+      </div>
     </section>
 
     <section class="premium-section" id="premium-section">
@@ -328,17 +335,19 @@
 
   <div class="bias-check-overlay hidden" id="bias-check-overlay" role="dialog" aria-modal="true" aria-labelledby="bias-check-title" aria-hidden="true">
     <div class="bias-check-panel">
-      <h3 class="bias-check-title" id="bias-check-title">Why do you see this as a mistake?</h3>
+      <p class="bias-check-panel-stat" id="bias-check-panel-stat" aria-live="polite"></p>
+      <p class="bias-check-panel-intent" id="bias-check-panel-intent">Reflect before you save. Why do you see this as a mistake?</p>
+      <h3 class="bias-check-title" id="bias-check-title">Choose the closest reason</h3>
       <div class="bias-check-options" id="bias-check-options">
-        <label class="bias-check-option"><input type="radio" name="bias-reason" value="harm"><span>Because it caused real harm</span></label>
-        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>Because it failed</span></label>
-        <label class="bias-check-option"><input type="radio" name="bias-reason" value="different"><span>Because it's different from what I would do</span></label>
-        <label class="bias-check-option"><input type="radio" name="bias-reason" value="triggered"><span>Because I felt annoyed or triggered</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="harm"><span>It caused real harm</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>It failed</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="different"><span>It's different from what I would do</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="triggered"><span>I felt annoyed or triggered</span></label>
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="unsure"><span>I'm not sure</span></label>
       </div>
       <p class="bias-check-reflection hidden" id="bias-check-reflection"></p>
       <div class="bias-check-actions">
-        <button type="button" id="btn-bias-check-close" class="btn-bias-close">Close</button>
+        <button type="button" id="btn-bias-check-close" class="btn-bias-save">Save</button>
       </div>
     </div>
   </div>

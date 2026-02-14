@@ -1,0 +1,11 @@
+{
+  "name": "slipup",
+  "private": true,
+  "scripts": {
+    "serve": "serve -l 3333",
+    "start": "serve -l 3333"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
