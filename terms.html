@@ -2,10 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0f0f12">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#14141a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
   <title>SlipUp — Terms and Conditions</title>
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=66">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
@@ -23,14 +27,17 @@
   </style>
 </head>
 <body>
+  <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
-    <a href="index.html" class="top-bar-brand">SlipUp</a>
+    <div class="top-bar-left">
+      <a href="index.html" class="top-bar-brand" title="Not a judge. A mirror. — See what repeats, choose what to keep.">SlipUp</a>
+    </div>
     <div class="top-bar-actions">
-      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
-      <a href="index.html" class="top-bar-home">Home</a>
+      <button type="button" id="btn-theme" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Calm</button>
+      <a href="index.html" class="top-bar-home">+ Add</a>
     </div>
   </header>
-  <div class="legal-page">
+  <main class="legal-page" id="main">
     <h1>SlipUp — Terms and Conditions</h1>
     <p><em>Last updated: February 2026</em></p>
 
@@ -76,21 +83,27 @@
       <a href="refund.html">Refund policy</a> ·
       <a href="inside.html">SlipUp Inside (groups)</a>
     </footer>
-  </div>
+  </main>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
-      var THEME_ORDER = ['calm', 'focus', 'warm'];
+      var THEME_ORDER = ['calm', 'focus', 'stressed', 'curious', 'tired'];
       var btn = document.getElementById('btn-theme');
       function applyTheme() {
         var theme = localStorage.getItem(THEME_KEY) || 'calm';
-        document.body.classList.remove('theme-focus', 'theme-warm');
+        document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
         if (theme === 'focus') {
           document.body.classList.add('theme-focus');
           if (btn) btn.textContent = 'Focus';
-        } else if (theme === 'warm') {
-          document.body.classList.add('theme-warm');
-          if (btn) btn.textContent = 'Warm';
+        } else if (theme === 'stressed') {
+          document.body.classList.add('theme-stressed');
+          if (btn) btn.textContent = 'Stressed';
+        } else if (theme === 'curious') {
+          document.body.classList.add('theme-curious');
+          if (btn) btn.textContent = 'Curious';
+        } else if (theme === 'tired') {
+          document.body.classList.add('theme-tired');
+          if (btn) btn.textContent = 'Tired';
         } else {
           if (btn) btn.textContent = 'Calm';
         }

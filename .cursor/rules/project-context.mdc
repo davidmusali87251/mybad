@@ -1,0 +1,108 @@
+---
+description: SlipUp project context — implemented features, run instructions, gating, known issues, PWA notes
+globs: app.js,index.html,inside.html,landing.html,landing-inside.html,auth-inside.html,styles.css,manifest.json,sw.js,inside-auth.js
+alwaysApply: false
+---
+
+# SlipUp Project Context
+
+## Run locally
+- **Server:** `npm run serve` or `npm start` (port 3333). **URL:** http://localhost:3333
+- **PowerShell:** Use `;` to chain commands (e.g. `cd path; npm run serve`). `&&` not supported.
+- **Bump version:** `node bump-version.js` (or `node bump-version.js 42`). Workflow runs on deploy.
+
+## Project folder structure
+
+```
+mistake-tracker/
+├── index.html, inside.html, landing.html     # Main app pages
+├── landing-inside.html, auth-inside.html     # Inside landing & auth gate
+├── privacy.html, terms.html, refund.html    # Legal pages
+├── app.js, inside-auth.js                   # Main app logic (inside-auth for auth gate only)
+├── styles.css, sw.js                        # Styles & service worker
+├── config.js, config.example.js             # Supabase/config (config.js gitignored)
+├── manifest.json, icon.svg, icon-maskable.svg
+├── bump-version.js                          # Asset version bump (workflow runs on deploy)
+├── package.json                             # npm deps (serve)
+├── supabase-*.sql                           # Supabase migrations
+├── .github/workflows/main.yml               # Deploy workflow
+├── README.md, ARCHITECTURE.md, FLOW.md
+├── INCONSISTENCIES-REPORT.md, AUDIT-REPORT-2026.md
+└── .cursor/rules/project-context.mdc        # This file
+```
+
+## Structure
+
+### index.html
+- **Phase tabs:** Personal | Social | Inside (link to inside.html)
+- **Personal view:** Micro-goal (Share intention) → Add card → Period tabs → Stats → Insights → Premium → Progress → Trends → Chart → History (with Day/Week/Month tabs) → Reflection
+- **Social view (Share tab):** Share your stats first (social-block), period tabs, Share my result → Recent shares (community-section) with btn-global-world 🌍 → Community metrics (last 7 days). Link "Add a slip-up →" to add card.
+- **Social → World tab:** Global count chart → Common words (insight-block--global-patterns) → community-browse (limit chips + filters) → Shared entries list. Link "See recent shares →" to Share tab.
+
+### inside.html
+- **Phase tabs:** Group | Shares (like Personal | Social)
+- **Group:** Add moments, stats, intentions; Shares = group's shared moments feed
+- **Shares view** — community-entries-section: global count chart, community-browse (Last 10 / All + filter groups), shared entries list. Heat/Shift/Support terminology. No Common words block (index-only).
+- **Bias Check** — Inside uses "Why does this moment stand out?"; index uses "Why do you see this as a mistake?"
+
+### landing.html, landing-inside.html
+- Minimal top bar (brand only). No 🌍, no + Add, no mood. CTA after Roadmap.
+- **landing-inside** — CTA "Open SlipUp Inside" for groups.
+
+### auth-inside.html
+- Auth gate for SlipUp Inside (sign in / create account / magic link). Has PWA meta (apple-mobile-*, manifest). Does not register SW.
+
+## Top bar
+
+| Page | Left | Right |
+|------|------|-------|
+| index, inside | btn-settings \| top-bar-brand \| btn-theme-top | top-bar-slipups (🌍 N) \| top-bar-add (+ Add) |
+| landing, landing-inside | top-bar-brand only | — |
+| privacy, terms, refund | top-bar-brand \| btn-theme | + Add (no slipups, no bell) |
+| auth-inside | top-bar-brand | top-bar-home (Open app) |
+
+- **Legal pages** — Use `btn-theme` (not btn-theme-top); title "Toggle theme" vs index/inside "How does this feel?"
+- **top-bar-slipups** — index: opens Social → world feed. inside: opens Shares. Refreshes on add (1200ms), phase switch.
+
+## Implemented
+- Add mistake/moment (max 19 chars), character count, type-colored (avoidable/fertile/observed)
+- **Type pills** — avoidable / fertile / observed (Inside: heat/shift/support)
+- **Bias Check** — When type=observed; modal 5 options. Copy differs index vs inside.
+- **Micro-goal** — First on Personal; Share intention → shared_intentions
+- Period tabs (day/week/month), stats, streaks, exploration index
+- **History** — index has Day/Week/Month tabs; inside has filters only
+- **community-browse** — Restructured: limit chips (Last 10 / All) + filter-group (Type, Mood) with label-above-chips
+- **Social share** — Share my result. Recent shares (contribution-first). Link to add card from metrics.
+- **Global common words** — World tab only. Download full list gated.
+- **Type colors** — --avoidable #c99a7a, --fertile #6ba88a, --observed #8b9bb8
+- Theme (calm/focus/stressed/curious/tired)
+
+## PWA / caching
+- **manifest.json** — display: standalone, theme_color #14141a. start_url: index.html.
+- **sw.js** — HTML fetch `cache: 'no-store'`. config.js never cached. inside-auth.js not in STATIC_ASSETS (cache-first on load).
+- **config.js versioning** — index, inside, auth-inside use `?v=N`; landing, landing-inside do not.
+- **Safe areas** — top-bar and .app use env(safe-area-inset-*).
+- **bump-version.js** — HTML_FILES: index, inside, landing, landing-inside, auth-inside, privacy, terms, refund.
+
+## Supabase
+- Tables: shared_stats, shared_what_happened, shared_stats_inside. Optional: shared_chart_counts, streak_reflections, shared_intentions, todays_reflections, shared_entries_personal, shared_entries_inside, state_events.
+- **supabase-inside-groups-admin.sql** — Run after supabase-inside-groups.sql. Adds: update_group_name, get_group_members, remove_member, leave_group, transfer_ownership, get_group_invites, cancel_group_invite. Group settings: edit name, member list (with Make creator / Remove), pending invites + cancel, leave group. Member skeleton + Try again on load error.
+- **shared_stats breakdown** — Optional: supabase-shared-stats-breakdown.sql for avoidable_count, fertile_count, observed_count.
+- Config: config.example.js → config.js (local). Deploy: Secrets.
+
+## Gated elements (PAID_ONLY_ELEMENT_IDS)
+btn-export-csv, btn-export-reflections, btn-export-intentions, btn-export-feed, **btn-download-global-patterns**
+
+(btn-export-json removed — not implemented.)
+
+## Known issues / SlipUp style
+- **CSS :has()** — Some linters flag it; acceptable.
+- **Terminology** — index: slip-ups, mistakes. inside: moments. Bias Check copy matches.
+- **Personal vs Inside** — add-sync-status, history-period-tabs, community-entries-last-updated on index only; intentional.
+- **SlipUp style** — Calm, mirror-not-judge, user-intent, enjoyable. Contribution-first on Social. Sentence-case labels. Notice without pressure.
+
+## Project docs
+- **README.md** — Run, features, PWA, Supabase
+- **ARCHITECTURE.md** — Design constraints
+- **FLOW.md** — User flow, decision criteria
+- **AUDIT-REPORT-2026.md** — Full audit summary

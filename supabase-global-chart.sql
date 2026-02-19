@@ -1,7 +1,11 @@
 -- Table for the global counting chart (Avoidable ↓ · Fertile ↔ or ↑)
 -- Stores pre-aggregated counts from shared_what_happened, updated by trigger on insert.
 --
--- Run this in Supabase: SQL Editor → New query → paste and run.
+-- HOW TO RUN: Do NOT paste the file path. In Supabase Dashboard:
+--   1. Go to SQL Editor → New query
+--   2. Open this file in your editor (e.g. VS Code), select ALL the SQL below (from "create table" to the end)
+--   3. Copy and paste that text into the Supabase query box, then click Run
+-- =============================================================================
 
 create table if not exists shared_chart_counts (
   id uuid default gen_random_uuid() primary key,

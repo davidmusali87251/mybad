@@ -15,7 +15,7 @@ This document outlines directions to evolve SlipUp from a daily tracker into a f
 | 2. Smarter reflection | Weekly digest (one sentence) | ✅ "This week in one sentence" in insights |
 | 3. Share & progress | Share as image | ✅ "Share as image" button (card with stats) |
 | 3. Share & progress | SlipUp Inside — group pulse | ✅ Inside mode with heat/shift/support, anonymous sharing |
-| 4. Calm personalization | Themes (calm / focus / warm) | ✅ Theme toggle in header |
+| 4. Calm personalization | Themes (calm / focus / stressed / curious / tired) | ✅ Mood toggle on add card, theme-aware accents |
 | 4. Calm personalization | Optional reminders | ✅ Same as above (8pm check-in) |
 | 5. Technical | Data layer (by day, week, type) | ✅ filterByPeriod, getDayCountsLastN, etc. |
 | 5. Technical | Offline-first | ✅ PWA, service worker; add/view works offline |
@@ -55,7 +55,7 @@ For groups: one shared view (e.g. "This week: heat ↓, shift ↑") with no indi
 ## 4. Calm personalization
 
 **Themes / mood**  
-Optional "calm" vs "focus" (or similar) that only tweaks accent and maybe one background tone. Keeps the product feeling like their space.
+Five soft mood modes — calm, focus, stressed, curious, tired — that only tweak accent and background tone. They are stored per-entry and used purely for reflection (no scoring), so the app still feels like their space.
 
 **Optional reminders**  
 Single daily check-in (e.g. 8pm), off by default, with copy like "Time for a quick look at your day." PWA or browser notification.

@@ -2,62 +2,203 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b1013">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#14141a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=66">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
+  <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
-    <a href="index.html" class="top-bar-brand">SlipUp</a>
+    <div class="top-bar-left">
+      <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
+      <a href="inside.html" class="top-bar-brand" title="SlipUp Inside — Group check-ins">SlipUp Inside</a>
+      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Calm</button>
+    </div>
+    <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
+      <label class="setting-row">
+        <input type="checkbox" id="reminder-checkbox">
+        <span>Notify me for evening check-in (8pm)</span>
+      </label>
+      <button type="button" id="btn-invite-members" class="setting-row btn-setting" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0.5rem 0;">Invite members</button>
+      <button type="button" id="btn-manage-group" class="setting-row btn-setting" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0.5rem 0;">Manage group</button>
+      <button type="button" id="btn-sign-out" class="setting-row" style="display:block;width:100%;margin-top:0.5rem;font-size:0.9rem;color:var(--text-muted);background:none;border:none;cursor:pointer;text-align:left;padding:0;">Sign out</button>
+    </div>
     <div class="top-bar-actions">
-      <button type="button" id="btn-theme" class="top-bar-theme" title="Toggle theme">Calm</button>
-      <a href="index.html" class="top-bar-home">Home</a>
+      <button type="button" id="top-bar-slipups" class="top-bar-slipups" title="Group shared moments — heat, shift, support" aria-label="Group moments: 0">🌍 0</button>
+      <a href="#main" class="top-bar-home" id="top-bar-add" aria-label="Add moment">+ Add</a>
     </div>
   </header>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
     <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
     <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
   </div>
-  <div class="app">
-    <header class="header">
-      <h1>SlipUp Inside</h1>
-      <p class="tagline">Daily check‑ins for the unit or group</p>
-      <p class="tagline-sub">A quiet place to put down tense moments, shifts, and support.</p>
-      <a href="landing.html" class="header-about">About SlipUp</a>
+  <div id="group-bootstrap-loading" class="group-bootstrap-loading" aria-live="polite">
+    <p class="group-bootstrap-loading-text">Loading…</p>
+  </div>
+  <div id="group-gate-wrap" class="group-gate-wrap hidden" aria-labelledby="group-gate-title">
+    <div class="group-gate-card">
+      <h2 id="group-gate-title">Join or create a group</h2>
+      <p class="group-gate-sub">Each group is private — you only see moments shared by people in your group.</p>
+      <div class="group-gate-tabs">
+        <button type="button" class="group-gate-tab" data-tab="switch">Switch group</button>
+        <button type="button" class="group-gate-tab active" data-tab="create">Create group</button>
+        <button type="button" class="group-gate-tab" data-tab="join">Join with link</button>
+      </div>
+      <div class="group-gate-switch hidden" id="group-gate-switch">
+        <p class="group-gate-switch-hint" id="group-gate-switch-hint">Select a group to open:</p>
+        <div class="group-gate-group-list" id="group-gate-group-list"></div>
+      </div>
+      <div class="group-gate-create" id="group-gate-create">
+        <label for="group-name-input">Group name</label>
+        <input type="text" id="group-name-input" placeholder="e.g. Our team" maxlength="80">
+        <button type="button" id="btn-create-group" class="btn-create-group">Create group</button>
+      </div>
+      <div class="group-gate-join hidden" id="group-gate-join">
+        <label for="invite-token-input">Paste invite link or token</label>
+        <input type="text" id="invite-token-input" placeholder="https://... or invite token">
+        <button type="button" id="btn-join-group" class="btn-join-group">Join group</button>
+      </div>
+      <p class="group-gate-status" id="group-gate-status" aria-live="polite"></p>
+      <p class="group-gate-empty-hint hidden" id="group-gate-empty-hint">Create your first group or paste an invite link to join one.</p>
+    </div>
+  </div>
+  <div id="inside-app-wrap" class="app hidden">
+    <header class="app-hero" id="main-hero">
+      <div class="app-hero-inner">
+        <div class="app-hero-group-row">
+          <div class="app-hero-group-badge-wrap">
+            <span class="app-hero-group-badge" id="hero-group-badge" aria-label="Current group"></span>
+            <select id="group-switcher" class="group-switcher hidden" aria-label="Switch group" title="Switch to another group"></select>
+          </div>
+          <button type="button" id="btn-invite-hero" class="btn-invite-hero" title="Invite members to your group">Invite</button>
+        </div>
+        <h1 class="app-hero-title">SlipUp Inside</h1>
+        <p class="app-hero-tagline">Daily check‑ins for the unit or group</p>
+        <p class="app-hero-sub">A quiet place to put down tense moments, shifts, and support.</p>
+        <a href="landing-inside.html" class="app-hero-about">What is this?</a>
+      </div>
+      <div class="app-hero-glow" aria-hidden="true"></div>
+      <div class="app-hero-glow-bottom" aria-hidden="true"></div>
     </header>
 
-    <p class="phase-label">Group — Today</p>
-    <section class="add-section">
+    <section class="group-invite-block hidden" id="group-invite-block" aria-labelledby="group-invite-heading">
+      <h3 id="group-invite-heading">Invite members to your group</h3>
+      <p class="group-invite-hint">Share this link — only people with it can join. Your group sees only shared moments from members.</p>
+      <p class="group-invite-member-count" id="group-invite-member-count" aria-live="polite"></p>
+      <div class="group-invite-row">
+        <input type="text" id="group-invite-url" readonly class="group-invite-url">
+        <button type="button" id="btn-copy-invite" class="btn-copy-invite">Copy</button>
+      </div>
+    </section>
+
+    <details class="group-management-block" id="group-management-block" aria-labelledby="group-management-heading">
+      <summary id="group-management-heading">Group settings</summary>
+      <div class="group-management-inner">
+        <div class="group-management-name-row" id="group-management-name-row">
+          <label for="group-name-edit" class="group-name-label">Group name</label>
+          <input type="text" id="group-name-edit" class="group-name-edit" maxlength="80" placeholder="Group name" aria-describedby="group-name-edit-hint">
+          <span class="group-name-edit-hint" id="group-name-edit-hint">Creators can edit</span>
+          <button type="button" id="btn-save-group-name" class="btn-save-group-name hidden">Save</button>
+          <button type="button" id="btn-edit-group-name" class="btn-edit-group-name">Edit name</button>
+        </div>
+        <p class="group-management-status" id="group-management-status" aria-live="polite"></p>
+        <div class="group-members-section" id="group-members-section">
+          <h4 class="group-members-heading">Members</h4>
+          <div class="group-members-loading hidden" id="group-members-loading" aria-hidden="true">
+            <div class="group-member-skeleton"></div>
+            <div class="group-member-skeleton"></div>
+            <div class="group-member-skeleton"></div>
+          </div>
+          <div class="group-members-error-wrap hidden" id="group-members-error-wrap">
+            <p class="group-members-error" id="group-members-error" role="alert"></p>
+            <button type="button" id="btn-members-try-again" class="btn-try-again">Try again</button>
+          </div>
+          <ul class="group-members-list" id="group-members-list" aria-label="Group members"></ul>
+        </div>
+        <div class="group-invites-section hidden" id="group-invites-section">
+          <h4 class="group-invites-heading">Active invite links</h4>
+          <p class="group-invites-hint">Only creators see these. Cancel to invalidate a link.</p>
+          <div class="group-invites-loading hidden" id="group-invites-loading">Loading…</div>
+          <ul class="group-invites-list" id="group-invites-list"></ul>
+          <p class="group-invites-empty hidden" id="group-invites-empty">No active invites. Use Invite members above to create one.</p>
+        </div>
+        <div class="group-management-actions">
+          <button type="button" id="btn-leave-group" class="btn-leave-group">Leave group</button>
+        </div>
+      </div>
+    </details>
+
+    <div class="phase-tabs" id="phase-tabs" role="tablist" aria-label="Group or Shares">
+      <button type="button" class="phase-tab active" role="tab" aria-selected="true" data-phase="personal">Group</button>
+      <button type="button" class="phase-tab" role="tab" aria-selected="false" data-phase="social">Shares</button>
+    </div>
+    <div id="personal-view" class="app-view">
+    <section class="micro-goal-section micro-goal-card" id="micro-goal-section" aria-labelledby="micro-goal-heading-inside" role="region">
+      <p class="micro-goal-pause" aria-hidden="true">Before you log — one intention</p>
+      <h2 class="micro-goal-heading" id="micro-goal-heading-inside">What matters to you today?</h2>
+      <div class="micro-goal-input-wrap">
+        <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-char-count" autocomplete="off">
+        <span class="micro-goal-char-count" id="micro-goal-char-count" aria-live="polite"></span>
+      </div>
+      <div class="micro-goal-actions">
+        <button type="button" id="btn-share-intention" class="btn-share-intention" title="Share so everyone in your group can see">Share intention</button>
+      </div>
+      <div class="micro-goal-result" id="micro-goal-result" aria-live="polite"></div>
+      <div class="shared-intentions-block hidden" id="shared-intentions-block" aria-label="Your group's shared intentions">
+        <div class="shared-intentions-header">
+          <p class="shared-intentions-label" id="shared-intentions-label">Your group's focus (last 2 days)</p>
+          <button type="button" id="btn-intentions-how" class="btn-intentions-how" title="How intentions work" aria-label="How this works">?</button>
+        </div>
+        <p class="shared-intentions-how-panel hidden" id="shared-intentions-how-panel"></p>
+        <div class="shared-intentions-chart" id="shared-intentions-chart"></div>
+        <button type="button" id="btn-view-older-intentions" class="shared-intentions-view-older hidden">View older</button>
+      </div>
+    </section>
+    <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What moment do you want to remember?</label>
-        <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="50">
+        <div class="add-card-input-wrap">
+          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19">
+          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
+        </div>
 
+        <div class="mode-row">
+          <span class="mode-label">Mood</span>
+          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
+        </div>
         <div class="type-row">
           <span class="type-label">Kind of moment</span>
           <div class="type-options">
             <label class="type-pill">
-              <input type="radio" name="mistake-type" value="avoidable" checked>
-              <span class="pill-main">⚠ Heat</span>
+              <input type="radio" name="mistake-type" value="avoidable">
+              <span class="pill-main">Heat</span>
               <span class="pill-sub">Tension, conflict, close call</span>
             </label>
             <label class="type-pill">
               <input type="radio" name="mistake-type" value="fertile">
-              <span class="pill-main">✶ Shift</span>
+              <span class="pill-main">Shift</span>
               <span class="pill-sub">Different choice than usual</span>
             </label>
             <label class="type-pill">
-              <input type="radio" name="mistake-type" value="observed">
-              <span class="pill-main">👁 Support</span>
+              <input type="radio" name="mistake-type" value="observed" checked>
+              <span class="pill-main">Support</span>
               <span class="pill-sub">Help you gave, got, or saw</span>
             </label>
           </div>
         </div>
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
+
+        <div class="bias-check-row hidden" id="bias-check-row">
+          <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
+        </div>
 
         <button type="button" id="add-mistake" class="btn-add" disabled>+ Add moment</button>
         <div class="quick-add-row">
@@ -68,62 +209,87 @@
       </div>
     </section>
 
-    <section class="period-tabs">
-      <button type="button" class="tab active" data-period="day">Today</button>
-      <button type="button" class="tab" data-period="week">This week</button>
-      <button type="button" class="tab" data-period="month">This month</button>
+    <section class="share-to-group-section" id="share-to-group-section" aria-labelledby="share-to-group-heading">
+      <h2 id="share-to-group-heading">Share to group</h2>
+      <p class="share-to-group-hint">Select moments to share. Others see heat, shift, support — no names.</p>
+      <div class="share-to-group-controls">
+        <button type="button" id="btn-share-to-group-select-all" class="btn-share-select-all">Select all</button>
+        <button type="button" id="btn-share-to-group" class="btn-share-to-group" disabled>Share 0 to group</button>
+      </div>
+      <p class="share-to-group-status" id="share-to-group-status" aria-live="polite"></p>
+      <ul class="share-to-group-list" id="share-to-group-list"></ul>
+      <p class="share-to-group-empty hidden" id="share-to-group-empty">No unshared moments. Add one above.</p>
     </section>
 
-    <section class="stats">
-      <div class="stat-card">
-        <span class="stat-value" id="stat-count">0</span>
-        <span class="stat-label" id="stat-label">moments today</span>
+    <section class="stats-section" id="stats-section" aria-label="Your stats for the selected period">
+      <section class="period-tabs" role="tablist" aria-label="Time period">
+        <button type="button" class="tab" role="tab" aria-selected="false" data-period="month" title="See patterns across the full month — heat, shift, support">This month</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-period="week" title="Focus on this week's check-ins">This week</button>
+        <button type="button" class="tab active" role="tab" aria-selected="true" data-period="day" title="Just today — a fresh snapshot">Today</button>
+      </section>
+      <div class="stats">
+        <div class="stat-card stat-card--observed">
+          <span class="stat-value" id="stat-count">0</span>
+          <span class="stat-sublabel">Color reflects heat / shift / support mix</span>
+          <span class="stat-foot" id="stat-count-foot" aria-live="polite"></span>
+        </div>
+        <div class="stat-card secondary stat-card--observed">
+          <span class="stat-value" id="stat-avg">—</span>
+          <span class="stat-label">per day</span>
+          <span class="stat-sublabel">Busy vs calm stretches</span>
+          <span class="stat-foot" id="stat-avg-foot" aria-live="polite"></span>
+        </div>
+        <div class="stat-card stat-exploration">
+          <span class="stat-value" id="stat-exploration">—</span>
+          <span class="stat-label">Shift<span class="stat-expl-tip" id="stat-exploration-tip" aria-label="What is shift index?">?</span></span>
+          <span class="stat-sublabel" id="stat-exploration-hint">shift ÷ (heat + shift)</span>
+          <span class="stat-so-what" id="stat-exploration-so-what"></span>
+        </div>
       </div>
-      <div class="stat-card secondary">
-        <span class="stat-value" id="stat-avg">—</span>
-        <span class="stat-label">avg per day (period)</span>
+      <div class="stats-period-summary">
+        <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
+          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
+        </div>
+        <div class="stats-insight-block insight-block insight-block--featured">
+          <span class="insight-label" id="stats-insight-label">Today</span>
+          <p class="stats-insight insight-text" id="stats-insight" aria-label="Your period summary"></p>
+          <div class="stats-insight-chart" id="stats-insight-chart" aria-hidden="true"></div>
+          <p class="streak-note" id="streak-note"></p>
+        </div>
       </div>
-      <div class="stat-card stat-exploration">
-        <span class="stat-value" id="stat-exploration">—</span>
-        <span class="stat-label">shift index</span>
-        <span class="stat-sublabel" id="stat-exploration-hint">shift ÷ (heat + shift)</span>
-        <span class="stat-so-what" id="stat-exploration-so-what"></span>
-      </div>
-    </section>
-    <p class="stats-note" id="stats-note"></p>
-    <p class="stats-breakdown" id="stats-breakdown"></p>
-    <p class="streak-note" id="streak-note"></p>
-    <p class="headline-stat" id="headline-stat"></p>
-
-    <section class="micro-goal-section" id="micro-goal-section">
-      <label for="micro-goal-input" class="micro-goal-label">Today's intention (optional)</label>
-      <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat today · or: One shift" maxlength="60">
-      <p class="micro-goal-result" id="micro-goal-result"></p>
     </section>
 
     <section class="insights-section" id="insights-section">
-      <h2>What we noticed</h2>
-      <p class="insights-intro">A few highlights from your data.</p>
-      <div class="insight-block insight-weekly-digest" id="weekly-digest-block">
-        <span class="insight-label">This week in one sentence</span>
-        <p class="insight-text" id="weekly-digest"></p>
+      <div class="insights-header">
+        <h2>What your moments say</h2>
+        <p class="insights-intro">Patterns from your check-ins — spot heat spikes and celebrate shifts.</p>
       </div>
-      <div class="insight-block">
-        <span class="insight-label">Today</span>
-        <p class="insight-text" id="day-vs-average"></p>
+      <div class="insight-block insight-block--today">
+        <span class="insight-label">Today vs your average</span>
+        <div class="insight-chart" id="day-vs-average-chart"></div>
+        <p class="insight-text insight-chart-summary" id="day-vs-average"></p>
       </div>
-      <div class="insight-block">
+      <div class="insight-block insight-block--time">
         <span class="insight-label">When you log</span>
-        <p class="insight-text" id="time-of-day"></p>
+        <div class="insight-chart" id="time-of-day-chart"></div>
+        <p class="insight-text insight-chart-summary" id="time-of-day"></p>
       </div>
-      <div class="insight-block">
+      <div class="insight-block insight-block--patterns">
         <span class="insight-label">Repeating notes</span>
-        <p class="insight-subtitle" id="top-patterns-title"></p>
-        <ul class="entry-list insight-list" id="top-patterns"></ul>
+        <div class="insight-chart" id="top-patterns-chart"></div>
       </div>
-      <div class="insight-block insight-patterns">
-        <span class="insight-label">More patterns</span>
-        <div class="insight-chips" id="more-patterns"></div>
+      <div class="insight-block insight-block--mood insight-patterns">
+        <span class="insight-label">Your mood when logging</span>
+        <div class="insight-chart" id="more-patterns-chart"></div>
+      </div>
+      <div class="insight-block insight-block-bias-check" id="bias-check-insight-block">
+        <div class="bias-check-insight-header">
+          <span class="insight-label">Moments observed &amp; Bias Check</span>
+        </div>
+        <p class="bias-check-period-breakdown" id="bias-check-period-breakdown" aria-label="Observed by period"></p>
+        <div class="bias-check-insight-content" id="bias-check-insight"></div>
       </div>
     </section>
 
@@ -156,9 +322,9 @@
 
     <section class="progress-section" id="progress-section">
       <h2>This week vs last week</h2>
-      <p class="section-hint">Is the group seeing more shifts and support over time?</p>
+      <p class="section-hint">Less heat, more shift — that's the trend.</p>
       <div class="progress-cards" id="progress-cards"></div>
-      <p class="progress-empty" id="progress-empty">Log moments in this week and last to compare.</p>
+      <p class="progress-empty" id="progress-empty">Log in this week and last to compare.</p>
     </section>
 
     <section class="trends-section" id="trends-section">
@@ -190,74 +356,112 @@
           <button type="button" class="history-filter" data-type="observed">Support</button>
         </div>
         <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
-        <button type="button" id="btn-export-json" class="btn-export">Export backup (JSON)</button>
       </div>
       <ul class="entry-list" id="entry-list"></ul>
-      <p class="empty-state" id="empty-state">No moments logged yet. Add one above.</p>
+      <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a moment">No moments logged yet. Add one above.</button>
     </section>
 
-    <p class="phase-label" id="phase-2-label">2 – Social</p>
-    <section class="community-entries-section" id="community-entries-section">
-      <h2>Everyone's recent moments</h2>
-      <p class="section-hint">Anonymous moments from all users. Add a moment above to contribute.</p>
-      <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
-      <p class="community-comparison" id="community-comparison"></p>
-      <p class="community-trend" id="community-entries-trend"></p>
-      <ul class="entry-list" id="shared-entries-list"></ul>
-      <p class="empty-state" id="shared-entries-empty">No shared moments yet. Add one to share yours.</p>
-      <p class="community-error hidden" id="shared-entries-error"></p>
-    </section>
-
-    <section class="reflection-section">
-      <h2>Today’s reflection</h2>
-      <p class="reflection-hint">
-        This is a space to notice what raised the heat and what cooled it down, and where support or shifts showed up.
-      </p>
-      <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
-      <div class="auto-reflection" id="auto-reflection"></div>
-      <div class="reflection-grid">
-        <div class="reflection-card">
-          <h3>Heat</h3>
-          <p class="reflection-subtitle">What set things off today? What would you like to handle differently next time?</p>
-          <textarea id="reflection-avoidable" rows="3" placeholder="e.g. Argument over TV, comment that stuck with me..."></textarea>
-          <p class="char-counter" id="reflection-avoidable-counter"></p>
+    <section class="reflection-section" id="reflection-section">
+      <div class="reflection-card-wrap">
+        <h2 class="reflection-title">Today's reflection</h2>
+        <p class="reflection-hint">Notice the heat, notice the shifts. One line each.</p>
+        <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
+        <div class="auto-reflection" id="auto-reflection"></div>
+        <div class="reflection-grid">
+          <div class="reflection-card reflection-card--avoidable">
+            <h3>Heat</h3>
+            <textarea id="reflection-avoidable" rows="2" placeholder="What set things off? What to handle differently..."></textarea>
+            <p class="char-counter" id="reflection-avoidable-counter"></p>
+          </div>
+          <div class="reflection-card reflection-card--fertile">
+            <h3>Shift</h3>
+            <textarea id="reflection-fertile" rows="2" placeholder="Chose differently? Got or gave support..."></textarea>
+            <p class="char-counter" id="reflection-fertile-counter"></p>
+          </div>
         </div>
-        <div class="reflection-card">
-          <h3>Shift & Support</h3>
-          <p class="reflection-subtitle">Where did you choose differently or get/give support?</p>
-          <textarea id="reflection-fertile" rows="3" placeholder="e.g. Took a walk instead of snapping back, checked in on someone..."></textarea>
-          <p class="char-counter" id="reflection-fertile-counter"></p>
+        <div class="reflection-intention-match hidden" id="reflection-intention-match" aria-label="Intention match">
+          <p class="reflection-intention-match-prompt">Did your intention match today?</p>
+          <div class="reflection-intention-match-options" role="group">
+            <button type="button" class="reflection-intention-btn" data-value="yes">Yes</button>
+            <button type="button" class="reflection-intention-btn" data-value="partially">Partially</button>
+            <button type="button" class="reflection-intention-btn" data-value="no">Not really</button>
+          </div>
         </div>
+        <p class="reflection-note" id="reflection-note"></p>
+        <div class="yesterday-reflection" id="yesterday-reflection"></div>
+        <details class="reflection-history" id="reflection-history">
+          <summary class="reflection-history-summary">Recent reflections</summary>
+          <div class="reflection-history-content">
+            <p class="reflection-history-hint">Saved on this device.</p>
+            <div class="reflection-history-table-wrap">
+              <table class="reflection-history-table" aria-label="Recent reflections">
+                <thead>
+                  <tr>
+                    <th scope="col">Day</th>
+                    <th scope="col">Heat / Avoidable</th>
+                    <th scope="col">Shift &amp; Support / Fertile</th>
+                  </tr>
+                </thead>
+                <tbody id="reflection-history-body"></tbody>
+              </table>
+            </div>
+            <button type="button" id="btn-export-reflections" class="btn-export-reflections">Export reflections (CSV)</button>
+          </div>
+        </details>
       </div>
-      <p class="reflection-note" id="reflection-note"></p>
-      <div class="yesterday-reflection" id="yesterday-reflection"></div>
     </section>
+    </div>
 
-    <section class="share-section" id="share-section">
-      <h2>Share anonymously (optional)</h2>
-      <p class="share-hint">If enabled, you can share your current period stats so others can see patterns (no names, no accounts).</p>
-      <button type="button" id="btn-share" class="btn-share">Share my period</button>
-      <button type="button" id="btn-share-image" class="btn-share btn-share-image">Share as image</button>
-      <p class="share-status" id="share-status"></p>
-    </section>
-
-    <section class="settings-section" id="settings-section">
-      <h2>Settings</h2>
-      <label class="setting-row">
-        <input type="checkbox" id="reminder-checkbox">
-        <span>Notify me for evening check-in (8pm)</span>
-      </label>
-    </section>
-
-    <section class="community-section" id="community-section">
-      <h2>Others’ results</h2>
-      <p class="community-hint">Recent anonymous shares (heat, shifts, support).</p>
-      <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
-      <p class="community-metrics" id="community-metrics"></p>
-      <ul class="shared-list" id="shared-list"></ul>
-      <p class="empty-state" id="shared-empty">No shared results yet.</p>
-      <p class="community-error hidden" id="community-error"></p>
-    </section>
+    <div id="social-view" class="app-view hidden">
+      <section class="community-entries-section community-entries-section--standalone" id="community-entries-section">
+        <div class="community-entries-card" id="community-entries-card" aria-label="Browse shared moments from your group">
+          <div class="community-entries-top">
+            <div class="community-entries-header">
+              <h2>What's happening in your group</h2>
+              <div class="community-entries-header-actions">
+                <button type="button" id="btn-shared-total" class="btn-shared-total" title="Group shared moments" aria-label="Group moments: 0">🌍 0 moments</button>
+                <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a moment to contribute">+ Add mine</button>
+              </div>
+            </div>
+            <p class="community-entries-hint">Anonymous moments from your group. Browse by type and mood — notice without blame.</p>
+          </div>
+          <div class="community-world-card">
+            <div class="global-count-chart-wrap" id="global-count-chart" aria-label="Group count of shared moments by type" aria-hidden="true"></div>
+          </div>
+          <div class="community-browse" aria-label="Filter and browse shared moments">
+            <div class="community-browse-actions">
+              <button type="button" id="btn-shared-entries-toggle" class="chip chip--limit" title="Limit shown entries" aria-label="Show last 10 entries">Last 10</button>
+              <button type="button" id="btn-show-all-shared" class="chip chip--world" title="See all moments your group has shared" aria-label="Show all shared moments"><span aria-hidden="true">🌍</span> All</button>
+            </div>
+            <div class="community-entries-filters" id="shared-entries-filters">
+              <div class="filter-group">
+                <span class="filter-group-label">Type</span>
+                <div class="filter-chips">
+                  <button type="button" class="filter-chip active" data-filter-type="all">All</button>
+                  <button type="button" class="filter-chip" data-filter-type="avoidable">Heat</button>
+                  <button type="button" class="filter-chip" data-filter-type="fertile">Shift</button>
+                  <button type="button" class="filter-chip" data-filter-type="observed">Support</button>
+                </div>
+              </div>
+              <div class="filter-group">
+                <span class="filter-group-label">Mood</span>
+                <div class="filter-chips">
+                  <button type="button" class="filter-chip active" data-filter-theme="all">All</button>
+                  <button type="button" class="filter-chip" data-filter-theme="calm">Calm</button>
+                  <button type="button" class="filter-chip" data-filter-theme="focus">Focus</button>
+                  <button type="button" class="filter-chip" data-filter-theme="stressed">Stressed</button>
+                  <button type="button" class="filter-chip" data-filter-theme="curious">Curious</button>
+                  <button type="button" class="filter-chip" data-filter-theme="tired">Tired</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ul class="entry-list" id="shared-entries-list"></ul>
+          <p class="empty-state empty-state--clickable" id="shared-entries-empty">No shared moments yet. Add one above and share to group.</p>
+          <p class="community-error hidden" id="shared-entries-error"></p>
+        </div>
+      </section>
+    </div>
 
     <footer class="page-footer">
       <a href="privacy.html">Privacy</a>
@@ -270,17 +474,248 @@
     </footer>
   </div>
 
+  <div class="bias-check-overlay hidden" id="bias-check-overlay" role="dialog" aria-modal="true" aria-labelledby="bias-check-title" aria-hidden="true">
+    <div class="bias-check-panel">
+      <p class="bias-check-panel-stat" id="bias-check-panel-stat" aria-live="polite"></p>
+      <p class="bias-check-panel-intent" id="bias-check-panel-intent">Reflect before you save. Why does this moment stand out?</p>
+      <h3 class="bias-check-title" id="bias-check-title">Choose the closest reason</h3>
+      <div class="bias-check-options" id="bias-check-options">
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="harm"><span>It caused real harm</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>It failed</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="different"><span>It's different from what I would do</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="triggered"><span>I felt annoyed or triggered</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="unsure"><span>I'm not sure</span></label>
+      </div>
+      <p class="bias-check-reflection hidden" id="bias-check-reflection"></p>
+      <div class="bias-check-actions">
+        <button type="button" id="btn-bias-check-close" class="btn-bias-save">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js"></script>
-  <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
+  <script src="config.js?v=66"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="inside-auth.js?v=66"></script>
   <script>
+    (function() {
+      var Auth = window.SlipUpInsideAuth;
+      var loadingEl = document.getElementById('group-bootstrap-loading');
+      var gate = document.getElementById('group-gate-wrap');
+      var app = document.getElementById('inside-app-wrap');
+      if (!Auth || !Auth.AUTH_ENABLED) {
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (app) app.classList.remove('hidden');
+        return;
+      }
+      if (app) app.classList.add('hidden');
+      var groupId = Auth.getActiveGroupId();
+      var inviteParam = new URLSearchParams(window.location.search).get('invite');
+
+      function hideLoading() { if (loadingEl) loadingEl.classList.add('hidden'); }
+      function showGate(options) {
+        hideLoading();
+        if (gate) { gate.classList.remove('hidden'); }
+        if (app) app.classList.add('hidden');
+        var emptyHint = document.getElementById('group-gate-empty-hint');
+        if (options && options.joinError && gate) {
+          var joinTab = gate.querySelector('.group-gate-tab[data-tab="join"]');
+          var statusEl = document.getElementById('group-gate-status');
+          if (joinTab) joinTab.click();
+          if (statusEl) { statusEl.textContent = options.joinError; statusEl.classList.add('error'); }
+          if (emptyHint) emptyHint.classList.add('hidden');
+        } else if (emptyHint) {
+          emptyHint.classList.remove('hidden');
+        }
+      }
+      function showApp() { hideLoading(); if (gate) gate.classList.add('hidden'); if (app) app.classList.remove('hidden'); }
+
+      Auth.getSession().then(function(r) {
+        if (!r.session) {
+          var returnTo = 'inside.html' + (inviteParam ? '?invite=' + encodeURIComponent(inviteParam) : '');
+          window.location.href = 'auth-inside.html?return=' + encodeURIComponent(returnTo);
+          return;
+        }
+        if (inviteParam) {
+          Auth.joinByInvite(inviteParam).then(function(j) {
+            if (j.success && j.groupId) {
+              Auth.setActiveGroup(j.groupId, j.groupName || '');
+              groupId = j.groupId;
+              window.SLIPUP_INSIDE_GROUP_ID = groupId;
+              showApp();
+            } else {
+              showGate({ joinError: j.error || 'Invalid or expired invite.' });
+            }
+          });
+          return;
+        }
+        if (groupId) {
+          validateAndShow();
+          return;
+        }
+        loadGroups();
+      });
+
+      function loadGroups() {
+        Auth.getUserGroups().then(function(r) {
+          if (r.groups && r.groups.length > 0) {
+            var storedId = Auth.getActiveGroupId();
+            var g = storedId ? r.groups.find(function(x) { return x.id === storedId; }) : null;
+            g = g || r.groups[0];
+            Auth.setActiveGroup(g.id, g.name);
+            window.SLIPUP_INSIDE_GROUP_ID = g.id;
+            showApp();
+          } else {
+            showGate();
+          }
+        });
+      }
+
+      function validateAndShow() {
+        if (!groupId) { loadGroups(); return; }
+        Auth.validateGroupMembership(groupId).then(function(r) {
+          if (r.valid) {
+            window.SLIPUP_INSIDE_GROUP_ID = groupId;
+            showApp();
+          } else {
+            Auth.clearActiveGroup();
+            loadGroups();
+          }
+        });
+      }
+
+      (function initGate() {
+        if (!Auth || !Auth.AUTH_ENABLED || !gate) return;
+        var tabs = gate.querySelectorAll('.group-gate-tab');
+        var createPanel = document.getElementById('group-gate-create');
+        var joinPanel = document.getElementById('group-gate-join');
+        var nameInput = document.getElementById('group-name-input');
+        var tokenInput = document.getElementById('invite-token-input');
+        var statusEl = document.getElementById('group-gate-status');
+        var btnCreate = document.getElementById('btn-create-group');
+        var btnJoin = document.getElementById('btn-join-group');
+
+        function setStatus(msg, isError) {
+          if (statusEl) { statusEl.textContent = msg || ''; statusEl.className = 'group-gate-status' + (isError ? ' error' : ''); }
+        }
+
+        var switchPanel = document.getElementById('group-gate-switch');
+        var switchList = document.getElementById('group-gate-group-list');
+        var switchHint = document.getElementById('group-gate-switch-hint');
+        function renderSwitchList() {
+          Auth.getUserGroups().then(function(r) {
+            if (!switchList || !r.groups || r.groups.length === 0) return;
+            switchList.innerHTML = r.groups.map(function(g) {
+              return '<button type="button" class="group-gate-group-btn" data-id="' + (g.id || '') + '" data-name="' + (g.name || '').replace(/"/g, '&quot;') + '">' + (g.name || 'Group') + '</button>';
+            }).join('');
+            switchList.querySelectorAll('.group-gate-group-btn').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var id = btn.dataset.id;
+                var name = btn.dataset.name || '';
+                Auth.setActiveGroup(id, name);
+                window.SLIPUP_INSIDE_GROUP_ID = id;
+                showApp();
+              });
+            });
+          });
+        }
+        tabs.forEach(function(t) {
+          t.addEventListener('click', function() {
+            var tab = t.dataset.tab;
+            tabs.forEach(function(x) { x.classList.toggle('active', x === t); });
+            if (createPanel) createPanel.classList.toggle('hidden', tab !== 'create');
+            if (joinPanel) joinPanel.classList.toggle('hidden', tab !== 'join');
+            if (switchPanel) {
+              switchPanel.classList.toggle('hidden', tab !== 'switch');
+              if (tab === 'switch') renderSwitchList();
+            }
+            setStatus('');
+            var emptyHint = document.getElementById('group-gate-empty-hint');
+            if (emptyHint) emptyHint.classList.add('hidden');
+          });
+        });
+        Auth.getUserGroups().then(function(r) {
+          var hasGroups = r.groups && r.groups.length > 0;
+          var switchTab = gate.querySelector('.group-gate-tab[data-tab="switch"]');
+          if (switchTab) switchTab.classList.toggle('hidden', !hasGroups);
+        });
+
+        if (btnCreate && nameInput) {
+          btnCreate.addEventListener('click', function() {
+            var name = (nameInput.value || '').trim() || 'My group';
+            setStatus('Creating…');
+            btnCreate.disabled = true;
+            Auth.createGroup(name).then(function(r) {
+              btnCreate.disabled = false;
+              if (r.error) { setStatus(r.error, true); return; }
+              Auth.setActiveGroup(r.groupId, r.groupName);
+              window.SLIPUP_INSIDE_GROUP_ID = r.groupId;
+              showApp();
+            });
+          });
+        }
+
+        if (btnJoin && tokenInput) {
+          btnJoin.addEventListener('click', function() {
+            var raw = (tokenInput.value || '').trim();
+            var token = raw;
+            var m = raw.match(/invite=([^&\s#]+)/);
+            if (m) token = m[1];
+            if (!token) { setStatus('Paste an invite link or token.', true); return; }
+            setStatus('Joining…');
+            btnJoin.disabled = true;
+            Auth.joinByInvite(token).then(function(r) {
+              btnJoin.disabled = false;
+              if (r.error) { setStatus(r.error, true); return; }
+              Auth.setActiveGroup(r.groupId, '');
+              window.SLIPUP_INSIDE_GROUP_ID = r.groupId;
+              showApp();
+            });
+          });
+        }
+      })();
+    })();
+  </script>
+  <script src="app.js?v=66"></script>
+  <script>
+    (function() {
+      var THEME_KEY = 'mistake-tracker-theme';
+      var THEME_ORDER = ['calm', 'focus', 'stressed', 'curious', 'tired'];
+      var btn = document.getElementById('btn-theme');
+      var btnTop = document.getElementById('btn-theme-top');
+      function setBtnText(el, label) { if (el) el.textContent = label; }
+      var LABELS = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
+      function applyTheme() {
+        var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
+        var label = 'Calm';
+        if (theme === 'focus') { document.body.classList.add('theme-focus'); label = 'Focus'; }
+        else if (theme === 'stressed') { document.body.classList.add('theme-stressed'); label = 'Stressed'; }
+        else if (theme === 'curious') { document.body.classList.add('theme-curious'); label = 'Curious'; }
+        else if (theme === 'tired') { document.body.classList.add('theme-tired'); label = 'Tired'; }
+        setBtnText(btn, label);
+        setBtnText(btnTop, label);
+        if (btn) { btn.setAttribute('data-theme', theme); btn.setAttribute('aria-label', 'Mood: ' + label + '. Click to cycle.'); }
+        if (btnTop) { btnTop.setAttribute('data-theme', theme); btnTop.setAttribute('aria-label', 'How does this feel? Current mood: ' + label + '. Click to cycle.'); }
+      }
+      function cycleTheme() {
+        var current = localStorage.getItem(THEME_KEY) || 'calm';
+        var idx = THEME_ORDER.indexOf(current);
+        var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+        localStorage.setItem(THEME_KEY, next);
+        applyTheme();
+      }
+      applyTheme();
+      if (btn) btn.addEventListener('click', cycleTheme);
+      if (btnTop) btnTop.addEventListener('click', cycleTheme);
+    })();
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      navigator.serviceWorker.register('sw.js', { scope: './' })
+        .then(function(reg) { if (reg) reg.update(); })
+        .catch(function() {});
     }
   </script>
 </body>

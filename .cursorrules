@@ -1,0 +1,85 @@
+# SlipUp — file context for Cursor / AI agent
+
+## Project
+- **SlipUp** — mistake/moment tracker (personal + SlipUp Inside). © 2026 SlipUp.
+- Repo: mistake-tracker (GitHub: davidmusali87251/mybad). Live: www.slipup.io.
+
+## Run the app locally
+- **Server:** `npm run serve` or `npm start` (serves on port 3333 via `serve`).
+- **URL:** http://localhost:3333 (then open index.html or inside.html from the served root).
+- **PowerShell:** Use `;` to chain commands (e.g. `cd path; npm run serve`). `&&` is not supported in PowerShell.
+
+## Key files
+- **app.js** — Core logic: entries (add, filter, localStorage), stats, sharing (Supabase), theme/mode, reflection, streaks. Export CSV/JSON gated by unlock (I've paid). Line chart (14-day).
+- **index.html** — Personal mistake tracker UI (add card, type pills, mood row, stats, recent entries, share, others' results). App hero: "Not a judge. A mirror." with colored phrases; top-bar-brand cache-bust on click when on index.
+- **inside.html** — SlipUp Inside (group check-ins): same add/stats/entries pattern; mode `inside`; shares to same Supabase with mode filter.
+- **landing.html** — Marketing/landing (hero: "Not a judge. A mirror." / "See what repeats…" / "One line a day. No shame — just patterns."; CTA "Start free · 10 to try"; Why SlipUp, Roadmap, footer links).
+- **styles.css** — Global theme (violet accent, modes: calm/focus/stressed/curious/tired), layout, components (btn-add, type-pill, btn-mode, entry-item left border by type, stat cards, empty-state icon), body gradients (::before, ::after).
+- **config.example.js** — Template only. Real config: local `config.js` (gitignored) or **GitHub Secrets** at deploy. Never commit `config.js`.
+- **.github/workflows/main.yml** — Single deploy workflow (build config from Secrets incl. PayPal, deploy to GitHub Pages).
+- **sw.js** — PWA service worker; pre-caches HTML/CSS/JS (config.js excluded to avoid install fail when missing locally).
+- **bump-version.js** — Run before major deploys to bump asset ?v= and SW cache.
+- **supabase-global-chart.sql** — Optional: shared_chart_counts table + trigger for global chart.
+- **supabase-streak-reflections.sql** — Optional: streak_reflections table for "what helped you show up?" (run in Supabase SQL Editor).
+- **supabase-todays-reflections.sql** — Optional: todays_reflections table (reflection text + stats per day); run first, then set SUPABASE_TODAYS_REFLECTIONS_TABLE.
+- **supabase-community-entries-personal.sql** — Optional: shared_entries_personal table for Personal world feed (separate from shared_what_happened).
+
+## Project docs (in folder)
+- **README.md** — How to run (npm run serve port 3333), features, Supabase, PWA, bump-version.
+- **ARCHITECTURE.md** — Design and constraints.
+- **CONCEPT_NEXT_LEVEL.md** — Roadmap and implementation status.
+- **FLOW.md** — User flow and structure (Personal/Social views).
+- **INCONSISTENCIES-REPORT.md** — DOM/JS/version audit; run bump-version.js before deploy.
+- **ISSUES-AND-COHERENCE-REPORT.md** — Lint (:has()), PWA coherence.
+- **BRAND_AND_TRADEMARK.md** — Internal only; do not publish.
+- **.github/workflows/README-WORKFLOW-SECURITY.md** — Workflow triggers and secrets.
+
+## Config (for agent)
+- **Local:** Copy `config.example.js` → `config.js`; set `SUPABASE_URL`, `SUPABASE_ANON_KEY`. Optional: `SUPABASE_STATS_TABLE`, `SUPABASE_ENTRIES_TABLE`, `PAYMENT_URL`, `PAYPAL_*`.
+- **Deploy:** Config is built from repo **Secrets** (SUPABASE_URL, SUPABASE_ANON_KEY, etc.). No `config.js` in repo.
+- **Tables:** Defaults: `shared_stats`, `shared_what_happened`. Optional: `shared_chart_counts`, `streak_reflections`, `shared_intentions` (supabase-shared-intentions.sql), `todays_reflections` (supabase-todays-reflections.sql), `shared_entries_personal` (supabase-community-entries-personal.sql), `shared_entries_inside` (supabase-community-entries-inside.sql). Inside uses `shared_stats_inside` and `shared_what_happened` with `mode = 'inside'`. Deploy Secrets: SUPABASE_INTENTIONS_TABLE, SUPABASE_TODAYS_REFLECTIONS_TABLE, etc.
+
+## Premium / export gating
+- **Flow:** User must click $5 purchase link first, then "I've paid" becomes enabled. After clicking "I've paid", paid-only elements unlock.
+- **Reusable pattern:** `PAID_ONLY_ELEMENT_IDS` in app.js lists element IDs to gate. Add any button/input ID to gate it. `updatePaidOnlyElements()` disables/enables them. Export CSV, Export JSON, Export reflections are gated.
+
+## Implemented (previously stub)
+- micro-goal-section, insights-section, btn-share-image, add-to-home-banner, reminder-checkbox — all now have handlers.
+
+## Recent features (agent context)
+- **Run locally:** `npm run serve` (port 3333); PowerShell: use `;` not `&&`.
+- **Mood in top bar** — btn-theme-top in top-bar-left (after brand) on index/inside.
+- **World feed** — Everyone's entries accessible via top bar 🌍 button (top-bar-slipups); shows "🌍 N". Personal: add mistake auto-pushes to Supabase; fetchSharedEntries refreshes top bar + community-entries-card on add (1200ms), phase switch, world tab switch. Cache-Control headers prevent stale data.
+- **Bias Check** — When type=observed; modal 5 options + reflection; choice stored in entry.biasReason; insight block shows pills + **You** / **All** count buttons (personal vs global observed).
+- **Global chart** — global-count-chart + btn-shared-total ("X shared") in community section.
+- **Stats section** — Period tabs → stat cards → stats-period-summary. Stats insight block (stats-note, stats-breakdown, #stats-insight-chart, streak-note) is INSIDE stats-section with mini period tabs (stats-period-tabs) for quick switch. No stat-label on count card. Stat cards have sublabels, SlipUp styling (gradient top, type-colored tint).
+- **Weekly/monthly digest** — Removed (weekly-digest-block, monthly-digest-block). Only day-vs-average, time-of-day, repeating notes, mood, bias-check remain in insights.
+- **Type pills** — Full border in type color (border-color), not just left. Default selection: observed.
+- **Streak reflection** — For 2-day streak: question "what helped you show up?" is a **button** (.streak-reflection-trigger); click opens panel "What moved you?" with 7 options (Discipline, Responsibility, Pressure, Curiosity, Fear, Commitment, Not sure); selection shows reflective line and is saved to localStorage + Supabase `streak_reflections` (optional table).
+- **Insights section** — Same strip style (left accent, border-radius); h2 + intro on one line; .insight-block rows: Today vs average, When you log, Repeating notes, Your mood, Bias Check. SlipUp gradients on compare bars, pattern bars, mood bars, time segments.
+- **Social share unified** — Flow: "Before you see others — add yours" → "Your turn to contribute" → intro → period tabs + stats row → to-share card → btn-share-primary (full width, 48px touch) → Share as image → reassurance. SlipUp card style.
+- **Micro-goal** — Top of Personal; "Before you log — one intention"; pushes to shared_intentions on blur when online; "What others are focusing on" block with ? How it works panel.
+- **Reflection section** — Today's Reduce/Keep, intention match, yesterday, recent reflections (details#reflection-history). reflection-history-content wrapper; SlipUp style (fertile accent, table, export). Syncs to todays_reflections on blur when SUPABASE_TODAYS_REFLECTIONS_TABLE set.
+- **Theme labels in entries** — Entry items use mood colors: theme--calm, theme--focus, theme--stressed, theme--curious, theme--tired (aligned with insight mood chart).
+- **Type colors (user intent)** — :root: --avoidable #c99a7a (warm sand), --fertile #6ba88a (sage), --observed #8b9bb8 (soft blue-gray). Used in CSS and in app.js line chart.
+- **SlipUp styling** — Gradient + glow on: stat cards (type-colored), insight-compare-bar (today/avg), insight-pattern-bar, insight-mood-bar-seg, insight-time-seg, trends-section/bars, history-filters (type-colored active), insight-chip, btn-export hover.
+- **19-char limit** — Mistake note: maxlength + JS enforcement for PWA.
+- **Custom note tooltip** — note-tooltip; data-fullNote on .entry-item .note.
+- **Touch** — @media (pointer: coarse): min-height 44–48px for main buttons; btn-share-primary 48px.
+- **Supabase** — Optional: shared_chart_counts, streak_reflections, shared_intentions (SUPABASE_INTENTIONS_TABLE), todays_reflections (SUPABASE_TODAYS_REFLECTIONS_TABLE). Reflections + stats sync on blur. Deploy Secrets include SUPABASE_INTENTIONS_TABLE, SUPABASE_TODAYS_REFLECTIONS_TABLE.
+
+## Data & conventions
+- **Entry:** timestamp, type (avoidable|fertile|observed), note (max 19 chars), theme. Stored in localStorage; pushed to Supabase on add (Personal mode) when sharing enabled. World feed refreshes after add, on Social/world tab switch.
+- **Theme/mode:** Stored in localStorage (THEME_KEY); applied as body class (e.g. `theme-focus`). Same THEME_ORDER and mode button on index, inside, privacy, terms, refund.
+- **Legal pages:** privacy.html, terms.html, refund.html — each has inline theme script and footer.
+
+## Where to change things
+- **UI/copy:** index.html, inside.html, landing.html.
+- **Behavior/data:** app.js (entries, stats, share, theme, Bias Check, tooltip, chart).
+- **Styling/theming:** styles.css (variables in :root and body.theme-*).
+- **Deploy:** .github/workflows/main.yml; config from Secrets only.
+
+## Don’t
+- Commit `config.js` or real API keys.
+- Rely on a second deploy workflow (only main.yml).
+- Add leaderboards, rankings, or competitive comparisons (see ARCHITECTURE.md).

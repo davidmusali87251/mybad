@@ -37,9 +37,10 @@ This document captures the constraints and technical decisions derived from the 
 Each mistake entry includes:
 
 - **timestamp**
-- **type:** `avoidable` | `fertile`
+- **type:** `avoidable` | `fertile` | `observed`
 - **optional note** (short text)
-- **visibility flag:** `private` | `shared_anonymous` | `stats_only`
+- **(Planned) visibility flag:** `private` | `shared_anonymous` | `stats_only`  
+  _Note: the current implementation treats all entries as private by default; sharing is an explicit, separate action (share stats / share entries) rather than a per-entry flag._
 
 No public per-user history is exposed.
 
