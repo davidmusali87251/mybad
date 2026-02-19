@@ -36,6 +36,7 @@ SlipUp Inside reuses the same app shell but switches copy and stats to fit **gro
 - **Shift index** instead of exploration index (shift ÷ (heat + shift)).
 - Anonymous sharing uses the same `shared_what_happened` table with `mode = 'inside'`, plus a separate `shared_stats_inside` table for group stats (see SQL above).
 - The mood system is the same (calm, focus, stressed, curious, tired), and reflections + entries are stored separately per mode on the same browser.
+- **Group management** — Run `supabase-inside-groups.sql` first, then `supabase-inside-groups-admin.sql` for edit name, member list, remove/leave. Run `supabase-community-entries-inside.sql` for the shared entries table.
 
 ## How to run
 
@@ -44,6 +45,10 @@ SlipUp Inside reuses the same app shell but switches copy and stats to fit **gro
 Or run a local server from the folder:
 
 ```bash
+# npm (project default)
+npm run serve
+# → http://localhost:3333
+
 # Python
 python -m http.server 8080
 
@@ -51,7 +56,7 @@ python -m http.server 8080
 npx serve .
 ```
 
-Then go to `http://localhost:8080` (or the port shown).
+Then go to `http://localhost:3333` (npm) or `http://localhost:8080` (or the port shown).
 
 No install required for local use. For **sharing** and **viewing others' results**, set up Supabase once (free) below.
 
@@ -143,7 +148,7 @@ window.MISTAKE_TRACKER_CONFIG = {
 
    `config.js` is in `.gitignore`, so it stays local and your keys are not pushed to the repo.
 
-   **Deploy (GitHub Pages) — use secrets, no config.js in the repo:** The live site must **not** use a committed `config.js`. The workflow `.github/workflows/main.yml` builds `config.js` from **repository secrets** at deploy time. (1) In the repo: **Settings → Secrets and variables → Actions** → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_HOSTED_BUTTON_ID`, `SUPABASE_STATS_TABLE`, `SUPABASE_ENTRIES_TABLE`, `SUPABASE_CHART_TABLE`, `SUPABASE_DAILY_SUMMARIES_TABLE`, `SUPABASE_STREAK_REFLECTIONS_TABLE`. (2) **Settings → Pages** → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing (and PayPal if those secrets are set); the repo never contains `config.js`.
+   **Deploy (GitHub Pages) — use secrets, no config.js in the repo:** The live site must **not** use a committed `config.js`. The workflow `.github/workflows/main.yml` builds `config.js` from **repository secrets** at deploy time. (1) In the repo: **Settings → Secrets and variables → Actions** → add `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optionally `PAYMENT_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_HOSTED_BUTTON_ID`, `SUPABASE_STATS_TABLE`, `SUPABASE_ENTRIES_TABLE`, `SUPABASE_CHART_TABLE`, `SUPABASE_DAILY_SUMMARIES_TABLE`, `SUPABASE_STREAK_REFLECTIONS_TABLE`, `SUPABASE_STATE_EVENTS_TABLE`, `SUPABASE_INTENTIONS_TABLE`, `SUPABASE_TODAYS_REFLECTIONS_TABLE`. (2) **Settings → Pages** → Source: **GitHub Actions**. (3) Push to `main`/`master` or run the workflow from the Actions tab. The published site gets full sharing (and PayPal if those secrets are set); the repo never contains `config.js`.
 
 5. Serve the app over HTTP (e.g. `npx serve .` or `python -m http.server 8080`). If you open `index.html` via `file://`, some features may not work.
 6. Reload the app. You'll see **Share my result** and **Others' results**; sharing is anonymous (no account, no name).
@@ -186,6 +191,49 @@ alter table shared_what_happened add column if not exists theme text not null de
 
 Then reload the app. After this, "Others' results" will group shares by anonymous user.
 
+### "Couldn't sync: new row violates row-level security policy"
+
+The app uses the **anon** key for inserts (no login). Supabase RLS must allow anonymous inserts. In **SQL Editor** (Dashboard → SQL Editor → New query), run:
+
+```sql
+drop policy if exists "Allow anonymous insert" on shared_what_happened;
+drop policy if exists "Anon insert personal only" on shared_what_happened;
+create policy "Allow anonymous insert" on shared_what_happened for insert to anon with check (true);
+
+drop policy if exists "Allow anonymous select" on shared_what_happened;
+drop policy if exists "Anon select personal only" on shared_what_happened;
+create policy "Allow anonymous select" on shared_what_happened for select to anon using (true);
+```
+
+If you use `shared_entries_personal`, run `supabase-fix-rls-shared-entries.sql` instead (it fixes both tables).
+
+### Using `shared_entries_personal` for the world feed
+
+To use the `shared_entries_personal` table (instead of `shared_what_happened`):
+
+1. The table must exist with columns: `id`, `note`, `type`, `theme`, `hour_utc`, `created_at`.
+2. Enable RLS and add policies. Run in **SQL Editor**:
+
+```sql
+alter table shared_entries_personal enable row level security;
+drop policy if exists "Anon insert personal" on shared_entries_personal;
+create policy "Anon insert personal" on shared_entries_personal for insert to anon with check (true);
+drop policy if exists "Anon select personal" on shared_entries_personal;
+create policy "Anon select personal" on shared_entries_personal for select to anon using (true);
+```
+
+3. In `config.js`, set:
+
+```js
+SUPABASE_ENTRIES_TABLE_PERSONAL: 'shared_entries_personal'
+```
+
+4. Reload the app. The world feed will read from and write to `shared_entries_personal`.
+
+### Richer Others' results (optional type breakdown)
+
+To show avoidable/fertile/observed breakdown and exploration % in "Others' results", run `supabase-shared-stats-breakdown.sql` in **SQL Editor**. This adds `avoidable_count`, `fertile_count`, `observed_count` to `shared_stats` and `shared_stats_inside`. New shares will include the breakdown; existing rows stay as before.
+
 ### Global counting chart table (`shared_chart_counts`)
 
 The **Avoidable ↓ · Fertile ↔ or ↑** chart in "Everyone's recent entries" aggregates counts from shared entries. To store these in a dedicated Supabase table (for dashboards, reporting, or future use), run the script:
@@ -201,6 +249,8 @@ This creates:
 - RLS allowing anonymous **select** only (writes happen via the trigger)
 
 The app still derives chart data from the entries list. The table is available for direct queries or future optimization.
+
+**State events (optional)** — To log each possible state element (phase, filters, views, actions) with an anonymous ID (short types, for analytics or dashboards), run `supabase-state-events.sql` in **SQL Editor**. Then set `SUPABASE_STATE_EVENTS_TABLE: 'state_events'` in config (or the same name as repo secret). The table has `anonymous_id`, `kind`, `value`, `mode`, `created_at`; the app can call `logStateEvent(kind, value)` to record events.
 
 ### Group "Others' results" by same anonymous user
 

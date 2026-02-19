@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0f0f12">
+  <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>SlipUp</title>
@@ -13,7 +13,7 @@
   </script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=66">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -23,7 +23,8 @@
   <header class="top-bar">
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
-      <a href="index.html" class="top-bar-brand">SlipUp</a>
+      <a href="index.html" id="top-bar-brand" class="top-bar-brand" title="Not a judge. A mirror. — See what repeats, choose what to keep.">SlipUp</a>
+      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Calm</button>
     </div>
     <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
       <label class="setting-row">
@@ -32,9 +33,8 @@
       </label>
     </div>
     <div class="top-bar-actions">
-      <button type="button" id="top-bar-slipups" class="top-bar-slipups" title="The world's slip-up chart" aria-label="World slip-ups: 0">🌍 0 slip-ups</button>
-      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?">Calm</button>
-      <a href="index.html" class="top-bar-home" id="top-bar-add">+ Add</a>
+      <a href="index.html#phase-tabs" id="top-bar-slipups" class="top-bar-slipups" title="See everyone's entries — opens world feed" aria-label="World: 0" role="button">🌍 0</a>
+      <a href="index.html" class="top-bar-home" id="top-bar-add" aria-label="Add mistake">+ Add</a>
     </div>
   </header>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
@@ -45,43 +45,67 @@
     <header class="app-hero" id="main-hero">
       <div class="app-hero-inner">
         <h1 class="app-hero-title">SlipUp</h1>
-        <p class="app-hero-tagline">Count & reflect by day, week, month</p>
-        <p class="app-hero-sub">Reduce useless mistakes. Keep the ones that grow you.</p>
+        <p class="app-hero-tagline">Not a judge. <span class="app-hero-accent">A mirror.</span></p>
+        <p class="app-hero-sub"><span class="app-hero-sub--see">See what repeats.</span> <span class="app-hero-sub--choose">Choose what to keep.</span> <span class="app-hero-sub--feel">Feel lighter.</span></p>
         <a href="landing.html" class="app-hero-about">What is this?</a>
       </div>
       <div class="app-hero-glow" aria-hidden="true"></div>
+      <div class="app-hero-glow-bottom" aria-hidden="true"></div>
     </header>
 
-    <p class="phase-label">1 – Personal</p>
+    <div class="phase-tabs" id="phase-tabs" role="tablist" aria-label="Personal, Social, or Inside (groups)">
+      <button type="button" class="phase-tab active" role="tab" aria-selected="true" data-phase="personal">Personal</button>
+      <button type="button" class="phase-tab" role="tab" aria-selected="false" data-phase="social">Social</button>
+      <a href="inside.html" class="phase-tab phase-tab--link" title="SlipUp Inside — for group check-ins">Inside</a>
+    </div>
+    <div id="personal-view" class="app-view">
+    <section class="micro-goal-section micro-goal-card" id="micro-goal-section" aria-labelledby="micro-goal-heading" role="region">
+      <p class="micro-goal-pause" aria-hidden="true">Before you log — one intention</p>
+      <h2 class="micro-goal-heading" id="micro-goal-heading">What matters to you today?</h2>
+      <div class="micro-goal-input-wrap">
+        <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-hint micro-goal-char-count" autocomplete="off">
+        <span class="micro-goal-char-count" id="micro-goal-char-count" aria-live="polite"></span>
+      </div>
+      <p class="micro-goal-hint" id="micro-goal-hint">Just for you — no one else sees this</p>
+      <div class="micro-goal-result" id="micro-goal-result" aria-live="polite"></div>
+      <div class="micro-goal-actions">
+        <button type="button" id="btn-share-intention" class="btn-share-intention" title="Add your intention to the shared chart">Share intention</button>
+      </div>
+    </section>
     <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What happened?</label>
-        <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
-
-        <div class="mode-row">
-          <span class="mode-label">Mood</span>
-          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
-        </div>
         <div class="type-row">
-          <span class="type-label">Type</span>
           <div class="type-options">
             <label class="type-pill">
-              <input type="radio" name="mistake-type" value="avoidable" checked>
-              <span class="pill-main">⚠ Avoidable</span>
+              <input type="radio" name="mistake-type" value="avoidable">
+              <span class="pill-main">Avoidable</span>
               <span class="pill-sub">Careless / repetitive</span>
             </label>
             <label class="type-pill">
               <input type="radio" name="mistake-type" value="fertile">
-              <span class="pill-main">✶ Fertile</span>
+              <span class="pill-main">Fertile</span>
               <span class="pill-sub">Experiment / growth</span>
             </label>
             <label class="type-pill">
-              <input type="radio" name="mistake-type" value="observed">
-              <span class="pill-main">👁 Observed</span>
+              <input type="radio" name="mistake-type" value="observed" checked>
+              <span class="pill-main">Observed</span>
               <span class="pill-sub">In others: avoid or understand</span>
             </label>
           </div>
         </div>
+        <div class="mode-row mode-row--pills" role="group" aria-label="How does this feel?">
+          <button type="button" class="mood-btn mood-btn--calm active" data-theme="calm" title="Calm">Calm</button>
+          <button type="button" class="mood-btn mood-btn--focus" data-theme="focus" title="Focus">Focus</button>
+          <button type="button" class="mood-btn mood-btn--stressed" data-theme="stressed" title="Stressed">Stressed</button>
+          <button type="button" class="mood-btn mood-btn--curious" data-theme="curious" title="Curious">Curious</button>
+          <button type="button" class="mood-btn mood-btn--tired" data-theme="tired" title="Tired">Tired</button>
+        </div>
+        <div class="add-card-input-wrap">
+          <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
+          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
+        </div>
+
         <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
 
         <div class="bias-check-row hidden" id="bias-check-row">
@@ -89,6 +113,7 @@
         </div>
 
         <button type="button" id="add-mistake" class="btn-add" disabled>+ Add mistake</button>
+        <p class="add-sync-status hidden" id="add-sync-status" aria-live="polite"></p>
         <div class="quick-add-row">
           <button type="button" id="btn-cant-tell" class="btn-quick">I can't tell</button>
         </div>
@@ -97,51 +122,45 @@
       </div>
     </section>
 
-    <section class="period-tabs" role="tablist" aria-label="Time period">
-      <button type="button" class="tab active" role="tab" aria-selected="true" data-period="day">Today</button>
-      <button type="button" class="tab" role="tab" aria-selected="false" data-period="week">This week</button>
-      <button type="button" class="tab" role="tab" aria-selected="false" data-period="month">This month</button>
-    </section>
-
-    <section class="stats">
-      <div class="stat-card">
-        <span class="stat-value" id="stat-count">0</span>
-        <span class="stat-label" id="stat-label">mistakes today</span>
+    <section class="stats-section" id="stats-section" aria-label="Your stats for the selected period">
+      <div class="stats">
+        <div class="stat-card secondary stat-card--observed">
+          <span class="stat-value" id="stat-count">0</span>
+          <span class="stat-label" id="stat-count-label">slip-ups today</span>
+          <span class="stat-foot" id="stat-count-foot" aria-live="polite"></span>
+        </div>
+        <div class="stat-card secondary stat-card--observed">
+          <span class="stat-value" id="stat-avg">—</span>
+          <span class="stat-label">per day</span>
+          <span class="stat-sublabel">Busy vs calm stretches</span>
+          <span class="stat-foot" id="stat-avg-foot" aria-live="polite"></span>
+        </div>
+        <div class="stat-card stat-exploration">
+          <span class="stat-value" id="stat-exploration">—</span>
+          <span class="stat-label">Exploration<span class="stat-expl-tip" id="stat-exploration-tip" aria-label="What is exploration?">?</span></span>
+          <span class="stat-sublabel" id="stat-exploration-hint">fertile ÷ (avoidable + fertile)</span>
+          <span class="stat-so-what" id="stat-exploration-so-what"></span>
+        </div>
       </div>
-      <div class="stat-card secondary">
-        <span class="stat-value" id="stat-avg">—</span>
-        <span class="stat-label">avg per day (period)</span>
+      <div class="stats-period-summary">
+        <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
+          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
+        </div>
+        <div class="stats-insight-block insight-block insight-block--featured">
+          <span class="insight-label" id="stats-insight-label">Today</span>
+          <p class="stats-insight insight-text" id="stats-insight" aria-label="Your period summary"></p>
+          <div class="stats-insight-chart" id="stats-insight-chart" aria-hidden="true"></div>
+          <p class="streak-note" id="streak-note"></p>
+        </div>
       </div>
-      <div class="stat-card stat-exploration">
-        <span class="stat-value" id="stat-exploration">—</span>
-        <span class="stat-label">exploration index</span>
-        <span class="stat-sublabel" id="stat-exploration-hint">fertile ÷ (avoidable + fertile)</span>
-        <span class="stat-so-what" id="stat-exploration-so-what"></span>
-      </div>
-    </section>
-    <div class="stats-insight-block">
-      <p class="stats-note" id="stats-note"></p>
-      <p class="stats-breakdown" id="stats-breakdown"></p>
-      <div class="stats-insight-chart" id="stats-insight-chart" aria-hidden="true"></div>
-      <p class="streak-note" id="streak-note"></p>
-    </div>
-    <p class="headline-stat" id="headline-stat"></p>
-
-    <section class="micro-goal-section" id="micro-goal-section">
-      <label for="micro-goal-input" class="micro-goal-label">Today's intention (optional)</label>
-      <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Keep avoidable under 3 · or: One fertile experiment" maxlength="60">
-      <p class="micro-goal-result" id="micro-goal-result"></p>
     </section>
 
     <section class="insights-section" id="insights-section">
       <div class="insights-header">
         <h2>What your Slip-ups say</h2>
         <p class="insights-intro">Patterns from your entries — use them to spot repeats and celebrate fertile risks.</p>
-      </div>
-      <div class="insight-block insight-block--featured insight-weekly-digest" id="weekly-digest-block">
-        <span class="insight-label">This week</span>
-        <div class="insight-weekly-chart" id="weekly-digest-chart" aria-hidden="true"></div>
-        <p class="insight-text insight-weekly-summary" id="weekly-digest"></p>
       </div>
       <div class="insight-block insight-block--today">
         <span class="insight-label">Today vs your average</span>
@@ -163,10 +182,9 @@
       </div>
       <div class="insight-block insight-block-bias-check" id="bias-check-insight-block">
         <div class="bias-check-insight-header">
-          <span class="insight-label">Observed &amp; Bias Check</span>
-          <span class="bias-check-count-btn" id="bias-check-count-btn" aria-label="Observed in this period (yours)" title="Observed in this period (yours)">0</span>
-          <span class="bias-check-count-btn bias-check-count-btn--global" id="bias-check-count-global-btn" aria-label="Observed from everyone's shared entries" title="Observed from everyone's shared entries">—</span>
+          <span class="insight-label">Slip-ups observed &amp; Bias Check</span>
         </div>
+        <p class="bias-check-period-breakdown" id="bias-check-period-breakdown" aria-label="Observed by period"></p>
         <div class="bias-check-insight-content" id="bias-check-insight"></div>
       </div>
     </section>
@@ -198,11 +216,32 @@
       <p class="roadmap-note">Teams &amp; reports coming later. <a href="landing.html">See roadmap</a></p>
     </section>
 
+    <section class="history">
+      <h2>Recent entries</h2>
+      <p class="section-hint">Your entries (saved on this device).</p>
+      <div class="history-period-tabs" role="tablist" aria-label="Time period">
+        <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Day</button>
+        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">Week</button>
+        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">Month</button>
+      </div>
+      <div class="history-controls">
+        <div class="history-filters" id="history-filters">
+          <button type="button" class="history-filter active" data-type="all">All</button>
+          <button type="button" class="history-filter" data-type="avoidable">Avoidable</button>
+          <button type="button" class="history-filter" data-type="fertile">Fertile</button>
+          <button type="button" class="history-filter" data-type="observed">Observed</button>
+        </div>
+        <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
+      </div>
+      <ul class="entry-list" id="entry-list"></ul>
+      <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a slip-up">No slip-ups logged yet. Add one above.</button>
+    </section>
+
     <section class="progress-section" id="progress-section">
       <h2>This week vs last week</h2>
-      <p class="section-hint">See if you're trending better.</p>
+      <p class="section-hint">Fewer repeats, more experiments — that's the trend.</p>
       <div class="progress-cards" id="progress-cards"></div>
-      <p class="progress-empty" id="progress-empty">Log mistakes in this week and last to compare.</p>
+      <p class="progress-empty" id="progress-empty">Log in this week and last to compare.</p>
     </section>
 
     <section class="trends-section" id="trends-section">
@@ -223,127 +262,180 @@
       <p class="line-chart-empty" id="line-chart-empty">Add a few entries over the next days to see your chart here.</p>
     </section>
 
-    <section class="history">
-      <h2>Recent entries</h2>
-      <p class="section-hint">Your entries (saved on this device).</p>
-      <div class="history-controls">
-        <div class="history-filters" id="history-filters">
-          <button type="button" class="history-filter active" data-type="all">All</button>
-          <button type="button" class="history-filter" data-type="avoidable">Avoidable</button>
-          <button type="button" class="history-filter" data-type="fertile">Fertile</button>
-          <button type="button" class="history-filter" data-type="observed">Observed</button>
+    <section class="reflection-section" id="reflection-section">
+      <div class="reflection-card-wrap">
+        <h2 class="reflection-title">Today's reflection</h2>
+        <p class="reflection-hint">A mirror, not a judge. One line each: what to reduce, what to keep.</p>
+        <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
+        <div class="auto-reflection" id="auto-reflection"></div>
+        <div class="reflection-grid">
+          <div class="reflection-card reflection-card--avoidable">
+            <h3>Reduce</h3>
+            <textarea id="reflection-avoidable" rows="2" placeholder="Careless or on autopilot? One pattern to tweak..."></textarea>
+            <p class="char-counter" id="reflection-avoidable-counter"></p>
+          </div>
+          <div class="reflection-card reflection-card--fertile">
+            <h3>Keep</h3>
+            <textarea id="reflection-fertile" rows="2" placeholder="Stretched, experimented, grew? What to repeat..."></textarea>
+            <p class="char-counter" id="reflection-fertile-counter"></p>
+          </div>
         </div>
-        <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
-        <button type="button" id="btn-export-json" class="btn-export">Export backup (JSON)</button>
+        <div class="reflection-intention-match hidden" id="reflection-intention-match" aria-label="Intention match">
+          <p class="reflection-intention-match-prompt">Did your intention match today?</p>
+          <div class="reflection-intention-match-options" role="group">
+            <button type="button" class="reflection-intention-btn" data-value="yes">Yes</button>
+            <button type="button" class="reflection-intention-btn" data-value="partially">Partially</button>
+            <button type="button" class="reflection-intention-btn" data-value="no">Not really</button>
+          </div>
+        </div>
+        <p class="reflection-note" id="reflection-note"></p>
+        <div class="yesterday-reflection" id="yesterday-reflection"></div>
+        <details class="reflection-history" id="reflection-history">
+          <summary class="reflection-history-summary">Recent reflections</summary>
+          <div class="reflection-history-content">
+            <p class="reflection-history-hint">Saved on this device.</p>
+            <div class="reflection-history-table-wrap">
+              <table class="reflection-history-table" aria-label="Recent reflections">
+                <thead>
+                  <tr>
+                    <th scope="col">Day</th>
+                    <th scope="col">Avoidable</th>
+                    <th scope="col">Fertile</th>
+                  </tr>
+                </thead>
+                <tbody id="reflection-history-body"></tbody>
+              </table>
+            </div>
+            <button type="button" id="btn-export-reflections" class="btn-export-reflections">Export reflections (CSV)</button>
+          </div>
+        </details>
       </div>
-      <ul class="entry-list" id="entry-list"></ul>
-      <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a mistake">No mistakes logged yet. Add one above.</button>
     </section>
+    </div>
 
-    <p class="phase-label" id="phase-2-label">2 – Social</p>
-    <section class="community-entries-section" id="community-entries-section">
-      <div class="community-entries-header">
-        <h2>Everyone's recent entries</h2>
-        <button type="button" id="btn-shared-total" class="btn-shared-total" title="The world's slip-up chart" aria-label="World slip-ups: 0">🌍 0 slip-ups</button>
-      </div>
-      <p class="section-hint">Avoidable ↓ · Fertile ↔ or ↑. Anonymous entries from all users. Add a mistake above to contribute.</p>
-      <button type="button" id="btn-add-from-community" class="btn-add-from-community" aria-label="Scroll to add a mistake">+ Add</button>
-      <div class="global-count-chart-wrap" id="global-count-chart" aria-label="Global count of shared entries by type" aria-hidden="true"></div>
-      <div class="community-entries-actions">
-        <button type="button" id="btn-refresh-entries" class="btn-refresh">Refresh</button>
-        <button type="button" id="btn-shared-entries-toggle" class="btn-refresh btn-refresh-secondary">Show more (last 50)</button>
-      </div>
-      <p class="community-comparison" id="community-comparison"></p>
-      <p class="community-trend" id="community-entries-trend"></p>
-      <p class="community-range" id="community-entries-range">Showing last 10 shared entries (most recent first).</p>
-      <div class="community-entries-filters" id="shared-entries-filters">
-        <div class="community-filter-row">
-          <span class="community-filters-label">Type</span>
-          <button type="button" class="filter-chip active" data-filter-type="all">All</button>
-          <button type="button" class="filter-chip" data-filter-type="avoidable">Avoidable</button>
-          <button type="button" class="filter-chip" data-filter-type="fertile">Fertile</button>
-          <button type="button" class="filter-chip" data-filter-type="observed">Observed</button>
-        </div>
-        <div class="community-filter-row">
-          <span class="community-filters-label">Mood</span>
-          <button type="button" class="filter-chip active" data-filter-theme="all">All</button>
-          <button type="button" class="filter-chip" data-filter-theme="calm">Calm</button>
-          <button type="button" class="filter-chip" data-filter-theme="focus">Focus</button>
-          <button type="button" class="filter-chip" data-filter-theme="stressed">Stressed</button>
-          <button type="button" class="filter-chip" data-filter-theme="curious">Curious</button>
-          <button type="button" class="filter-chip" data-filter-theme="tired">Tired</button>
-        </div>
-      </div>
-      <ul class="entry-list" id="shared-entries-list"></ul>
-      <p class="empty-state" id="shared-entries-empty">No shared entries yet. Add a mistake to share yours.</p>
-      <p class="community-error hidden" id="shared-entries-error"></p>
-    </section>
+    <div id="social-view" class="app-view hidden">
+    <div class="social-tab-panel" id="social-tab-share" aria-hidden="false">
+    <div class="social-share-unified social-share-card" id="social-block">
+      <p class="social-share-intro">Share your stats anonymously — no account, no name. Your numbers join the world chart.</p>
 
-    <section class="reflection-section">
-      <h2>Today's reflection</h2>
-      <p class="reflection-hint">A mirror, not a judge. One line each: what to reduce, what to keep.</p>
-      <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
-      <div class="auto-reflection" id="auto-reflection"></div>
-      <div class="reflection-grid">
-        <div class="reflection-card reflection-card--avoidable">
-          <h3>Reduce</h3>
-          <textarea id="reflection-avoidable" rows="2" placeholder="Careless or on autopilot? One pattern to tweak..."></textarea>
-          <p class="char-counter" id="reflection-avoidable-counter"></p>
+      <section class="social-share-stats-wrap stats-section--share" aria-label="Your stats for the selected period">
+        <div class="stats">
+          <div class="stat-card stat-card--observed">
+            <span class="stat-value" id="stat-count-social">0</span>
+            <span class="stat-foot" id="stat-label-social" aria-live="polite">slip-ups today</span>
+          </div>
+          <div class="stat-card secondary stat-card--observed">
+            <span class="stat-value" id="stat-avg-social">—</span>
+            <span class="stat-label">per day</span>
+            <span class="stat-sublabel">Busy vs calm stretches</span>
+          </div>
+          <div class="stat-card stat-exploration">
+            <span class="stat-value" id="stat-exploration-social">—</span>
+            <span class="stat-label">Exploration</span>
+            <span class="stat-sublabel" id="stat-exploration-hint-social">fertile ÷ (avoidable + fertile)</span>
+            <span class="stat-so-what" id="stat-exploration-so-what-social"></span>
+          </div>
         </div>
-        <div class="reflection-card reflection-card--fertile">
-          <h3>Keep</h3>
-          <textarea id="reflection-fertile" rows="2" placeholder="Stretched, experimented, grew? What to repeat..."></textarea>
-          <p class="char-counter" id="reflection-fertile-counter"></p>
+        <div class="stats-period-summary">
+          <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
+            <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
+            <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
+            <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
+          </div>
+          <div class="stats-insight-block insight-block insight-block--featured">
+            <span class="insight-label" id="stats-insight-label-social">Today</span>
+            <p class="stats-insight insight-text" id="stats-insight-social" aria-label="Your period summary"></p>
+          </div>
         </div>
-      </div>
-      <p class="reflection-note" id="reflection-note"></p>
-      <div class="yesterday-reflection" id="yesterday-reflection"></div>
-      <details class="reflection-history" id="reflection-history">
-        <summary class="reflection-history-summary">Recent reflections</summary>
-        <p class="reflection-history-hint">Saved on this device.</p>
-        <div class="reflection-history-table-wrap">
-          <table class="reflection-history-table" aria-label="Recent reflections">
-            <thead>
-              <tr>
-                <th scope="col">Day</th>
-                <th scope="col">Avoidable</th>
-                <th scope="col">Fertile</th>
-              </tr>
-            </thead>
-            <tbody id="reflection-history-body"></tbody>
-          </table>
-        </div>
-        <button type="button" id="btn-export-reflections" class="btn-export-reflections">Export reflections (CSV)</button>
-      </details>
-    </section>
+      </section>
 
-    <section class="share-section" id="share-section">
-      <h2>Share anonymously</h2>
-      <p class="share-hint">Pick Today, This week, or This month above, then share. Your count and exploration % go to the world chart — no account, fully anonymous.</p>
-      <div class="share-period-tabs">
-        <span class="share-period-label">Share period:</span>
-        <div class="period-tabs" role="tablist" aria-label="Period to share">
-          <button type="button" class="tab" role="tab" data-period="day">Today</button>
-          <button type="button" class="tab" role="tab" data-period="week">This week</button>
-          <button type="button" class="tab" role="tab" data-period="month">This month</button>
-        </div>
+      <div class="social-to-share-card" id="social-to-share" role="status">
+        <span class="social-to-share-count" id="social-to-share-count">0</span>
+        <span class="social-to-share-label" id="social-to-share-label">ready to share</span>
       </div>
-      <button type="button" id="btn-share" class="btn-share">Share my result</button>
-      <button type="button" id="btn-share-image" class="btn-share btn-share-image">Share as image</button>
-      <p class="share-status" id="share-status"></p>
-    </section>
 
-    <section class="community-section" id="community-section">
-      <h2>Others' results</h2>
-      <p class="community-hint">Recent anonymous shares from everyone.</p>
-      <div class="community-header">
-        <button type="button" id="btn-refresh-feed" class="btn-refresh">Refresh</button>
-        <div class="community-metrics-chart" id="community-metrics-chart"></div>
+      <section class="share-section" id="share-section">
+        <button type="button" id="btn-share" class="btn-share-primary">Share my result</button>
+        <p class="share-status" id="share-status"></p>
+        <p class="share-reassurance">Anonymous — no one can link this to you.</p>
+      </section>
+    </div>
+    <section class="community-section community-section--separate community-section--share" id="community-section">
+      <div class="community-section-header">
+        <h2>Recent shares</h2>
+        <a href="index.html#phase-tabs" class="btn-global-world" title="See everyone's entries — opens world feed" aria-label="World feed">🌍</a>
       </div>
+      <p class="community-hint">Anonymous period stats from everyone. Yours join above.</p>
       <div class="shared-list-chart" id="shared-list-chart"></div>
-      <p class="empty-state" id="shared-empty">No shared results yet. Share yours above!</p>
+      <div class="community-chart-footer">
+        <button type="button" id="btn-refresh-feed" class="btn-refresh-subtle" title="Refresh shared results" aria-label="Refresh">Refresh</button>
+      </div>
+      <p class="empty-state" id="shared-empty">No shared results yet. Share yours below!</p>
       <p class="community-error hidden" id="community-error"></p>
     </section>
+    <div class="community-metrics-chart" id="community-metrics-chart"></div>
+    <a href="#mistake-note" id="btn-link-add-mistake" class="btn-link-recent-shares" title="Go to add a slip-up" aria-label="Add a slip-up">Add a slip-up →</a>
+    </div>
+    <div class="social-tab-panel hidden" id="social-tab-world" aria-hidden="true">
+    <section class="community-entries-section community-entries-section--standalone" id="community-entries-section">
+      <div class="community-entries-card" id="community-entries-card" aria-label="Browse shared slip-ups from everyone">
+        <div class="community-entries-top">
+          <div class="community-entries-header">
+            <h2>What's happening in the world</h2>
+            <div class="community-entries-header-actions">
+              <button type="button" id="btn-shared-total" class="btn-shared-total" title="The world's slip-up chart" aria-label="World slip-ups: 0">🌍 0 slip-ups</button>
+              <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a mistake to contribute to the world feed">+ Add mine</button>
+            </div>
+          </div>
+          <p class="community-entries-hint">Anonymous moments from everyone. Browse by type and mood — notice without blame.</p>
+        </div>
+        <div class="community-world-card">
+          <div class="global-count-chart-wrap" id="global-count-chart" aria-label="Global count of shared entries by type" aria-hidden="true"></div>
+        </div>
+        <div class="insight-block insight-block--patterns insight-block--global-patterns" id="global-patterns-block">
+          <span class="insight-label">Common words</span>
+          <div class="insight-chart" id="global-patterns-chart"></div>
+          <div class="global-patterns-actions">
+            <button type="button" id="btn-download-global-patterns" class="btn-download-patterns" title="Download full list as CSV (full version)" aria-label="Download global patterns CSV">Download full list</button>
+          </div>
+        </div>
+        <div class="community-browse" aria-label="Filter and browse shared entries">
+          <div class="community-browse-actions">
+            <button type="button" id="btn-shared-entries-toggle" class="chip chip--limit" title="Limit shown entries" aria-label="Show last 10 entries">Last 10</button>
+            <button type="button" id="btn-show-all-shared" class="chip chip--world" title="See all slip-ups everyone has shared" aria-label="Show all shared slip-ups"><span aria-hidden="true">🌍</span> All</button>
+            <span class="community-entries-last-updated" id="community-entries-last-updated" aria-live="polite"></span>
+          </div>
+          <div class="community-entries-filters" id="shared-entries-filters">
+            <div class="filter-group">
+              <span class="filter-group-label">Type</span>
+              <div class="filter-chips">
+                <button type="button" class="filter-chip active" data-filter-type="all">All</button>
+                <button type="button" class="filter-chip" data-filter-type="avoidable">Avoidable</button>
+                <button type="button" class="filter-chip" data-filter-type="fertile">Fertile</button>
+                <button type="button" class="filter-chip" data-filter-type="observed">Observed</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <span class="filter-group-label">Mood</span>
+              <div class="filter-chips">
+                <button type="button" class="filter-chip active" data-filter-theme="all">All</button>
+                <button type="button" class="filter-chip" data-filter-theme="calm">Calm</button>
+                <button type="button" class="filter-chip" data-filter-theme="focus">Focus</button>
+                <button type="button" class="filter-chip" data-filter-theme="stressed">Stressed</button>
+                <button type="button" class="filter-chip" data-filter-theme="curious">Curious</button>
+                <button type="button" class="filter-chip" data-filter-theme="tired">Tired</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="entry-list" id="shared-entries-list"></ul>
+        <p class="empty-state empty-state--clickable" id="shared-entries-empty">No shared entries yet. Add a mistake above to contribute yours.</p>
+        <p class="community-error hidden" id="shared-entries-error"></p>
+      </div>
+      <a href="#community-section" id="btn-link-recent-shares" class="btn-link-recent-shares" title="Go to Recent shares to see period stats and share yours">See recent shares →</a>
+    </section>
+    </div>
+    </div>
 
     <footer class="page-footer">
       <a href="privacy.html">Privacy</a>
@@ -376,41 +468,51 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=14"></script>
+  <script src="config.js?v=66"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=66"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
-      var THEME_ORDER = ['calm', 'focus', 'stressed', 'curious', 'tired'];
-      var btn = document.getElementById('btn-theme');
+      var LABELS = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
+      var moodBtns = document.querySelectorAll('.mood-btn[data-theme]');
       var btnTop = document.getElementById('btn-theme-top');
-      function setBtnText(el, label) { if (el) el.textContent = label; }
       function applyTheme() {
         var theme = localStorage.getItem(THEME_KEY) || 'calm';
         document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
-        var label = 'Calm';
-        if (theme === 'focus') { document.body.classList.add('theme-focus'); label = 'Focus'; }
-        else if (theme === 'stressed') { document.body.classList.add('theme-stressed'); label = 'Stressed'; }
-        else if (theme === 'curious') { document.body.classList.add('theme-curious'); label = 'Curious'; }
-        else if (theme === 'tired') { document.body.classList.add('theme-tired'); label = 'Tired'; }
-        setBtnText(btn, label);
-        setBtnText(btnTop, label);
+        if (theme === 'focus') document.body.classList.add('theme-focus');
+        else if (theme === 'stressed') document.body.classList.add('theme-stressed');
+        else if (theme === 'curious') document.body.classList.add('theme-curious');
+        else if (theme === 'tired') document.body.classList.add('theme-tired');
+        moodBtns.forEach(function(b) {
+          b.classList.toggle('active', b.getAttribute('data-theme') === theme);
+        });
+        if (btnTop) {
+          btnTop.textContent = LABELS[theme] || 'Calm';
+          btnTop.setAttribute('data-theme', theme);
+          btnTop.setAttribute('aria-label', 'How does this feel? Current mood: ' + (LABELS[theme] || 'Calm') + '. Click to cycle.');
+        }
       }
-      function cycleTheme() {
-        var current = localStorage.getItem(THEME_KEY) || 'calm';
-        var idx = THEME_ORDER.indexOf(current);
-        var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
-        localStorage.setItem(THEME_KEY, next);
+      function selectTheme(theme) {
+        localStorage.setItem(THEME_KEY, theme);
         applyTheme();
       }
       applyTheme();
-      if (btn) btn.addEventListener('click', cycleTheme);
-      if (btnTop) btnTop.addEventListener('click', cycleTheme);
+      moodBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() { selectTheme(btn.getAttribute('data-theme')); });
+      });
+      if (btnTop) btnTop.addEventListener('click', function() {
+        var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        var order = ['calm', 'focus', 'stressed', 'curious', 'tired'];
+        var idx = order.indexOf(theme);
+        selectTheme(order[(idx + 1) % order.length]);
+      });
     })();
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      navigator.serviceWorker.register('sw.js', { scope: './' })
+        .then(function(reg) { if (reg) reg.update(); })
+        .catch(function() {});
     }
   </script>
 </body>

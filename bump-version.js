@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
  * SlipUp — Bump asset versions and service worker cache for deploys.
- * Run before pushing to GitHub Pages so users get fresh CSS/JS.
+ * The GitHub Actions deploy workflow runs this with the run number so you don't need to run it before push.
  *
  * Usage: node bump-version.js [newVersion]
- *   If newVersion omitted, bumps current + 1 (e.g. 5 → 6).
+ *   newVersion = number to set (e.g. 42). If omitted, bumps current + 1 (e.g. 14 → 15).
+ *   Workflow uses: node bump-version.js ${{ github.run_number }}
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname);
-const HTML_FILES = ['index.html', 'inside.html', 'landing.html', 'privacy.html', 'terms.html', 'refund.html'];
+const HTML_FILES = ['index.html', 'inside.html', 'landing.html', 'landing-inside.html', 'auth-inside.html', 'privacy.html', 'terms.html', 'refund.html'];
 const SW_FILE = 'sw.js';
 
 function getCurrentVersion(content) {

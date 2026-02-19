@@ -1,0 +1,12 @@
+anonymous_id,kind,value,mode
+sample-user-001,phase,personal,personal
+sample-user-001,period,day,personal
+sample-user-001,action,add_entry,personal
+sample-user-001,entry_type,avoidable,personal
+sample-user-001,phase,social,personal
+sample-user-001,filter_type,all,personal
+sample-user-001,filter_theme,calm,personal
+sample-user-001,action,share,personal
+sample-user-002,phase,personal,inside
+sample-user-002,streak_choice,discipline,personal
+sample-user-002,bias_reason,triggered,personal

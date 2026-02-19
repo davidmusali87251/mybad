@@ -1,19 +1,17 @@
-const CACHE_NAME = 'slip-track-v14';
+const CACHE_NAME = 'slip-track-v66';
 
+/* Don't pre-cache HTML — always fetch fresh on nav so "Inside" and others show latest */
 const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './landing.html',
-  './inside.html',
-  './privacy.html',
-  './terms.html',
-  './refund.html',
-  './styles.css?v=14',
-  './app.js?v=14',
+  './styles.css?v=66',
+  './app.js?v=66',
   './manifest.json',
   './icon.svg',
   './icon-maskable.svg'
 ];
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'skipWaiting') self.skipWaiting();
+});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -60,10 +58,10 @@ self.addEventListener('fetch', (event) => {
   }
   if (!isAppAsset(url.pathname)) return;
 
-  // HTML: network-first so phones get updates without waiting for SW bump
+  // HTML: always network-first, no pre-cache — nav clicks get latest (no stale Inside)
   if (isHtmlRequest(url.pathname)) {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-store' })
         .then((res) => {
           if (res.ok) {
             const clone = res.clone();

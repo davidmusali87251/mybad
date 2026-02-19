@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0f0f12">
+  <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <title>SlipUp — A smarter relationship with mistakes</title>
   <meta name="description" content="An operational awareness tool. Reduce useless mistakes. Keep the ones that grow you. Daily system for conscious error.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=66">
+  <script src="config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
@@ -20,8 +21,14 @@
     .landing-hero h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
     .landing-hero .lead { font-size: 1.05rem; color: var(--text-muted); line-height: 1.55; margin-top: 0.75rem; }
     .landing-hero .lead strong { color: var(--text); }
-    .landing-cta { display: inline-block; margin-top: 1.25rem; padding: 0.7rem 1.4rem; background: var(--accent); color: var(--bg); text-decoration: none; font-weight: 600; border-radius: 8px; font-size: 0.95rem; }
+    .landing-cta-wrap { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; align-items: center; margin-top: 1.25rem; }
+    .landing-cta { display: inline-block; padding: 0.7rem 1.4rem; background: var(--accent); color: var(--bg); text-decoration: none; font-weight: 600; border-radius: 8px; font-size: 0.95rem; }
     .landing-cta:hover { filter: brightness(1.1); }
+    .landing-cta.landing-cta--secondary { background: transparent; color: var(--accent-text); border: 1px solid var(--accent); cursor: pointer; font: inherit; }
+    .landing-cta.landing-cta--secondary:hover { background: var(--accent-tint); }
+    button.landing-cta { border: none; }
+    button.landing-cta.landing-cta--secondary { border: 1px solid var(--accent); }
+    .landing-cta.hidden { display: none !important; }
     .landing-h2 { font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 0.5rem; color: var(--text); }
     .landing-h3 { font-size: 0.9rem; font-weight: 600; margin: 1.25rem 0 0.35rem; color: var(--text-muted); }
     .landing p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.55; }
@@ -39,23 +46,27 @@
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to main content</a>
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <a href="index.html" class="top-bar-brand" title="Not a judge. A mirror.">SlipUp</a>
+    </div>
+  </header>
   <div class="landing" id="main">
     <header class="landing-hero">
       <h1>SlipUp</h1>
-      <p class="lead">It’s not just a counter.<br>It’s a calmer way to look at your mistakes.</p>
-      <p class="lead">Reduce useless repeats. Keep the ones that grow you.</p>
-      <p class="lead" style="font-size: 0.9rem; margin-top: 0.35rem;">A small daily check-in to notice what happened and what you want to change.</p>
-      <a href="index.html" class="landing-cta">Start free — open the app</a>
+      <p class="lead">Not a judge. A mirror.</p>
+      <p class="lead">See what repeats. Choose what to keep. Feel lighter.</p>
+      <p class="lead lead--punch" style="font-size: 0.9rem; margin-top: 0.35rem;"><span class="lead--reframe">No shame</span> — just <span class="lead--outcome">patterns you can change.</span></p>
     </header>
 
     <h2 class="landing-h2">Why SlipUp?</h2>
     <p>SlipUp is a calm place to park mistakes so they stop spinning in your head and start turning into learning.</p>
 
     <h3 class="landing-h3">Three simple types</h3>
-    <ul>
-      <li><strong>Avoidable</strong> – “I knew better.” Reduce repeats.</li>
-      <li><strong>Fertile</strong> – “I tried something new.” Keep the experiments.</li>
-      <li><strong>Observed</strong> – “I saw this in others or the system.” Learn without the pain.</li>
+    <ul class="landing-types">
+      <li class="landing-type landing-type--avoidable"><strong>Avoidable</strong> – “I knew better.” Reduce repeats.</li>
+      <li class="landing-type landing-type--fertile"><strong>Fertile</strong> – “I tried something new.” Keep the experiments.</li>
+      <li class="landing-type landing-type--observed"><strong>Observed</strong> – “I saw this in others or the system.” Learn without the pain.</li>
     </ul>
 
     <h2 class="landing-h2">Roadmap</h2>
@@ -64,8 +75,10 @@
       <p><strong>Next – Social:</strong> Stronger anonymous sharing and summaries so you can compare your exploration with others.</p>
       <p><strong>Later – Teams:</strong> Group views (SlipUp Inside) for facilitators and teams, without exposing individual entries.</p>
     </div>
-
-    <p style="margin-top: 1.25rem;"><a href="index.html" class="landing-cta">Open SlipUp</a></p>
+    <div class="landing-cta-wrap">
+      <a href="index.html" class="landing-cta">Start free · 10 to try</a>
+      <button type="button" id="landing-install-btn" class="landing-cta landing-cta--secondary hidden" aria-label="Install SlipUp as app">Install app</button>
+    </div>
 
     <footer class="landing-footer">
       <a href="privacy.html">Privacy</a> ·
@@ -75,5 +88,36 @@
       <span style="font-size: 0.8rem; opacity: 0.9;">© 2026 SlipUp. All rights reserved.</span>
     </footer>
   </div>
+  <script>
+    (function() {
+      var installPrompt = null;
+      var installBtn = document.getElementById('landing-install-btn');
+      function showInstallBtn() {
+        if (installBtn) installBtn.classList.remove('hidden');
+      }
+      if ('beforeinstallprompt' in window) {
+        window.addEventListener('beforeinstallprompt', function(e) {
+          e.preventDefault();
+          installPrompt = e;
+          showInstallBtn();
+        }, { once: true });
+      }
+      if (installBtn) {
+        installBtn.addEventListener('click', function() {
+          if (installPrompt) {
+            installPrompt.prompt();
+            installPrompt.userChoice.then(function() {
+              window.location.href = 'index.html';
+            });
+          } else {
+            window.location.href = 'index.html';
+          }
+        });
+      }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      }
+    })();
+  </script>
 </body>
 </html>
