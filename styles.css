@@ -300,6 +300,81 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Mobile: compact top bar so Share, World, + Add fit without overflow */
+@media (max-width: 540px) {
+  .top-bar {
+    padding: 0.5rem max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    gap: 0.35rem;
+  }
+  .top-bar-left {
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  .top-bar-brand {
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .top-bar-theme {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: 0;
+  }
+  .top-bar-actions {
+    gap: 0.35rem;
+  }
+  .top-bar-btn {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  .top-bar-btn.top-bar-world {
+    padding-left: 0.4rem;
+    padding-right: 0.5rem;
+  }
+  .top-bar-home {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
+  }
+  .top-bar-slipups {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Very narrow phones: extra compact, prevent overflow */
+@media (max-width: 380px) {
+  .top-bar {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  .top-bar-left {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .top-bar-brand {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 6.5rem;
+  }
+  .top-bar-actions {
+    flex-shrink: 0;
+  }
+  .top-bar-btn {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.7rem;
+  }
+  .top-bar-home {
+    padding: 0.3rem 0.45rem;
+    font-size: 0.7rem;
+  }
+  .top-bar-slipups {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.7rem;
+  }
 }
 
 .top-bar-type-badges {
@@ -3252,6 +3327,7 @@ body.theme-tired .btn-bias-check {
   .top-bar-theme,
   .top-bar-slipups,
   .top-bar-home,
+  .top-bar-btn,
   .tab {
     min-height: 44px;
     touch-action: manipulation;
