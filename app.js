@@ -259,6 +259,9 @@ function updatePaidOnlyElements() {
     if (el) {
       el.disabled = !unlocked;
       el.setAttribute('title', unlocked ? PAID_ONLY_TOOLTIP_UNLOCKED : PAID_ONLY_TOOLTIP_LOCKED);
+      if (id === 'btn-download-global-patterns') {
+        el.setAttribute('aria-label', unlocked ? 'Download global patterns CSV' : 'Download global patterns CSV (Full version required)');
+      }
     }
   });
 }
@@ -1614,6 +1617,8 @@ function fetchSharedIntentions(opts) {
   if (MODE === 'inside' && !getInsideGroupId()) return;
   const includeOlder = opts && opts.includeOlder;
   try {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
     let q = getSupabase()
       .from(INTENTIONS_TABLE)
@@ -1623,6 +1628,9 @@ function fetchSharedIntentions(opts) {
     if (MODE === 'inside') q = q.eq('group_id', getInsideGroupId());
     if (MODE === 'inside' && !includeOlder) {
       q = q.gte('created_at', twoDaysAgo);
+    }
+    if (MODE === 'personal' && !includeOlder) {
+      q = q.gte('created_at', startOfToday);
     }
     q = q.limit(includeOlder ? 50 : 20);
     q.then(({ data, error }) => {
@@ -3072,6 +3080,11 @@ async function fetchSharedEntries() {
       topBarSlipups.setAttribute('aria-label', 'World: ' + total);
       topBarSlipups.title = total > 0 ? tooltip : "See everyone's entries — opens world feed";
     }
+    if (topBarWorld) {
+      topBarWorld.textContent = '\uD83C\uDF0D ' + total;
+      topBarWorld.setAttribute('aria-label', 'World feed: ' + total + ' slip-ups');
+      topBarWorld.title = total > 0 ? tooltip : "What's happening in the world";
+    }
     if (typeof updateSharedEntriesLimitButtons === 'function') updateSharedEntriesLimitButtons();
     if (communityEntriesLastUpdated) {
       communityEntriesLastUpdated.textContent = 'Just refreshed';
@@ -3090,6 +3103,11 @@ async function fetchSharedEntries() {
     const noun0 = MODE === 'inside' ? 'moments' : 'slip-ups';
     if (btnSharedTotal) btnSharedTotal.textContent = '🌍 0 ' + noun0;
     if (topBarSlipups) topBarSlipups.textContent = '\uD83C\uDF0D 0';
+    if (topBarWorld) {
+      topBarWorld.textContent = '\uD83C\uDF0D 0';
+      topBarWorld.setAttribute('aria-label', 'World feed');
+      topBarWorld.title = "What's happening in the world";
+    }
     if (sharedEntriesError) {
       sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
       sharedEntriesError.classList.remove('hidden');
@@ -3123,7 +3141,7 @@ function renderGlobalPatternsChart() {
   });
   const sorted = Object.entries(wordCounts).filter(function (e) { return e[1] >= 2; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 6);
   if (sorted.length === 0) {
-    chart.innerHTML = '<p class="insight-chart-empty">Words that show up often (2+ uses) will appear here.</p>';
+    chart.innerHTML = '<p class="insight-chart-empty">Share yours. Words that repeat 2+ times will appear here.</p>';
     block.classList.remove('hidden');
   } else {
     const maxC = sorted[0][1];
@@ -3959,7 +3977,7 @@ function initMicroGoal() {
   if (!microGoalInput) return;
   if (microGoalHint && MODE !== 'inside') {
     microGoalHint.textContent = SHARING_ENABLED
-      ? "Anonymous — no name. Tap Share intention to add yours to the Social chart."
+      ? "Yours to keep. Share to add to the world chart — anonymous."
       : 'Just for you — stays on your device.';
   }
   microGoalInput.setAttribute('maxlength', String(MICRO_GOAL_MAXLEN));
@@ -4010,6 +4028,8 @@ function initMicroGoal() {
   if (btnIntentionsHow && intentionsHowPanel) {
     if (MODE === 'inside') {
       intentionsHowPanel.textContent = "Tap Share intention to add yours here. Everyone in your group can see shared intentions.";
+    } else {
+      intentionsHowPanel.textContent = "Share intention to add yours here. Anonymous. See what others are focusing on today.";
     }
     btnIntentionsHow.addEventListener('click', () => {
       var open = intentionsHowPanel.classList.toggle('hidden');

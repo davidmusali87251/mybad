@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=82">
+  <link rel="stylesheet" href="styles.css?v=83">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -357,8 +357,8 @@
       <p class="line-chart-empty" id="line-chart-empty">Add a few moments over the next days to see your chart here.</p>
     </section>
 
-    <section class="history">
-      <h2>Recent moments</h2>
+    <section class="history" aria-labelledby="history-heading-inside">
+      <h2 id="history-heading-inside">Recent moments — Heat · Shift · Support</h2>
       <p class="section-hint">Saved on this device. Use in group or 1‑on‑1 sessions.</p>
       <div class="history-controls">
         <div class="history-filters" id="history-filters">
@@ -437,7 +437,7 @@
               <h2>What's happening in your group</h2>
               <div class="community-entries-header-actions">
                 <button type="button" id="btn-shared-total" class="btn-shared-total" title="Group shared moments" aria-label="Group moments: 0">🌍 0 moments</button>
-                <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a moment to contribute">+ Add mine</button>
+                <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a moment to contribute">+ Add</button>
               </div>
             </div>
             <p class="community-entries-hint">Anonymous moments from your group. Browse by type and mood — notice without blame.</p>
@@ -514,9 +514,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=82"></script>
+  <script src="config.js?v=83"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=82"></script>
+  <script src="inside-auth.js?v=83"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -717,7 +717,7 @@
       })();
     })();
   </script>
-  <script src="app.js?v=82"></script>
+  <script src="app.js?v=83"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
