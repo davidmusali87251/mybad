@@ -234,6 +234,8 @@ SUPABASE_ENTRIES_TABLE_PERSONAL: 'shared_entries_personal'
 
 To show avoidable/fertile/observed breakdown and exploration % in "Others' results", run `supabase-shared-stats-breakdown.sql` in **SQL Editor**. This adds `avoidable_count`, `fertile_count`, `observed_count` to `shared_stats` and `shared_stats_inside`. New shares will include the breakdown; existing rows stay as before.
 
+To show **most mood** (e.g. "mostly tired") in Recent shares, run `supabase-shared-stats-top-theme.sql` in **SQL Editor**. This adds `top_theme` to both tables. New shares will include the dominant mood from the period; existing rows stay as before.
+
 ### Global counting chart table (`shared_chart_counts`)
 
 The **Avoidable ↓ · Fertile ↔ or ↑** chart in "Everyone's recent entries" aggregates counts from shared entries. To store these in a dedicated Supabase table (for dashboards, reporting, or future use), run the script:

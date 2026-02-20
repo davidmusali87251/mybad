@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=83">
+  <link rel="stylesheet" href="styles.css?v=84">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -95,6 +95,7 @@
             </label>
           </div>
         </div>
+        <p class="add-card-style-hint">SlipUp style: one line, calm, notice without blame</p>
         <div class="add-card-input-wrap">
           <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
           <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
@@ -218,11 +219,6 @@
     <section class="history" aria-labelledby="history-heading">
       <h2 id="history-heading">Recent entries — Avoidable · Fertile · Observed</h2>
       <p class="section-hint">Your entries (saved on this device).</p>
-      <div class="history-period-tabs" role="tablist" aria-label="Time period">
-        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Day</button>
-        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">Week</button>
-        <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">Month</button>
-      </div>
       <div class="history-controls">
         <div class="history-filters" id="history-filters">
           <button type="button" class="history-filter active" data-type="all">All</button>
@@ -231,6 +227,11 @@
           <button type="button" class="history-filter" data-type="observed">Observed</button>
         </div>
         <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
+      </div>
+      <div class="history-period-tabs" role="tablist" aria-label="Time period">
+        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Day</button>
+        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">Week</button>
+        <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">Month</button>
       </div>
       <ul class="entry-list" id="entry-list"></ul>
       <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a slip-up">No slip-ups logged yet. Add one above.</button>
@@ -327,9 +328,9 @@
 
       <section class="social-share-stats-wrap stats-section--share" aria-label="Your stats for the selected period">
         <div class="stats">
-          <div class="stat-card stat-card--observed">
+          <div class="stat-card secondary stat-card--observed">
             <span class="stat-value" id="stat-count-social">0</span>
-            <span class="stat-foot" id="stat-label-social" aria-live="polite">slip-ups today</span>
+            <span class="stat-label" id="stat-label-social" aria-live="polite">slip-ups today</span>
           </div>
           <div class="stat-card secondary stat-card--observed">
             <span class="stat-value" id="stat-avg-social">—</span>
@@ -485,10 +486,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=83"></script>
+  <script src="config.js?v=84"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=83"></script>
+  <script src="app.js?v=84"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

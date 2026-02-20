@@ -2582,6 +2582,20 @@ async function shareAnonymously() {
     const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
     const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
     const observedCount = filtered.filter(e => e.type === 'observed').length;
+    const byTheme = { calm: 0, focus: 0, stressed: 0, curious: 0, tired: 0 };
+    filtered.forEach(e => {
+      const raw = e.theme || 'calm';
+      const t = (raw === 'focus' || raw === 'stressed' || raw === 'curious' || raw === 'tired') ? raw : 'calm';
+      if (byTheme[t] != null) byTheme[t] += 1;
+    });
+    let topTheme = null;
+    let topThemeCount = 0;
+    Object.keys(byTheme).forEach(key => {
+      if (byTheme[key] > topThemeCount) {
+        topTheme = key;
+        topThemeCount = byTheme[key];
+      }
+    });
     const client = getSupabase();
     const payload = {
       period: stats.period,
@@ -2594,11 +2608,15 @@ async function shareAnonymously() {
       payload.fertile_count = fertileCount;
       payload.observed_count = observedCount;
     }
+    if (topTheme && topThemeCount > 0) {
+      payload.top_theme = topTheme;
+    }
     let insertResult = await client.from(STATS_TABLE).insert(payload);
     if (insertResult.error && /column.*does not exist/i.test(insertResult.error.message || '')) {
       delete payload.avoidable_count;
       delete payload.fertile_count;
       delete payload.observed_count;
+      delete payload.top_theme;
       insertResult = await client.from(STATS_TABLE).insert(payload);
     }
     const { error } = insertResult;
@@ -2807,7 +2825,7 @@ async function fetchSharedStats() {
   }
   const client = getSupabase();
   const MAX_OTHER_RESULTS = 5;
-  const selectExtended = 'id, period, count, avg_per_day, created_at, anonymous_id, avoidable_count, fertile_count, observed_count';
+  const selectExtended = 'id, period, count, avg_per_day, created_at, anonymous_id, avoidable_count, fertile_count, observed_count, top_theme';
   const selectBase = 'id, period, count, avg_per_day, created_at, anonymous_id';
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   let statsQuery = client.from(STATS_TABLE).select(selectExtended).order('created_at', { ascending: false }).limit(MAX_OTHER_RESULTS);
@@ -2898,6 +2916,11 @@ async function fetchSharedStats() {
         if (fv > 0) parts.push('<span class="shared-share-type shared-share-type--fertile">' + fv + ' ' + typeLabels.fertile + '</span>');
         if (ov > 0) parts.push('<span class="shared-share-type shared-share-type--observed">' + ov + ' ' + typeLabels.observed + '</span>');
         chartHtml += '<div class="shared-share-breakdown">' + parts.join('<span class="shared-share-type-sep"> · </span>') + '</div>';
+      }
+      if (row.top_theme) {
+        const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'stressed', curious: 'curious', tired: 'tired' };
+        const themeLabel = themeLabels[row.top_theme] || row.top_theme;
+        chartHtml += '<div class="shared-share-mood"><span class="shared-share-mood-label">mostly ' + escapeHtml(themeLabel) + '</span></div>';
       }
       chartHtml += '</div>';
     });
