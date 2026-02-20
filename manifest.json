@@ -1,7 +1,7 @@
 {
   "name": "SlipUp",
   "short_name": "SlipUp",
-  "description": "Count & reflect on mistakes by day, week, month. Track avoidable vs fertile errors.",
+  "description": "Count & reflect on slip-ups by day, week, month. Track avoidable vs fertile errors.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

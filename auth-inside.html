@@ -8,13 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>SlipUp Inside — Sign in</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=66">
+  <link rel="stylesheet" href="styles.css?v=70">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
   <style>
-    .auth-wrap { max-width: 360px; margin: 4rem auto; padding: 0 1.25rem; }
+    .auth-wrap { max-width: 360px; margin: max(4rem, env(safe-area-inset-top)) auto max(2rem, env(safe-area-inset-bottom)); padding-left: max(1.25rem, env(safe-area-inset-left)); padding-right: max(1.25rem, env(safe-area-inset-right)); }
     .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
     .auth-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
     .auth-sub { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem; }
@@ -85,9 +86,9 @@
   <script>
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=66"></script>
+  <script src="config.js?v=70"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=66"></script>
+  <script src="inside-auth.js?v=70"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});

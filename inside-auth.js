@@ -75,6 +75,45 @@
     return { groupId: data.group_id, groupName: data.group_name || trimmed, error: null };
   }
 
+  /** Get participation today (X of Y checked in). Returns { participantCount, memberCount, error } */
+  async function getGroupParticipationToday(groupId) {
+    const client = getClient();
+    if (!client || !groupId) return { participantCount: 0, memberCount: 0, error: 'Not configured' };
+    const useEntriesInside = true; // Config could toggle; shared_entries_inside is default for Inside
+    const { data, error } = await client.rpc('get_group_participation_today', { p_group_id: groupId, p_use_entries_inside: useEntriesInside });
+    if (error) return { participantCount: 0, memberCount: 0, error: error.message };
+    return {
+      participantCount: data?.participant_count ?? 0,
+      memberCount: data?.member_count ?? 0,
+      error: null
+    };
+  }
+
+  /** Get group streak (consecutive days with shares). Returns { streak, error } */
+  async function getGroupStreakDays(groupId) {
+    const client = getClient();
+    if (!client || !groupId) return { streak: 0, error: 'Not configured' };
+    const { data, error } = await client.rpc('get_group_streak_days', { p_group_id: groupId });
+    if (error) return { streak: 0, error: error.message };
+    return { streak: typeof data === 'number' ? data : 0, error: null };
+  }
+
+  /** Get group activity summary for feed. Returns { memberCount, sharedCount, participantToday, sharesToday, error } */
+  async function getGroupActivitySummary(groupId) {
+    const client = getClient();
+    if (!client || !groupId) return { memberCount: 0, sharedCount: 0, participantToday: 0, sharesToday: 0, error: 'Not configured' };
+    const { data, error } = await client.rpc('get_group_activity_summary', { p_group_id: groupId });
+    if (error) return { memberCount: 0, sharedCount: 0, participantToday: 0, sharesToday: 0, error: error.message };
+    return {
+      memberCount: data?.member_count ?? 0,
+      sharedCount: data?.shared_count ?? 0,
+      participantToday: data?.participant_today ?? 0,
+      sharesToday: data?.shares_today ?? 0,
+      streakDays: data?.streak_days ?? 0,
+      error: null
+    };
+  }
+
   /** Get member count for a group (must be member). Returns { count, error } */
   async function getGroupMemberCount(groupId) {
     const client = getClient();
@@ -164,6 +203,24 @@
     return { success: true, error: null };
   }
 
+  /** Get invite preview (group name + member count) without joining. Returns { exists, groupName, memberCount, expired, error } */
+  async function getInvitePreview(token) {
+    const client = getClient();
+    if (!client) return { exists: false, error: 'Supabase not configured' };
+    if (!token) return { exists: false, error: 'Token required' };
+    const { data, error } = await client.rpc('get_invite_preview', { p_token: token });
+    if (error) return { exists: false, error: error.message };
+    if (!data) return { exists: false };
+    if (!data.exists) return { exists: false };
+    return {
+      exists: true,
+      groupName: data.group_name || 'Group',
+      memberCount: data.member_count ?? 0,
+      expired: !!data.expired,
+      error: null
+    };
+  }
+
   /** Create invite for group. Returns { inviteUrl, token, error } */
   async function createInvite(groupId, expiresInDays) {
     const client = getClient();
@@ -232,6 +289,10 @@
     getUserGroups,
     getGroupMemberCount,
     getGroupMembers,
+    getInvitePreview,
+    getGroupParticipationToday,
+    getGroupActivitySummary,
+    getGroupStreakDays,
     validateGroupMembership,
     joinByInvite,
     createGroup,

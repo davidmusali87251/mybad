@@ -9,7 +9,8 @@
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=66">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css?v=70">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -64,6 +65,9 @@
       <div class="group-gate-join hidden" id="group-gate-join">
         <label for="invite-token-input">Paste invite link or token</label>
         <input type="text" id="invite-token-input" placeholder="https://... or invite token">
+        <div class="group-gate-preview hidden" id="group-gate-preview" aria-live="polite">
+          <p class="group-gate-preview-text" id="group-gate-preview-text"></p>
+        </div>
         <button type="button" id="btn-join-group" class="btn-join-group">Join group</button>
       </div>
       <p class="group-gate-status" id="group-gate-status" aria-live="polite"></p>
@@ -219,6 +223,16 @@
       <p class="share-to-group-status" id="share-to-group-status" aria-live="polite"></p>
       <ul class="share-to-group-list" id="share-to-group-list"></ul>
       <p class="share-to-group-empty hidden" id="share-to-group-empty">No unshared moments. Add one above.</p>
+    </section>
+
+    <section class="group-participation-section" id="group-participation-section" aria-labelledby="group-participation-heading">
+      <h3 id="group-participation-heading">Group today</h3>
+      <p class="group-participation-text" id="group-participation-text" aria-live="polite">—</p>
+      <p class="group-activity-summary" id="group-activity-summary" aria-live="polite"></p>
+    </section>
+
+    <section class="group-milestone-section hidden" id="group-milestone-section" aria-live="polite">
+      <div class="group-milestone-card" id="group-milestone-card"></div>
     </section>
 
     <section class="stats-section" id="stats-section" aria-label="Your stats for the selected period">
@@ -413,6 +427,11 @@
     </div>
 
     <div id="social-view" class="app-view hidden">
+      <section class="group-activity-feed-section" id="group-activity-feed-section" aria-labelledby="group-activity-feed-heading">
+        <h3 id="group-activity-feed-heading">Activity</h3>
+        <ul class="group-activity-feed-list" id="group-activity-feed-list" aria-label="Recent group activity"></ul>
+        <p class="group-activity-feed-empty hidden" id="group-activity-feed-empty">No recent activity yet.</p>
+      </section>
       <section class="community-entries-section community-entries-section--standalone" id="community-entries-section">
         <div class="community-entries-card" id="community-entries-card" aria-label="Browse shared moments from your group">
           <div class="community-entries-top">
@@ -497,9 +516,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=66"></script>
+  <script src="config.js?v=70"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=66"></script>
+  <script src="inside-auth.js?v=70"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -658,12 +677,33 @@
           });
         }
 
+        var previewEl = document.getElementById('group-gate-preview');
+        var previewText = document.getElementById('group-gate-preview-text');
+        function extractToken(raw) {
+          var m = (raw || '').trim().match(/invite=([^&\s#]+)/);
+          return m ? m[1] : (raw || '').trim();
+        }
+        function updateInvitePreview() {
+          var token = extractToken(tokenInput ? tokenInput.value : '');
+          if (!token || !Auth.getInvitePreview || !previewEl || !previewText) {
+            if (previewEl) previewEl.classList.add('hidden');
+            return;
+          }
+          Auth.getInvitePreview(token).then(function(r) {
+            if (!r.exists || r.expired) { previewEl.classList.add('hidden'); return; }
+            previewText.textContent = 'Preview: ' + (r.groupName || 'Group') + ' — ' + (r.memberCount || 0) + ' member' + (r.memberCount === 1 ? '' : 's');
+            previewEl.classList.remove('hidden');
+          }).catch(function() { if (previewEl) previewEl.classList.add('hidden'); });
+        }
+        if (tokenInput && Auth.getInvitePreview) {
+          var previewTimeout;
+          tokenInput.addEventListener('input', function() { clearTimeout(previewTimeout); previewTimeout = setTimeout(updateInvitePreview, 400); });
+          tokenInput.addEventListener('paste', function() { setTimeout(updateInvitePreview, 100); });
+        }
         if (btnJoin && tokenInput) {
           btnJoin.addEventListener('click', function() {
             var raw = (tokenInput.value || '').trim();
-            var token = raw;
-            var m = raw.match(/invite=([^&\s#]+)/);
-            if (m) token = m[1];
+            var token = extractToken(raw);
             if (!token) { setStatus('Paste an invite link or token.', true); return; }
             setStatus('Joining…');
             btnJoin.disabled = true;
@@ -679,7 +719,7 @@
       })();
     })();
   </script>
-  <script src="app.js?v=66"></script>
+  <script src="app.js?v=70"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

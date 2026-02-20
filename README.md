@@ -36,7 +36,7 @@ SlipUp Inside reuses the same app shell but switches copy and stats to fit **gro
 - **Shift index** instead of exploration index (shift ÷ (heat + shift)).
 - Anonymous sharing uses the same `shared_what_happened` table with `mode = 'inside'`, plus a separate `shared_stats_inside` table for group stats (see SQL above).
 - The mood system is the same (calm, focus, stressed, curious, tired), and reflections + entries are stored separately per mode on the same browser.
-- **Group management** — Run `supabase-inside-groups.sql` first, then `supabase-inside-groups-admin.sql` for edit name, member list, remove/leave. Run `supabase-community-entries-inside.sql` for the shared entries table.
+- **Group management** — Run `supabase-inside-groups.sql` first, then `supabase-inside-groups-admin.sql` for edit name, member list, remove/leave. Run `supabase-community-entries-inside.sql` for the shared entries table. Run `supabase-group-mode-upgrade.sql` for participation tracking, invite preview, activity feed, streaks, and moderator role.
 
 ## How to run
 

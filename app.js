@@ -2280,6 +2280,11 @@ async function shareSelectedToGroup() {
   const client = getSupabase();
   const now = new Date();
   const useSplitTable = ENTRIES_TABLE === 'shared_entries_inside';
+  let userId = null;
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (user) userId = user.id;
+  } catch (_) {}
   let ok = 0;
   for (const entry of selected) {
     try {
@@ -2289,8 +2294,14 @@ async function shareSelectedToGroup() {
         theme: entry.theme || getCurrentTheme(),
         hour_utc: now.getUTCHours()
       };
-      if (useSplitTable) payload.group_id = groupId;
-      else { payload.mode = 'inside'; if (groupId) payload.group_id = groupId; }
+      if (useSplitTable) {
+        payload.group_id = groupId;
+        if (userId) payload.user_id = userId;
+      } else {
+        payload.mode = 'inside';
+        if (groupId) payload.group_id = groupId;
+        if (userId) payload.user_id = userId;
+      }
       const { error } = await client.from(ENTRIES_TABLE).insert(payload);
       if (error) throw error;
       entry.sharedAt = Date.now();
@@ -2305,6 +2316,7 @@ async function shareSelectedToGroup() {
   if (shareToGroupStatus) shareToGroupStatus.textContent = ok === selected.length ? 'Shared ' + ok + ' to group.' : 'Shared ' + ok + ' of ' + selected.length + '.';
   if (btnShareToGroup) btnShareToGroup.disabled = false;
   if (typeof fetchSharedCountsForInsideButton === 'function') fetchSharedCountsForInsideButton();
+  if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement();
   if (shareToGroupStatus) setTimeout(() => { shareToGroupStatus.textContent = ''; }, 3000);
 }
 
@@ -3369,6 +3381,77 @@ async function fetchSharedCountsForInsideButton() {
   }
 }
 
+const MILESTONE_THRESHOLDS = [25, 50, 100, 250, 500];
+const MILESTONE_STORAGE_KEY = 'slipup-group-milestone-celebrated';
+
+function refreshGroupEngagement() {
+  if (MODE !== 'inside') return;
+  const groupId = getInsideGroupId();
+  const Auth = window.SlipUpInsideAuth;
+  if (!groupId || !Auth || !Auth.getGroupParticipationToday || !Auth.getGroupActivitySummary) return;
+  const partText = document.getElementById('group-participation-text');
+  const partSection = document.getElementById('group-participation-section');
+  const activitySummary = document.getElementById('group-activity-summary');
+  const activityFeedList = document.getElementById('group-activity-feed-list');
+  const activityFeedEmpty = document.getElementById('group-activity-feed-empty');
+  Auth.getGroupParticipationToday(groupId).then(function (r) {
+    if (partText && partSection) {
+      const p = r.participantCount ?? 0;
+      const m = r.memberCount ?? 0;
+      if (m > 0) {
+        partSection.classList.remove('hidden');
+        partText.textContent = p > 0 ? (p + ' of ' + m + ' checked in today') : (m > 1 ? '0 of ' + m + ' checked in today — be the first.' : '0 of 1 — add a moment to share with your group.');
+      } else {
+        partSection.classList.add('hidden');
+      }
+    }
+  });
+  Auth.getGroupActivitySummary(groupId).then(function (r) {
+    if (activitySummary) {
+      const sc = r.sharedCount ?? 0;
+      const mc = r.memberCount ?? 0;
+      const st = r.sharesToday ?? 0;
+      if (mc > 0) activitySummary.textContent = sc + ' shared moments · ' + mc + ' member' + (mc === 1 ? '' : 's') + (st > 0 ? ' · ' + st + ' today' : '');
+      else activitySummary.textContent = '';
+    }
+    if (activityFeedList && activityFeedEmpty) {
+      const items = [];
+      const pt = r.participantToday ?? 0;
+      const mc = r.memberCount ?? 0;
+      const sc = r.sharedCount ?? 0;
+      const streak = r.streakDays ?? 0;
+      if (streak > 0) items.push({ text: 'Group streak: ' + streak + ' day' + (streak === 1 ? '' : 's'), type: 'streak' });
+      if (pt > 0 && mc > 0) items.push({ text: pt + ' of ' + mc + ' checked in today', type: 'participation' });
+      if (sc >= 25) items.push({ text: 'Group has ' + sc + ' shared moments', type: 'milestone' });
+      if (mc > 0) items.push({ text: mc + ' member' + (mc === 1 ? '' : 's') + ' in the group', type: 'members' });
+      if (items.length > 0) {
+        activityFeedEmpty.classList.add('hidden');
+        activityFeedList.innerHTML = items.slice(0, 6).map(function (x) {
+          return '<li class="group-activity-feed-item group-activity-feed-item--' + (x.type || '') + '">' + (x.text || '') + '</li>';
+        }).join('');
+      } else {
+        activityFeedList.innerHTML = '';
+        activityFeedEmpty.classList.remove('hidden');
+      }
+    }
+    const sharedCount = r.sharedCount ?? 0;
+    try {
+      const celebrated = JSON.parse(localStorage.getItem(MILESTONE_STORAGE_KEY + '-' + groupId) || '[]');
+      const toCelebrate = MILESTONE_THRESHOLDS.find(function (t) { return sharedCount >= t && celebrated.indexOf(t) < 0; });
+      if (toCelebrate != null) {
+        celebrated.push(toCelebrate);
+        localStorage.setItem(MILESTONE_STORAGE_KEY + '-' + groupId, JSON.stringify(celebrated));
+        const milestoneSection = document.getElementById('group-milestone-section');
+        const milestoneCard = document.getElementById('group-milestone-card');
+        if (milestoneSection && milestoneCard) {
+          milestoneCard.textContent = 'Group reached ' + toCelebrate + ' shared moments.';
+          milestoneSection.classList.remove('hidden');
+        }
+      }
+    } catch (_) {}
+  });
+}
+
 function initInsideAuth() {
   var btnSignOut = document.getElementById('btn-sign-out');
   var btnInvite = document.getElementById('btn-invite-members');
@@ -3412,6 +3495,7 @@ function initInsideAuth() {
       if (typeof renderStats === 'function') renderStats();
       if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
       if (typeof renderShareToGroupList === 'function') renderShareToGroupList();
+      if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement();
     });
     updateGroupSwitcher();
   }
@@ -4253,6 +4337,7 @@ if (MODE === 'inside') {
   initShareToGroup();
   initInsideAuth();
   initGroupManagement();
+  setTimeout(function () { if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement(); }, 500);
 }
 initReflection();
 initMicroGoal();
@@ -4444,7 +4529,10 @@ function switchToPhase(phase) {
       if (typeof fetchSharedIntentions === 'function') fetchSharedIntentions();
       if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
     }
-    if (MODE === 'inside' && typeof fetchSharedEntries === 'function') fetchSharedEntries();
+    if (MODE === 'inside') {
+      if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+      if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement();
+    }
     tabs.forEach(function (t) {
       const isActive = t.getAttribute('data-phase') === 'social';
       t.classList.toggle('active', isActive);
