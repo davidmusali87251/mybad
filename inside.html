@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=70">
+  <link rel="stylesheet" href="styles.css?v=73">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -169,15 +169,6 @@
     <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What moment do you want to remember?</label>
-        <div class="add-card-input-wrap">
-          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19">
-          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
-        </div>
-
-        <div class="mode-row">
-          <span class="mode-label">Mood</span>
-          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
-        </div>
         <div class="type-row">
           <span class="type-label">Kind of moment</span>
           <div class="type-options">
@@ -198,8 +189,15 @@
             </label>
           </div>
         </div>
+        <div class="add-card-input-wrap">
+          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19">
+          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
+        </div>
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
-
+        <div class="mode-row">
+          <span class="mode-label">Mood</span>
+          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
+        </div>
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
         </div>
@@ -516,9 +514,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=70"></script>
+  <script src="config.js?v=73"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=70"></script>
+  <script src="inside-auth.js?v=73"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -719,7 +717,7 @@
       })();
     })();
   </script>
-  <script src="app.js?v=70"></script>
+  <script src="app.js?v=73"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

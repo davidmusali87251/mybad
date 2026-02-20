@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=72">
+  <link rel="stylesheet" href="styles.css?v=73">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -96,6 +96,11 @@
             </label>
           </div>
         </div>
+        <div class="add-card-input-wrap">
+          <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
+          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
+        </div>
+        <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
         <div class="mode-row mode-row--pills" role="group" aria-label="How does this feel?">
           <button type="button" class="mood-btn mood-btn--calm active" data-theme="calm" title="Calm">Calm</button>
           <button type="button" class="mood-btn mood-btn--focus" data-theme="focus" title="Focus">Focus</button>
@@ -103,13 +108,6 @@
           <button type="button" class="mood-btn mood-btn--curious" data-theme="curious" title="Curious">Curious</button>
           <button type="button" class="mood-btn mood-btn--tired" data-theme="tired" title="Tired">Tired</button>
         </div>
-        <div class="add-card-input-wrap">
-          <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
-          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
-        </div>
-
-        <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
-
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
         </div>
@@ -470,10 +468,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=72"></script>
+  <script src="config.js?v=73"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=72"></script>
+  <script src="app.js?v=73"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
