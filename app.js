@@ -148,8 +148,6 @@ const topBarShare = document.getElementById('top-bar-share');
 const btnShareAfterReflection = document.getElementById('btn-share-after-reflection');
 const reflectionShareWrap = document.getElementById('reflection-share-wrap');
 const topBarWorld = document.getElementById('top-bar-world');
-const btnShareAfterReflection = document.getElementById('btn-share-after-reflection');
-const reflectionShareWrap = document.getElementById('reflection-share-wrap');
 const personalView = document.getElementById('personal-view');
 const socialView = document.getElementById('social-view');
 const globalCountChart = document.getElementById('global-count-chart');
@@ -3793,7 +3791,6 @@ function initShareToGroup() {
 }
 
 function initSharing() {
-  if (!shareSection && MODE !== 'inside') return;
   if (MODE === 'inside' && !shareSection) {
     if (topBarSlipups) {
       topBarSlipups.textContent = '\uD83C\uDF0D 0';
@@ -3837,7 +3834,7 @@ function initSharing() {
   if (topBarSlipups) topBarSlipups.style.display = SHARING_ENABLED ? '' : 'none';
   if (SHARING_ENABLED) {
     if (socialBlock) socialBlock.classList.remove('hidden');
-    shareSection.classList.remove('hidden');
+    if (shareSection) shareSection.classList.remove('hidden');
     if (communitySection) communitySection.classList.remove('hidden');
     var socialTab = document.querySelector('.phase-tab[data-phase="social"]');
     if (socialTab) socialTab.style.display = '';
@@ -3845,15 +3842,21 @@ function initSharing() {
       socialToShare.classList.remove('hidden');
       updateSocialToShare();
     }
+    var socialConfigMsg = document.getElementById('social-config-required');
+    if (socialConfigMsg) socialConfigMsg.classList.add('hidden');
   } else {
     if (socialBlock) socialBlock.classList.add('hidden');
+    if (shareSection) shareSection.classList.add('hidden');
+    if (communitySection) communitySection.classList.add('hidden');
     var socialTab = document.querySelector('.phase-tab[data-phase="social"]');
-    if (socialTab) socialTab.style.display = 'none';
+    if (socialTab) socialTab.style.display = '';
     if (socialToShare) socialToShare.classList.add('hidden');
     if (topBarShare) topBarShare.style.display = 'none';
     if (topBarWorld) topBarWorld.style.display = 'none';
     if (topBarSlipups) topBarSlipups.style.display = 'none';
     if (reflectionShareWrap) reflectionShareWrap.style.display = 'none';
+    var socialConfigMsg = document.getElementById('social-config-required');
+    if (socialConfigMsg) socialConfigMsg.classList.remove('hidden');
   }
   if (btnShare) btnShare.addEventListener('click', shareAnonymously);
   if (btnRefreshFeed) btnRefreshFeed.addEventListener('click', function () { logStateEvent('action', 'refresh_feed'); fetchSharedStats(); });
@@ -4339,6 +4342,7 @@ updateUpgradeUI();
 renderStats();
 renderList();
 initSharing();
+initPhaseTabs();
 if (MODE === 'inside') {
   initShareToGroup();
   initInsideAuth();
@@ -4370,10 +4374,12 @@ if (btnSettings && settingsDropdown) {
 if (topBarAdd) {
   topBarAdd.addEventListener('click', function (e) {
     e.preventDefault();
-    if (personalView && socialView && personalView.classList.contains('hidden') && typeof switchToPhase === 'function') {
+    var pv = personalView || document.getElementById('personal-view');
+    var sv = socialView || document.getElementById('social-view');
+    if (pv && sv && pv.classList.contains('hidden') && typeof switchToPhase === 'function') {
       switchToPhase('personal');
     }
-    const main = document.getElementById('main');
+    var main = document.getElementById('main');
     if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
   });
@@ -4417,7 +4423,9 @@ if (topBarBrand) {
 if (topBarShare) {
   topBarShare.addEventListener('click', function (e) {
     e.preventDefault();
-    if (!socialView || !personalView) return;
+    var pv = document.getElementById('personal-view');
+    var sv = document.getElementById('social-view');
+    if (!pv || !sv) return;
     if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
     switchToPhase('social');
     switchToSocialTab('share');
@@ -4426,20 +4434,24 @@ if (topBarShare) {
 if (btnShareAfterReflection) {
   btnShareAfterReflection.addEventListener('click', function (e) {
     e.preventDefault();
-    if (!socialView || !personalView) return;
+    var pv = document.getElementById('personal-view');
+    var sv = document.getElementById('social-view');
+    if (!pv || !sv) return;
     if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
     switchToPhase('social');
     switchToSocialTab('share');
   });
 }
 if (topBarWorld) {
-  const communityEntriesCard = document.getElementById('community-entries-card');
   topBarWorld.addEventListener('click', function (e) {
     e.preventDefault();
-    if (!socialView || !personalView) return;
+    var pv = personalView || document.getElementById('personal-view');
+    var sv = socialView || document.getElementById('social-view');
+    if (!pv || !sv) return;
     if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
     switchToPhase('social');
     switchToSocialTab('world');
+    var communityEntriesCard = document.getElementById('community-entries-card');
     if (communityEntriesCard) {
       requestAnimationFrame(function () {
         communityEntriesCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4468,24 +4480,23 @@ if (topBarSlipups) {
 }
 var btnGlobalWorld = document.querySelector('.btn-global-world');
 if (btnGlobalWorld) {
-  var communityEntriesCardForWorld = document.getElementById('community-entries-card');
   btnGlobalWorld.addEventListener('click', function (e) {
     e.preventDefault();
+    var pv = document.getElementById('personal-view');
+    var sv = document.getElementById('social-view');
     if (MODE === 'inside') {
-      if (socialView && personalView) {
+      if (pv && sv) {
         switchToPhase('social');
-        if (communityEntriesCardForWorld) {
-          requestAnimationFrame(function () {
-            communityEntriesCardForWorld.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          });
-        }
+        var card = document.getElementById('community-entries-card');
+        if (card) requestAnimationFrame(function () { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
       }
       return;
     }
-    if (!socialView || !personalView) return;
+    if (!pv || !sv) return;
     if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
     switchToPhase('social');
     switchToSocialTab('world');
+    var communityEntriesCardForWorld = document.getElementById('community-entries-card');
     if (communityEntriesCardForWorld) {
       requestAnimationFrame(function () {
         communityEntriesCardForWorld.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4497,7 +4508,9 @@ var btnLinkRecentShares = document.getElementById('btn-link-recent-shares');
 if (btnLinkRecentShares) {
   btnLinkRecentShares.addEventListener('click', function (e) {
     e.preventDefault();
-    if (!socialView || !personalView) return;
+    var pv = document.getElementById('personal-view');
+    var sv = document.getElementById('social-view');
+    if (!pv || !sv) return;
     switchToPhase('social');
     if (typeof switchToSocialTab === 'function') switchToSocialTab('share');
     if (communitySection) {
@@ -4523,12 +4536,14 @@ if (btnLinkAddMistake) {
 }
 
 function switchToPhase(phase) {
-  if (!personalView || !socialView) return;
+  var pv = personalView || document.getElementById('personal-view');
+  var sv = socialView || document.getElementById('social-view');
+  if (!pv || !sv) return;
   logStateEvent('phase', phase, { source: phase + '_view' });
   const tabs = document.querySelectorAll('.phase-tab');
   if (phase === 'personal') {
-    personalView.classList.remove('hidden');
-    socialView.classList.add('hidden');
+    pv.classList.remove('hidden');
+    sv.classList.add('hidden');
     tabs.forEach(function (t) {
       const isActive = t.getAttribute('data-phase') === 'personal';
       t.classList.toggle('active', isActive);
@@ -4536,8 +4551,8 @@ function switchToPhase(phase) {
     });
     if (history.replaceState) history.replaceState(null, '', window.location.pathname + window.location.search);
   } else {
-    personalView.classList.add('hidden');
-    socialView.classList.remove('hidden');
+    pv.classList.add('hidden');
+    sv.classList.remove('hidden');
     switchToSocialTab('share');
     if (typeof renderMicroGoal === 'function') renderMicroGoal();
     if (MODE === 'personal') {
@@ -4558,7 +4573,9 @@ function switchToPhase(phase) {
 }
 
 function applyHashPhase() {
-  if (!personalView || !socialView) return;
+  var pv = personalView || document.getElementById('personal-view');
+  var sv = socialView || document.getElementById('social-view');
+  if (!pv || !sv) return;
   var hash = (window.location.hash || '').toLowerCase();
   if (hash === '#social') {
     switchToPhase('social');
@@ -4578,20 +4595,22 @@ function applyHashPhase() {
     if (card) requestAnimationFrame(function () { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   }
 }
-(function initPhaseTabs() {
-  const tabs = document.querySelectorAll('.phase-tab');
-  if (!tabs.length || !personalView || !socialView) return;
+function initPhaseTabs() {
+  var tabs = document.querySelectorAll('.phase-tab');
+  var pv = document.getElementById('personal-view');
+  var sv = document.getElementById('social-view');
+  if (!tabs.length || !pv || !sv) return;
   applyHashPhase();
   window.addEventListener('hashchange', applyHashPhase);
   tabs.forEach(function (t) {
     if (t.getAttribute('data-phase') == null) return;
-    t.addEventListener('click', function () {
+    t.addEventListener('click', function (e) {
+      e.preventDefault();
       var phase = t.getAttribute('data-phase');
       if (phase) switchToPhase(phase);
     });
   });
-})();
-
+}
 function switchToSocialTab(tab) {
   var panelShare = document.getElementById('social-tab-share');
   var panelWorld = document.getElementById('social-tab-world');
