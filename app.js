@@ -84,7 +84,7 @@ const STREAK_REFLECTION_LINES = {
 const TYPE_PLACEHOLDERS = {
   avoidable: 'e.g. Forgot to save, spoke harshly…',
   fertile: 'e.g. Tried a new approach, missed the mark…',
-  observed: 'What did I see? What lesson applies to me?'
+  observed: 'e.g. Saw a pattern — my takeaway'
 };
 const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
