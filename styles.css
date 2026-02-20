@@ -2742,14 +2742,14 @@ a.phase-tab--link,
 }
 .add-card input {
   width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1px solid var(--border);
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 0.95rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 /* Small screens: 16px input prevents iOS zoom on focus */
@@ -2757,6 +2757,32 @@ a.phase-tab--link,
   .add-card input,
   .micro-goal-input {
     font-size: 16px;
+  }
+}
+
+/* Type pills: prevent overflow on narrow Android screens */
+@media (max-width: 420px) {
+  .type-options {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .type-pill {
+    flex: none;
+    min-width: 100%;
+    padding: 0.65rem 0.75rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 0.5rem;
+  }
+  .type-pill .pill-main {
+    flex-shrink: 0;
+    min-width: 4.5rem;
+  }
+  .type-pill .pill-sub {
+    flex: 1;
+    min-width: 0;
   }
 }
 
@@ -2849,21 +2875,27 @@ a.phase-tab--link,
 .type-options {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .type-pill {
   flex: 1;
+  min-width: 0;
   position: relative;
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem 0.65rem;
   border-radius: var(--radius-sm);
   border: 2px solid var(--border);
   background: var(--surface);
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.2s;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  text-align: center;
+  overflow: hidden;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
+  -webkit-tap-highlight-color: rgba(114, 96, 255, 0.2);
 }
 
 .type-pill:has(input[value="avoidable"]) {
@@ -2883,6 +2915,10 @@ a.phase-tab--link,
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+.type-pill:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
 
 .type-pill:has(input:focus-visible) {
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
@@ -2900,6 +2936,8 @@ a.phase-tab--link,
   font-weight: 700;
   color: var(--text);
   line-height: 1.2;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .type-pill:has(input[value="avoidable"]) .pill-main {
@@ -2923,6 +2961,9 @@ a.phase-tab--link,
   font-size: 0.72rem;
   color: var(--text-muted);
   line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 /* Bias Check – only for Observed type; color follows current mood */
@@ -3283,7 +3324,7 @@ body.theme-tired .btn-bias-check {
 
 .type-pill:has(input:checked) {
   border-color: var(--accent);
-  background: var(--accent-tint);
+  background: linear-gradient(180deg, var(--accent-tint) 0%, color-mix(in srgb, var(--accent-tint) 70%, var(--surface)) 100%);
   box-shadow: 0 0 0 1px var(--accent), 0 2px 8px var(--accent-glow);
 }
 
@@ -3315,12 +3356,14 @@ body.theme-tired .btn-bias-check {
 
 .add-card input::placeholder {
   color: var(--text-muted);
+  opacity: 0.85;
 }
 
 .add-card input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: var(--focus-ring);
+  background: var(--bg);
 }
 
 .quick-add-row {
