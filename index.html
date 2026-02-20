@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=80">
+  <link rel="stylesheet" href="styles.css?v=82">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -143,9 +143,9 @@
       </div>
       <div class="stats-period-summary">
         <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
-          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
+          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">This month</button>
           <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
-          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Today</button>
         </div>
         <div class="stats-insight-block insight-block insight-block--featured">
           <span class="insight-label" id="stats-insight-label">Today</span>
@@ -219,9 +219,9 @@
       <h2>Recent entries</h2>
       <p class="section-hint">Your entries (saved on this device).</p>
       <div class="history-period-tabs" role="tablist" aria-label="Time period">
-        <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Day</button>
+        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Day</button>
         <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">Week</button>
-        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">Month</button>
+        <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">Month</button>
       </div>
       <div class="history-controls">
         <div class="history-filters" id="history-filters">
@@ -310,9 +310,9 @@
         </details>
       </div>
       <div class="reflection-share-wrap" id="reflection-share-wrap" aria-labelledby="reflection-share-heading">
-        <p class="reflection-share-prompt" id="reflection-share-heading">Add today's result to the world chart?</p>
-        <p class="reflection-share-hint">Anonymous. No account. Just your numbers, next to others.</p>
-        <a href="index.html#social" id="btn-share-after-reflection" class="btn-share-after-reflection" title="Share your stats — see recent shares" aria-label="Share today's result" role="button">Share today</a>
+        <p class="reflection-share-prompt" id="reflection-share-heading">Add your numbers to the world chart?</p>
+        <p class="reflection-share-hint">Pick month, week, or today — then share. Anonymous. No account.</p>
+        <a href="index.html#social" id="btn-share-after-reflection" class="btn-share-after-reflection" title="Share your stats — pick period, then share" aria-label="Share my result" role="button">Share my result</a>
       </div>
     </section>
     </div>
@@ -345,9 +345,9 @@
         </div>
         <div class="stats-period-summary">
           <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
-            <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
+            <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">This month</button>
             <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
-            <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
+            <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Today</button>
           </div>
           <div class="stats-insight-block insight-block insight-block--featured">
             <span class="insight-label" id="stats-insight-label-social">Today</span>
@@ -475,10 +475,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=80"></script>
+  <script src="config.js?v=82"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=80"></script>
+  <script src="app.js?v=82"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=80">
+  <link rel="stylesheet" href="styles.css?v=82">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -235,9 +235,9 @@
 
     <section class="stats-section" id="stats-section" aria-label="Your stats for the selected period">
       <section class="period-tabs" role="tablist" aria-label="Time period">
-        <button type="button" class="tab" role="tab" aria-selected="false" data-period="month" title="See patterns across the full month — heat, shift, support">This month</button>
+        <button type="button" class="tab active" role="tab" aria-selected="true" data-period="month" title="See patterns across the full month — heat, shift, support">This month</button>
         <button type="button" class="tab" role="tab" aria-selected="false" data-period="week" title="Focus on this week's check-ins">This week</button>
-        <button type="button" class="tab active" role="tab" aria-selected="true" data-period="day" title="Just today — a fresh snapshot">Today</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-period="day" title="Just today — a fresh snapshot">Today</button>
       </section>
       <div class="stats">
         <div class="stat-card stat-card--observed">
@@ -260,9 +260,9 @@
       </div>
       <div class="stats-period-summary">
         <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
-          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
+          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">This month</button>
           <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
-          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Today</button>
         </div>
         <div class="stats-insight-block insight-block insight-block--featured">
           <span class="insight-label" id="stats-insight-label">Today</span>
@@ -514,9 +514,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=80"></script>
+  <script src="config.js?v=82"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=80"></script>
+  <script src="inside-auth.js?v=82"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -717,7 +717,7 @@
       })();
     })();
   </script>
-  <script src="app.js?v=80"></script>
+  <script src="app.js?v=82"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

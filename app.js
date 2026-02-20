@@ -21,7 +21,7 @@ const INTENTIONS_TABLE = (CONFIG.SUPABASE_INTENTIONS_TABLE || '').trim() || 'sha
 const TODAYS_REFLECTIONS_TABLE = (CONFIG.SUPABASE_TODAYS_REFLECTIONS_TABLE || '').trim() || 'todays_reflections';
 
 let entries = [];
-let currentPeriod = 'day';
+let currentPeriod = 'month';
 let currentTypeFilter = 'all';
 let lastEntry = null;
 let lastShareAt = 0;
@@ -4420,26 +4420,31 @@ if (topBarBrand) {
     }
   }, true);
 }
+function goToShareWithMonth() {
+  var pv = document.getElementById('personal-view');
+  var sv = document.getElementById('social-view');
+  if (!pv || !sv) return;
+  if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+  switchToPhase('social');
+  switchToSocialTab('share');
+  if (typeof setPeriod === 'function') setPeriod('month');
+  var shareIntro = document.querySelector('#social-tab-share .social-share-intro');
+  if (shareIntro) {
+    requestAnimationFrame(function () {
+      shareIntro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+}
 if (topBarShare) {
   topBarShare.addEventListener('click', function (e) {
     e.preventDefault();
-    var pv = document.getElementById('personal-view');
-    var sv = document.getElementById('social-view');
-    if (!pv || !sv) return;
-    if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
-    switchToPhase('social');
-    switchToSocialTab('share');
+    goToShareWithMonth();
   });
 }
 if (btnShareAfterReflection) {
   btnShareAfterReflection.addEventListener('click', function (e) {
     e.preventDefault();
-    var pv = document.getElementById('personal-view');
-    var sv = document.getElementById('social-view');
-    if (!pv || !sv) return;
-    if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
-    switchToPhase('social');
-    switchToSocialTab('share');
+    goToShareWithMonth();
   });
 }
 if (topBarWorld) {
