@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=73">
+  <link rel="stylesheet" href="styles.css?v=74">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -34,7 +34,6 @@
       </label>
     </div>
     <div class="top-bar-actions">
-      <a href="index.html#social" id="top-bar-share" class="top-bar-btn top-bar-share" title="Share your stats — see recent shares" aria-label="Share" role="button">Share</a>
       <a href="index.html#phase-tabs" id="top-bar-world" class="top-bar-btn top-bar-world" title="What's happening in the world" aria-label="World feed" role="button">🌍 World</a>
       <a href="index.html" class="top-bar-home" id="top-bar-add" aria-label="Add mistake">+ Add</a>
     </div>
@@ -310,6 +309,11 @@
           </div>
         </details>
       </div>
+      <div class="reflection-share-wrap" id="reflection-share-wrap" aria-labelledby="reflection-share-heading">
+        <p class="reflection-share-prompt" id="reflection-share-heading">Add today's result to the world chart?</p>
+        <p class="reflection-share-hint">Anonymous. No account. Just your numbers, next to others.</p>
+        <a href="index.html#social" id="btn-share-after-reflection" class="btn-share-after-reflection" title="Share your stats — see recent shares" aria-label="Share today's result" role="button">Share today</a>
+      </div>
     </section>
     </div>
 
@@ -468,10 +472,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=73"></script>
+  <script src="config.js?v=74"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=73"></script>
+  <script src="app.js?v=74"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

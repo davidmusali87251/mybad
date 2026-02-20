@@ -145,7 +145,11 @@ const btnAddFromCommunity = document.getElementById('btn-add-from-community');
 const topBarAdd = document.getElementById('top-bar-add');
 const topBarSlipups = document.getElementById('top-bar-slipups');
 const topBarShare = document.getElementById('top-bar-share');
+const btnShareAfterReflection = document.getElementById('btn-share-after-reflection');
+const reflectionShareWrap = document.getElementById('reflection-share-wrap');
 const topBarWorld = document.getElementById('top-bar-world');
+const btnShareAfterReflection = document.getElementById('btn-share-after-reflection');
+const reflectionShareWrap = document.getElementById('reflection-share-wrap');
 const personalView = document.getElementById('personal-view');
 const socialView = document.getElementById('social-view');
 const globalCountChart = document.getElementById('global-count-chart');
@@ -3829,6 +3833,7 @@ function initSharing() {
   }
   if (topBarShare) topBarShare.style.display = SHARING_ENABLED ? '' : 'none';
   if (topBarWorld) topBarWorld.style.display = SHARING_ENABLED ? '' : 'none';
+  if (reflectionShareWrap) reflectionShareWrap.style.display = SHARING_ENABLED ? '' : 'none';
   if (topBarSlipups) topBarSlipups.style.display = SHARING_ENABLED ? '' : 'none';
   if (SHARING_ENABLED) {
     if (socialBlock) socialBlock.classList.remove('hidden');
@@ -3848,6 +3853,7 @@ function initSharing() {
     if (topBarShare) topBarShare.style.display = 'none';
     if (topBarWorld) topBarWorld.style.display = 'none';
     if (topBarSlipups) topBarSlipups.style.display = 'none';
+    if (reflectionShareWrap) reflectionShareWrap.style.display = 'none';
   }
   if (btnShare) btnShare.addEventListener('click', shareAnonymously);
   if (btnRefreshFeed) btnRefreshFeed.addEventListener('click', function () { logStateEvent('action', 'refresh_feed'); fetchSharedStats(); });
@@ -4410,6 +4416,15 @@ if (topBarBrand) {
 }
 if (topBarShare) {
   topBarShare.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!socialView || !personalView) return;
+    if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+    switchToPhase('social');
+    switchToSocialTab('share');
+  });
+}
+if (btnShareAfterReflection) {
+  btnShareAfterReflection.addEventListener('click', function (e) {
     e.preventDefault();
     if (!socialView || !personalView) return;
     if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
