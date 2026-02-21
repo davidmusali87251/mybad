@@ -5005,13 +5005,17 @@ body.theme-tired .btn-bias-check {
   margin-right: 0.5rem;
 }
 .entry-item--shared .time {
-  order: 3;
+  order: 4;
   margin-left: auto;
   margin-right: 0.5rem;
 }
 .entry-item--shared .theme {
-  order: 4;
+  order: 5;
   min-width: auto;
+}
+.entry-item--shared .bias-reason {
+  order: 3;
+  margin-right: 0.5rem;
 }
 
 @media (min-width: 480px) {

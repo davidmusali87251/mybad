@@ -2176,7 +2176,7 @@ function addMistake() {
   renderStats();
   renderList();
   if (SHARING_ENABLED && MODE !== 'inside') {
-    pushEntryToShared({ note, type, theme: entry.theme });
+    pushEntryToShared({ note, type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
   } else if (!SHARING_ENABLED && MODE === 'personal' && addSyncStatus) {
     showAddSyncStatus('Saved locally — add config.js to sync to world feed', false);
@@ -2261,6 +2261,9 @@ async function shareSelectedToGroup() {
         theme: entry.theme || getCurrentTheme(),
         hour_utc: now.getUTCHours()
       };
+      if ((entry.type || 'avoidable') === 'observed' && entry.biasReason && BIAS_LABELS[entry.biasReason]) {
+        payload.bias_reason = entry.biasReason;
+      }
       if (useSplitTable) payload.group_id = groupId;
       else { payload.mode = 'inside'; if (groupId) payload.group_id = groupId; }
       const { error } = await client.from(ENTRIES_TABLE).insert(payload);
@@ -2303,6 +2306,9 @@ function pushEntryToShared(entry) {
       theme: entry.theme || getCurrentTheme(),
       hour_utc: now.getUTCHours()
     };
+    if ((entry.type || 'avoidable') === 'observed' && entry.biasReason && BIAS_LABELS[entry.biasReason]) {
+      payload.bias_reason = entry.biasReason;
+    }
     if (ENTRIES_TABLE !== 'shared_entries_personal') payload.mode = MODE;
     getSupabase()
       .from(ENTRIES_TABLE)
@@ -2616,7 +2622,7 @@ function quickAdd(type) {
   renderStats();
   renderList();
   if (SHARING_ENABLED && MODE !== 'inside') {
-    pushEntryToShared({ note: '', type, theme: entry.theme });
+    pushEntryToShared({ note: '', type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
   } else if (!SHARING_ENABLED && MODE === 'personal' && addSyncStatus) {
     showAddSyncStatus('Saved locally — add config.js to sync to world feed', false);
@@ -2644,7 +2650,7 @@ function repeatLastNote() {
   renderStats();
   renderList();
   if (SHARING_ENABLED && MODE !== 'inside') {
-    pushEntryToShared({ note: entry.note, type: entry.type, theme: entry.theme });
+    pushEntryToShared({ note: entry.note, type: entry.type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
   } else if (!SHARING_ENABLED && MODE === 'personal' && addSyncStatus) {
     showAddSyncStatus('Saved locally — add config.js to sync to world feed', false);
@@ -2915,7 +2921,9 @@ async function fetchSharedEntries() {
 
     const usePersonalSplit = ENTRIES_TABLE === 'shared_entries_personal';
     const useInsideSplit = ENTRIES_TABLE === 'shared_entries_inside';
-    let entriesQuery = client.from(ENTRIES_TABLE).select('id, note, type, theme, created_at').order('created_at', { ascending: false }).limit(sharedEntriesLimit);
+    const selectWithBias = 'id, note, type, theme, bias_reason, created_at';
+    const selectBase = 'id, note, type, theme, created_at';
+    let entriesQuery = client.from(ENTRIES_TABLE).select(selectWithBias).order('created_at', { ascending: false }).limit(sharedEntriesLimit);
     if (useInsideSplit) {
       const gid = getInsideGroupId();
       if (gid) entriesQuery = entriesQuery.eq('group_id', gid);
@@ -2926,7 +2934,23 @@ async function fetchSharedEntries() {
         if (gid) entriesQuery = entriesQuery.eq('group_id', gid);
       }
     }
-    const { data, error } = await entriesQuery;
+    let { data, error } = await entriesQuery;
+    if (error && /column.*bias_reason.*does not exist/i.test(error.message || '')) {
+      entriesQuery = client.from(ENTRIES_TABLE).select(selectBase).order('created_at', { ascending: false }).limit(sharedEntriesLimit);
+      if (useInsideSplit) {
+        const gid = getInsideGroupId();
+        if (gid) entriesQuery = entriesQuery.eq('group_id', gid);
+      } else if (!usePersonalSplit) {
+        entriesQuery = entriesQuery.eq('mode', MODE);
+        if (MODE === 'inside') {
+          const gid = getInsideGroupId();
+          if (gid) entriesQuery = entriesQuery.eq('group_id', gid);
+        }
+      }
+      const retry = await entriesQuery;
+      data = retry.data;
+      error = retry.error;
+    }
     if (error) throw error;
 
     let globalTotal = 0;
@@ -3228,6 +3252,13 @@ function renderSharedEntriesList() {
     theme.textContent = themeLabels[t] || themeLabels.calm;
     li.appendChild(badge);
     li.appendChild(note);
+    if (type === 'observed' && row.bias_reason && BIAS_DISPLAY[row.bias_reason]) {
+      const bias = document.createElement('span');
+      bias.className = 'bias-reason bias-reason--' + row.bias_reason;
+      bias.textContent = BIAS_DISPLAY[row.bias_reason];
+      bias.title = 'Why: ' + (BIAS_TITLES[row.bias_reason] || '');
+      li.appendChild(bias);
+    }
     li.appendChild(time);
     li.appendChild(theme);
     sharedEntriesList.appendChild(li);
