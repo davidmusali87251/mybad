@@ -4241,6 +4241,35 @@ body.theme-tired .btn-bias-check {
   margin-bottom: 0;
 }
 
+.sw-update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.85rem;
+  position: relative;
+  z-index: 1;
+}
+.sw-update-banner.hidden { display: none; }
+.sw-update-text { flex: 1; min-width: 0; }
+.sw-update-refresh {
+  padding: 0.3rem 0.6rem;
+  background: var(--bg);
+  color: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 36px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.sw-update-refresh:hover { filter: brightness(0.95); }
+
 .add-to-home-banner {
   display: flex;
   align-items: center;

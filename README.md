@@ -264,6 +264,18 @@ alter table shared_stats add column if not exists anonymous_id text;
 
 The app will then send a per-browser anonymous ID when sharing and group results by it in the UI.
 
+### Social tab or phase tabs not working (web, PWA, iOS, Android)
+
+If the Social tab does nothing when clicked, or tabs work only in an incognito/private window, the app is likely using **stale cached JavaScript** from an older deploy.
+
+**Quick fixes:**
+1. **Click the Refresh button** — If you see a "New version available" banner, click **Refresh** to load the latest version.
+2. **Hard refresh** — Desktop: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac). Mobile: Close the tab and reopen, or clear site data.
+3. **Unregister the service worker** — DevTools → Application → Service Workers → Unregister, then reload.
+4. **Click the SlipUp brand** (top-left) on index — This forces an update check and reload when a new version is available.
+
+After deploy, the app shows "New version available" when a Service Worker update is waiting. Use that banner to reload and fix Social/phase tabs.
+
 ### Sharing works in the app but Supabase tables don't update
 
 If the app shows "Shared anonymously" or no errors but rows don't appear in the Supabase dashboard:

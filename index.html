@@ -16,7 +16,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=94">
+  <link rel="stylesheet" href="styles.css?v=96">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -40,6 +40,10 @@
       <a href="#main" class="top-bar-home" id="top-bar-add" aria-label="Add mistake">+ Add</a>
     </div>
   </header>
+  <div id="sw-update-banner" class="sw-update-banner hidden" role="region" aria-label="Update available">
+    <span class="sw-update-text">New version available.</span>
+    <button type="button" id="sw-update-refresh" class="sw-update-refresh" aria-label="Refresh to update">Refresh</button>
+  </div>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
     <span class="add-to-home-text">Add to home screen for one-tap access. Android: tap Install. iPhone: Share → Add to Home Screen.</span>
     <div class="add-to-home-actions">
@@ -52,7 +56,7 @@
       <div class="app-hero-inner">
         <h1 class="app-hero-title">SlipUp</h1>
         <p class="app-hero-tagline">Not a judge. <span class="app-hero-accent">A mirror.</span></p>
-        <p class="app-hero-sub"><span class="app-hero-sub--see">See what happens again.</span> <span class="app-hero-sub--choose">Keep what helps.</span> <span class="app-hero-sub--feel">Feel better.</span></p>
+        <p class="app-hero-sub"><span class="app-hero-sub--see">See what again.</span> <span class="app-hero-sub--choose">Keep what helps.</span> <span class="app-hero-sub--feel">Feel better.</span></p>
         <a href="landing.html" class="app-hero-about">What is this?</a>
       </div>
       <div class="app-hero-glow" aria-hidden="true"></div>
@@ -492,10 +496,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=94"></script>
+  <script src="config.js?v=96"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js" integrity="sha384-CN6ec/YLZH98+X82LthsWvZQKFXdRvLmqd5hi7HLWXWp4Z3SXWb5ju3v3zYhypY+" crossorigin="anonymous"></script>
-  <script type="module" src="app.js?v=94"></script>
+  <script type="module" src="app.js?v=96"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';

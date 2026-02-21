@@ -4130,6 +4130,64 @@ function initAddToHomeBanner() {
   });
 }
 
+/** Show "New version available" banner when a Service Worker update is waiting. Helps recover from stale cache (e.g. Social tab not working). */
+function initSwUpdateCheck() {
+  if (!('serviceWorker' in navigator)) return;
+  const banner = document.getElementById('sw-update-banner');
+  const refreshBtn = document.getElementById('sw-update-refresh');
+  if (!banner || !refreshBtn) return;
+
+  function showBanner() {
+    banner.classList.remove('hidden');
+  }
+
+  function doRefresh() {
+    const u = new URL(window.location.href);
+    u.searchParams.set('_', String(Date.now()));
+    u.hash = '';
+    window.location.replace(u.toString());
+  }
+
+  refreshBtn.addEventListener('click', function () {
+    navigator.serviceWorker.getRegistration().then(function (r) {
+      if (r && r.waiting) {
+        r.waiting.postMessage({ type: 'skipWaiting' });
+        navigator.serviceWorker.addEventListener('controllerchange', function onNew() {
+          navigator.serviceWorker.removeEventListener('controllerchange', onNew);
+          doRefresh();
+        });
+        setTimeout(doRefresh, 1500);
+      } else {
+        doRefresh();
+      }
+    }).catch(function () { doRefresh(); });
+  });
+
+  function checkForUpdate(reg) {
+    if (reg && reg.waiting) {
+      showBanner();
+      return;
+    }
+    if (reg && reg.installing) {
+      reg.installing.addEventListener('statechange', function () {
+        if (reg.waiting) showBanner();
+      });
+    }
+  }
+
+  navigator.serviceWorker.getRegistration().then(function (r) {
+    checkForUpdate(r);
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    navigator.serviceWorker.getRegistration().then(function (r) {
+      if (!r) return;
+      r.update().then(function () { checkForUpdate(r); });
+    });
+  });
+}
+
 function initReminder() {
   if (!reminderCheckbox) return;
   try {
@@ -4486,6 +4544,7 @@ initReflection();
 initMicroGoal();
 initAddToHomeBanner();
 initReminder();
+initSwUpdateCheck();
 const btnSettings = document.getElementById('btn-settings');
 const settingsDropdown = document.getElementById('settings-dropdown');
 if (btnSettings && settingsDropdown) {
