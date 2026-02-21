@@ -6,17 +6,20 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <title>SlipUp Inside — Group check-ins</title>
   <meta name="description" content="Daily check-ins for units and groups. Log heat, shift, and support. Share moments with your group — no names, just patterns.">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=66">
-  <script src="config.js"></script>
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css?v=97">
+  <script src="config.js?v=97"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
   <style>
-    .landing { max-width: 580px; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
+    .landing { max-width: 580px; margin: 0 auto; padding-top: max(2.5rem, env(safe-area-inset-top)); padding-right: max(1.25rem, env(safe-area-inset-right)); padding-bottom: max(3rem, env(safe-area-inset-bottom)); padding-left: max(1.25rem, env(safe-area-inset-left)); }
     .landing-hero { text-align: center; margin-bottom: 2.5rem; }
     .landing-hero h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
     .landing-hero .lead { font-size: 1.05rem; color: var(--text-muted); line-height: 1.55; margin-top: 0.75rem; }
@@ -56,7 +59,7 @@
     </header>
 
     <h2 class="landing-h2">Why SlipUp Inside?</h2>
-    <p>SlipUp Inside is built for teams, units, and groups. Log moments when they happen. Share what you choose. See heat, shift, and support — all anonymous.</p>
+    <p>Built for teams and groups. Log moments when they happen. Share what you choose. See heat, shift, and support — all anonymous. <strong>Invite someone today</strong> and start your first check-in.</p>
 
     <h3 class="landing-h3">Three kinds of moments</h3>
     <ul class="landing-types">
@@ -68,9 +71,9 @@
     <h2 class="landing-h2">How it works</h2>
     <div class="landing-roadmap">
       <p><strong>Log moments</strong> – One line when something happens. Heat, shift, or support.</p>
-      <p><strong>Share to group</strong> – Select which moments to share. Others see anonymous counts and patterns — no names.</p>
-      <p><strong>Reflect</strong> – End-of-day reflection: heat to cool down, shifts you're glad for.</p>
-      <p><strong>Intentions</strong> – Set a daily focus. See what others in your group are focusing on.</p>
+      <p><strong>Share to group</strong> – Select which moments to share. Others see anonymous counts — no names.</p>
+      <p><strong>Check in together</strong> – See who's participating. Gentle accountability, not pressure.</p>
+      <p><strong>Reflect</strong> – End-of-day: heat to cool down, shifts you're glad for.</p>
     </div>
 
     <div class="landing-cta-wrap" style="margin-top: 1.5rem;">
@@ -87,7 +90,9 @@
   </div>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      var isLocalhost = /^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+      if (!isLocalhost) navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      else navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});});
     }
   </script>
 </body>

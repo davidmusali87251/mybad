@@ -36,7 +36,7 @@ SlipUp Inside reuses the same app shell but switches copy and stats to fit **gro
 - **Shift index** instead of exploration index (shift ÷ (heat + shift)).
 - Anonymous sharing uses the same `shared_what_happened` table with `mode = 'inside'`, plus a separate `shared_stats_inside` table for group stats (see SQL above).
 - The mood system is the same (calm, focus, stressed, curious, tired), and reflections + entries are stored separately per mode on the same browser.
-- **Group management** — Run `supabase-inside-groups.sql` first, then `supabase-inside-groups-admin.sql` for edit name, member list, remove/leave. Run `supabase-community-entries-inside.sql` for the shared entries table.
+- **Group management** — Run `supabase-inside-groups.sql` first, then `supabase-inside-groups-admin.sql` for edit name, member list, remove/leave. Run `supabase-community-entries-inside.sql` for the shared entries table. Run `supabase-group-mode-upgrade.sql` for participation tracking, invite preview, activity feed, streaks, and moderator role.
 
 ## How to run
 
@@ -234,6 +234,8 @@ SUPABASE_ENTRIES_TABLE_PERSONAL: 'shared_entries_personal'
 
 To show avoidable/fertile/observed breakdown and exploration % in "Others' results", run `supabase-shared-stats-breakdown.sql` in **SQL Editor**. This adds `avoidable_count`, `fertile_count`, `observed_count` to `shared_stats` and `shared_stats_inside`. New shares will include the breakdown; existing rows stay as before.
 
+To show **most mood** (e.g. "mostly tired") in Recent shares, run `supabase-shared-stats-top-theme.sql` in **SQL Editor**. This adds `top_theme` to both tables. New shares will include the dominant mood from the period; existing rows stay as before.
+
 ### Global counting chart table (`shared_chart_counts`)
 
 The **Avoidable ↓ · Fertile ↔ or ↑** chart in "Everyone's recent entries" aggregates counts from shared entries. To store these in a dedicated Supabase table (for dashboards, reporting, or future use), run the script:
@@ -261,6 +263,18 @@ alter table shared_stats add column if not exists anonymous_id text;
 ```
 
 The app will then send a per-browser anonymous ID when sharing and group results by it in the UI.
+
+### Social tab or phase tabs not working (web, PWA, iOS, Android)
+
+If the Social tab does nothing when clicked, or tabs work only in an incognito/private window, the app is likely using **stale cached JavaScript** from an older deploy.
+
+**Quick fixes:**
+1. **Click the Refresh button** — If you see a "New version available" banner, click **Refresh** to load the latest version.
+2. **Hard refresh** — Desktop: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac). Mobile: Close the tab and reopen, or clear site data.
+3. **Unregister the service worker** — DevTools → Application → Service Workers → Unregister, then reload.
+4. **Click the SlipUp brand** (top-left) on index — This forces an update check and reload when a new version is available.
+
+After deploy, the app shows "New version available" when a Service Worker update is waiting. Use that banner to reload and fix Social/phase tabs.
 
 ### Sharing works in the app but Supabase tables don't update
 

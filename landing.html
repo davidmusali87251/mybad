@@ -6,17 +6,20 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <link rel="manifest" href="manifest.json">
   <title>SlipUp — A smarter relationship with mistakes</title>
   <meta name="description" content="An operational awareness tool. Reduce useless mistakes. Keep the ones that grow you. Daily system for conscious error.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=66">
-  <script src="config.js"></script>
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css?v=97">
+  <script src="config.js?v=97"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
   <style>
-    .landing { max-width: 580px; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
+    .landing { max-width: 580px; margin: 0 auto; padding-top: max(2.5rem, env(safe-area-inset-top)); padding-right: max(1.25rem, env(safe-area-inset-right)); padding-bottom: max(3rem, env(safe-area-inset-bottom)); padding-left: max(1.25rem, env(safe-area-inset-left)); }
     .landing-hero { text-align: center; margin-bottom: 2.5rem; }
     .landing-hero h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
     .landing-hero .lead { font-size: 1.05rem; color: var(--text-muted); line-height: 1.55; margin-top: 0.75rem; }
@@ -34,6 +37,8 @@
     .landing p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.55; }
     .landing ul { margin: 0.4rem 0 0; padding-left: 1.2rem; color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
     .landing blockquote { margin: 0.5rem 0; padding-left: 1rem; border-left: 3px solid var(--border); color: var(--text-muted); font-size: 0.9rem; font-style: italic; }
+    .landing-trust { margin: 1.25rem 0; }
+    .landing-trust blockquote { margin: 0.6rem 0; }
     .landing-divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
     .landing-footer { text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
     .landing-footer a { color: var(--accent); text-decoration: none; }
@@ -62,21 +67,26 @@
     <h2 class="landing-h2">Why SlipUp?</h2>
     <p>SlipUp is a calm place to park mistakes so they stop spinning in your head and start turning into learning.</p>
 
+    <div class="landing-trust">
+      <blockquote>It’s like having a mirror instead of a critic. I see patterns I’d never noticed.</blockquote>
+      <blockquote>Two minutes at night. My head feels clearer.</blockquote>
+    </div>
+
     <h3 class="landing-h3">Three simple types</h3>
     <ul class="landing-types">
-      <li class="landing-type landing-type--avoidable"><strong>Avoidable</strong> – “I knew better.” Reduce repeats.</li>
-      <li class="landing-type landing-type--fertile"><strong>Fertile</strong> – “I tried something new.” Keep the experiments.</li>
-      <li class="landing-type landing-type--observed"><strong>Observed</strong> – “I saw this in others or the system.” Learn without the pain.</li>
+      <li class="landing-type landing-type--avoidable"><strong>Avoidable</strong> – “This keeps happening.” You caught a repeat or autopilot slip. Log it, see the pattern, then tweak. Goal: fewer repeats over time.</li>
+      <li class="landing-type landing-type--fertile"><strong>Fertile</strong> – “I stretched. I tried something new.” Experiment, stretch, fail forward. Log it so you remember what worked and what to try again. Goal: keep the experiments that grow you.</li>
+      <li class="landing-type landing-type--observed"><strong>Observed</strong> – “I noticed this in others or the system.” Not your mistake, but useful. Learn without the sting. Goal: borrow wisdom and apply it before it becomes yours.</li>
     </ul>
 
     <h2 class="landing-h2">Roadmap</h2>
     <div class="landing-roadmap">
-      <p><strong>Now – Personal:</strong> Log mistakes by type, see simple stats, and add a short daily reflection.</p>
-      <p><strong>Next – Social:</strong> Stronger anonymous sharing and summaries so you can compare your exploration with others.</p>
-      <p><strong>Later – Teams:</strong> Group views (SlipUp Inside) for facilitators and teams, without exposing individual entries.</p>
+      <p><strong>Now – Personal:</strong> Log by type (avoidable, fertile, observed), see your stats, and reflect in one line: what to reduce, what to keep. Your data stays on your device.</p>
+      <p><strong>Next – Social:</strong> Share your numbers anonymously. See how your patterns compare with others. No names, no pressure—just a mirror for the world.</p>
+      <p><strong>Later – Teams:</strong> SlipUp Inside for groups and facilitators. Heat, Shift, Support views so teams learn together without exposing individual entries.</p>
     </div>
     <div class="landing-cta-wrap">
-      <a href="index.html" class="landing-cta">Start free · 10 to try</a>
+      <a href="index.html" class="landing-cta">Start free · 10 to try · $5 to unlock</a>
       <button type="button" id="landing-install-btn" class="landing-cta landing-cta--secondary hidden" aria-label="Install SlipUp as app">Install app</button>
     </div>
 
@@ -115,7 +125,9 @@
         });
       }
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+        var isLocalhost = /^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+        if (!isLocalhost) navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+        else navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});});
       }
     })();
   </script>

@@ -1,3 +1,37 @@
+/** @typedef {'avoidable'|'fertile'|'observed'} EntryType */
+
+/** Inlined from modules/slipup-utils.js — avoids ES module load failure on some hosts/PWA. */
+function getStartOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+}
+function formatTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const today = getStartOfDay(now);
+  const entryDay = getStartOfDay(ts);
+  if (entryDay === today) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (entryDay >= today - 86400000 * 6) return d.toLocaleDateString([], { weekday: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function formatTimeFromISO(isoStr) {
+  if (!isoStr) return '';
+  return formatTime(new Date(isoStr).getTime());
+}
+function escapeHtml(s) {
+  if (s == null) return '';
+  if (typeof s !== 'string' && typeof s !== 'number') return '';
+  const div = document.createElement('div');
+  div.textContent = String(s);
+  return div.innerHTML;
+}
+
+/** Allowed entry types for sharing (validated before Supabase insert). */
+const ALLOWED_TYPES = ['avoidable', 'fertile', 'observed'];
+/** Allowed themes for sharing (validated before Supabase insert). */
+const ALLOWED_THEMES = ['calm', 'focus', 'stressed', 'curious', 'tired'];
+
 // Mode: "personal" (default) or "inside" (SlipUp Inside)
 const MODE = (typeof window !== 'undefined' && window.SLIPUP_MODE) || 'personal';
 
@@ -21,7 +55,7 @@ const INTENTIONS_TABLE = (CONFIG.SUPABASE_INTENTIONS_TABLE || '').trim() || 'sha
 const TODAYS_REFLECTIONS_TABLE = (CONFIG.SUPABASE_TODAYS_REFLECTIONS_TABLE || '').trim() || 'todays_reflections';
 
 let entries = [];
-let currentPeriod = 'day';
+let currentPeriod = 'month';
 let currentTypeFilter = 'all';
 let lastEntry = null;
 let lastShareAt = 0;
@@ -84,7 +118,7 @@ const STREAK_REFLECTION_LINES = {
 const TYPE_PLACEHOLDERS = {
   avoidable: 'e.g. Forgot to save, spoke harshly…',
   fertile: 'e.g. Tried a new approach, missed the mark…',
-  observed: 'What did I see? What lesson applies to me?'
+  observed: 'e.g. Saw a pattern — my takeaway'
 };
 const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
@@ -144,6 +178,10 @@ const sharedEntriesFilters = document.getElementById('shared-entries-filters');
 const btnAddFromCommunity = document.getElementById('btn-add-from-community');
 const topBarAdd = document.getElementById('top-bar-add');
 const topBarSlipups = document.getElementById('top-bar-slipups');
+const topBarShare = document.getElementById('top-bar-share');
+const btnShareAfterReflection = document.getElementById('btn-share-after-reflection');
+const reflectionShareWrap = document.getElementById('reflection-share-wrap');
+const topBarWorld = document.getElementById('top-bar-world');
 const personalView = document.getElementById('personal-view');
 const socialView = document.getElementById('social-view');
 const globalCountChart = document.getElementById('global-count-chart');
@@ -245,8 +283,8 @@ function isUnlocked() {
  */
 const PAID_ONLY_ELEMENT_IDS = ['btn-export-csv', 'btn-export-reflections', 'btn-export-intentions', 'btn-export-feed', 'btn-download-global-patterns'];
 
-var PAID_ONLY_TOOLTIP_LOCKED = 'Unlock to download — Purchase for $5, then click "I\'ve paid". Your support helps SlipUp grow. See Terms & Refund.';
-var PAID_ONLY_TOOLTIP_UNLOCKED = '';
+const PAID_ONLY_TOOLTIP_LOCKED = 'Unlock to download — Purchase for $5, then click "I\'ve paid". Your support helps SlipUp grow. See Terms & Refund.';
+const PAID_ONLY_TOOLTIP_UNLOCKED = '';
 
 function updatePaidOnlyElements() {
   const unlocked = isUnlocked();
@@ -255,6 +293,9 @@ function updatePaidOnlyElements() {
     if (el) {
       el.disabled = !unlocked;
       el.setAttribute('title', unlocked ? PAID_ONLY_TOOLTIP_UNLOCKED : PAID_ONLY_TOOLTIP_LOCKED);
+      if (id === 'btn-download-global-patterns') {
+        el.setAttribute('aria-label', unlocked ? 'Download global patterns CSV' : 'Download global patterns CSV (Full version required)');
+      }
     }
   });
 }
@@ -365,13 +406,17 @@ function getCurrentTheme() {
       if (t === 'focus' || t === 'stressed' || t === 'curious' || t === 'tired') return t;
       if (t === 'calm') return 'calm';
     }
-    const t = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || 'calm';
-    return (t === 'focus' || t === 'stressed' || t === 'curious' || t === 'tired') ? t : 'calm';
+    const t = (typeof localStorage !== 'undefined' && localStorage.getItem(THEME_KEY)) || 'focus';
+    return (t === 'focus' || t === 'stressed' || t === 'curious' || t === 'tired') ? t : 'focus';
   } catch {
-    return 'calm';
+    return 'focus';
   }
 }
 
+/**
+ * Load entries from localStorage into the global entries array.
+ * Handles parse errors by resetting to empty. Normalizes scope and theme on load.
+ */
 function loadEntries() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -393,11 +438,24 @@ function loadEntries() {
     entries = [];
   }
 }
+/**
+ * Persist entries to localStorage.
+ * On failure, shows a user-facing message via addSyncStatus (if available).
+ */
 function saveEntries() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
   } catch (e) {
     console.warn('SlipUp: could not save to localStorage', e);
+    if (addSyncStatus) {
+      addSyncStatus.textContent = 'Could not save — check storage.';
+      addSyncStatus.classList.add('add-sync-status--error');
+      addSyncStatus.classList.remove('hidden');
+      setTimeout(function () {
+        addSyncStatus.classList.add('hidden');
+        addSyncStatus.textContent = '';
+      }, 4000);
+    }
   }
 }
 
@@ -568,20 +626,20 @@ function renderReflectionHistory() {
   reflectionHistoryBody.innerHTML = '';
 
   // Only show rows that actually have some text, up to the last 7 days with content.
-  var shown = 0;
-  for (var i = 0; i < keys.length && shown < 7; i++) {
-    var ts = keys[i];
-    var day = all[String(ts)] || {};
+  let shown = 0;
+  for (let i = 0; i < keys.length && shown < 7; i++) {
+    const ts = keys[i];
+    const day = all[String(ts)] || {};
     if (!day.avoidable && !day.fertile) continue;
     shown++;
-    var d = new Date(ts);
-    var dayLabel = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
-    var tr = document.createElement('tr');
-    var tdDay = document.createElement('td');
+    const d = new Date(ts);
+    const dayLabel = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    const tr = document.createElement('tr');
+    const tdDay = document.createElement('td');
     tdDay.textContent = dayLabel;
-    var tdAvoid = document.createElement('td');
+    const tdAvoid = document.createElement('td');
     tdAvoid.textContent = day.avoidable || '—';
-    var tdFertile = document.createElement('td');
+    const tdFertile = document.createElement('td');
     tdFertile.textContent = day.fertile || '—';
     tr.appendChild(tdDay);
     tr.appendChild(tdAvoid);
@@ -638,12 +696,6 @@ function exportReflectionsCsv() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-}
-
-function getStartOfDay(d) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x.getTime();
 }
 
 function getStartOfWeek(d) {
@@ -712,14 +764,14 @@ function renderStats() {
     }
   });
 
-  var dominantType = 'observed';
+  const dominantType = 'observed';
   if (count > 0) {
     if (fertileCount >= avoidableCount && fertileCount >= observedCount) dominantType = 'fertile';
     else if (avoidableCount >= fertileCount && avoidableCount >= observedCount) dominantType = 'avoidable';
     else dominantType = 'observed';
   }
-  var typeClass = 'stat-card--' + dominantType;
-  var cardsToType = document.querySelectorAll('.stats .stat-card:not(.stat-exploration)');
+  const typeClass = 'stat-card--' + dominantType;
+  const cardsToType = document.querySelectorAll('.stats .stat-card:not(.stat-exploration)');
   cardsToType.forEach(function (card) {
     card.classList.remove('stat-card--avoidable', 'stat-card--fertile', 'stat-card--observed');
     card.classList.add(typeClass);
@@ -787,16 +839,16 @@ function renderStats() {
     statAvgFoot.textContent = '';
   }
 
-  var countTitle = MODE === 'inside'
+  const countTitle = MODE === 'inside'
     ? 'Moments you logged in this period. Color reflects your mix of heat, shift, support — notice without blame.'
     : 'Slip-ups you logged in this period. Color reflects your mix of avoidable, fertile, observed — notice patterns without blame.';
-  var avgTitle = MODE === 'inside'
+  const avgTitle = MODE === 'inside'
     ? 'Average per day — helps you spot busy vs calm stretches.'
     : 'Average per day — helps you spot busy vs calm stretches.';
-  var explTitle = MODE === 'inside'
+  const explTitle = MODE === 'inside'
     ? 'Share of shift vs heat — shift ÷ (heat + shift). Higher = more stretches, less tension.'
     : 'Share of fertile (experiments) vs avoidable (repeats). Higher = more risks that grow you.';
-  var cards = document.querySelectorAll('.stats .stat-card');
+  const cards = document.querySelectorAll('.stats .stat-card');
   if (cards[0]) cards[0].setAttribute('title', countTitle);
   if (cards[1]) cards[1].setAttribute('title', avgTitle);
   if (cards[2]) cards[2].setAttribute('title', explTitle);
@@ -978,17 +1030,17 @@ function renderStats() {
 
 function getExplorationSoWhat(pct) {
   if (MODE === 'inside') {
-    if (pct >= 70) return 'Lots of shifts.';
+    if (pct >= 70) return 'Lots of shifts — keep stretching.';
     if (pct >= 50) return 'Good balance of heat and shift.';
-    if (pct >= 30) return 'Room for more shifts.';
-    if (pct >= 10) return 'Aim for more shifts.';
+    if (pct >= 30) return 'Room for more shifts — one tomorrow?';
+    if (pct >= 10) return 'Aim for one small shift today.';
     if (pct > 0) return 'One small shift can help.';
     return 'Try one stretch today.';
   }
-  if (pct >= 70) return 'Lots of experimenting.';
+  if (pct >= 70) return 'Lots of experimenting — fertile ground.';
   if (pct >= 50) return 'Good mix of risk and care.';
-  if (pct >= 30) return 'Room to add more experiments.';
-  if (pct >= 10) return 'Aim for more fertile mistakes.';
+  if (pct >= 30) return 'Room for more experiments — try something new.';
+  if (pct >= 10) return 'Aim for one fertile stretch today.';
   if (pct > 0) return 'One small experiment can help.';
   return 'Try one stretch today.';
 }
@@ -1018,20 +1070,6 @@ function renderStatsInsightChart(avoidableCount, fertileCount, observedCount) {
       seg('fertile', f, fertileCount) +
       seg('observed', o, observedCount) +
     '</div>';
-}
-
-function formatTime(ts) {
-  const d = new Date(ts);
-  const now = new Date();
-  const today = getStartOfDay(now);
-  const entryDay = getStartOfDay(ts);
-  if (entryDay === today) {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  if (entryDay >= today - 86400000 * 6) {
-    return d.toLocaleDateString([], { weekday: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function renderList() {
@@ -1610,6 +1648,8 @@ function fetchSharedIntentions(opts) {
   if (MODE === 'inside' && !getInsideGroupId()) return;
   const includeOlder = opts && opts.includeOlder;
   try {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
     let q = getSupabase()
       .from(INTENTIONS_TABLE)
@@ -1619,6 +1659,9 @@ function fetchSharedIntentions(opts) {
     if (MODE === 'inside') q = q.eq('group_id', getInsideGroupId());
     if (MODE === 'inside' && !includeOlder) {
       q = q.gte('created_at', twoDaysAgo);
+    }
+    if (MODE === 'personal' && !includeOlder) {
+      q = q.gte('created_at', startOfToday);
     }
     q = q.limit(includeOlder ? 50 : 20);
     q.then(({ data, error }) => {
@@ -1923,10 +1966,10 @@ function renderInsights() {
         timeOfDayChart.innerHTML = '<div class="insight-time-bar">' + seg(morning, mR, 'morning') + seg(afternoon, aR, 'afternoon') + seg(evening, eR, 'evening') + '</div><div class="insight-time-legend"><span>AM</span><span>PM</span><span>Eve</span></div>';
       }
       if (timeOfDay) {
-        if (max === 0) timeOfDay.textContent = 'No clear peak yet.';
-        else if (morning === max) timeOfDay.textContent = 'Morning peak — good for reflection.';
-        else if (afternoon === max) timeOfDay.textContent = 'Afternoon peak.';
-        else timeOfDay.textContent = 'Evening peak — end-of-day review.';
+        if (max === 0) timeOfDay.textContent = 'No clear peak yet — log at different times to see.';
+        else if (morning === max) timeOfDay.textContent = 'Morning peak — good for reflection. Try a quick check-in then.';
+        else if (afternoon === max) timeOfDay.textContent = 'Afternoon peak — notice what’s triggering entries then.';
+        else timeOfDay.textContent = 'Evening peak — end-of-day review. A calm close.';
       }
     }
   }
@@ -2032,12 +2075,6 @@ function renderInsights() {
     }
     biasCheckInsightBlock.classList.remove('hidden');
   }
-}
-
-function escapeHtml(s) {
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
 }
 
 function shareAsImage() {
@@ -2172,12 +2209,21 @@ function getCurrentStreak() {
   return streak;
 }
 
+/**
+ * Get the currently selected entry type from the add form.
+ * @returns {'avoidable'|'fertile'|'observed'}
+ */
 function getSelectedType() {
   if (!typeInputs || typeInputs.length === 0) return 'avoidable';
   const checked = Array.from(typeInputs).find(i => i.checked);
   return (checked && checked.value) || 'avoidable';
 }
 
+/**
+ * Add a new slip-up entry from the add form.
+ * Reads note from input, selected type, and current theme. Saves locally, syncs to shared
+ * feed when enabled, and updates all UI (stats, list, share section).
+ */
 function addMistake() {
   if (isAtLimit()) return;
   const note = (addNoteInput.value || '').trim();
@@ -2278,17 +2324,32 @@ async function shareSelectedToGroup() {
   const client = getSupabase();
   const now = new Date();
   const useSplitTable = ENTRIES_TABLE === 'shared_entries_inside';
+  let userId = null;
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (user) userId = user.id;
+  } catch (_) {}
   let ok = 0;
   for (const entry of selected) {
     try {
+      const noteRaw = typeof entry.note === 'string' ? entry.note.trim() : '';
+      const note = noteRaw.length > 0 ? noteRaw.slice(0, 19) : null;
+      const type = ALLOWED_TYPES.includes(entry.type) ? entry.type : 'avoidable';
+      const theme = ALLOWED_THEMES.includes(entry.theme) ? entry.theme : getCurrentTheme();
       const payload = {
-        note: entry.note || null,
-        type: entry.type || 'avoidable',
-        theme: entry.theme || getCurrentTheme(),
+        note,
+        type,
+        theme,
         hour_utc: now.getUTCHours()
       };
-      if (useSplitTable) payload.group_id = groupId;
-      else { payload.mode = 'inside'; if (groupId) payload.group_id = groupId; }
+      if (useSplitTable) {
+        payload.group_id = groupId;
+        if (userId) payload.user_id = userId;
+      } else {
+        payload.mode = 'inside';
+        if (groupId) payload.group_id = groupId;
+        if (userId) payload.user_id = userId;
+      }
       const { error } = await client.from(ENTRIES_TABLE).insert(payload);
       if (error) throw error;
       entry.sharedAt = Date.now();
@@ -2303,6 +2364,7 @@ async function shareSelectedToGroup() {
   if (shareToGroupStatus) shareToGroupStatus.textContent = ok === selected.length ? 'Shared ' + ok + ' to group.' : 'Shared ' + ok + ' of ' + selected.length + '.';
   if (btnShareToGroup) btnShareToGroup.disabled = false;
   if (typeof fetchSharedCountsForInsideButton === 'function') fetchSharedCountsForInsideButton();
+  if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement();
   if (shareToGroupStatus) setTimeout(() => { shareToGroupStatus.textContent = ''; }, 3000);
 }
 
@@ -2322,11 +2384,15 @@ function pushEntryToShared(entry) {
   if (!SHARING_ENABLED) return;
   showAddSyncStatus('Syncing to world feed…', false);
   try {
+    const noteRaw = typeof entry.note === 'string' ? entry.note.trim() : '';
+    const note = noteRaw.length > 0 ? noteRaw.slice(0, 19) : null;
+    const type = ALLOWED_TYPES.includes(entry.type) ? entry.type : 'avoidable';
+    const theme = ALLOWED_THEMES.includes(entry.theme) ? entry.theme : getCurrentTheme();
     const now = new Date();
     const payload = {
-      note: entry.note || null,
-      type: entry.type || 'avoidable',
-      theme: entry.theme || getCurrentTheme(),
+      note,
+      type,
+      theme,
       hour_utc: now.getUTCHours()
     };
     if (ENTRIES_TABLE !== 'shared_entries_personal') payload.mode = MODE;
@@ -2530,6 +2596,11 @@ function saveStreakReflectionToSupabase(choice) {
   }
 }
 
+/**
+ * Share current period stats anonymously to the world chart.
+ * Requires SUPABASE_URL and SUPABASE_ANON_KEY. Throttles shares to ~15s apart.
+ * Updates share status UI and fetches shared stats on success.
+ */
 async function shareAnonymously() {
   if (!SHARING_ENABLED) {
     if (shareStatus) {
@@ -2558,6 +2629,20 @@ async function shareAnonymously() {
     const avoidableCount = filtered.filter(e => (e.type || 'avoidable') === 'avoidable').length;
     const fertileCount = filtered.filter(e => (e.type || 'avoidable') === 'fertile').length;
     const observedCount = filtered.filter(e => e.type === 'observed').length;
+    const byTheme = { calm: 0, focus: 0, stressed: 0, curious: 0, tired: 0 };
+    filtered.forEach(e => {
+      const raw = e.theme || 'calm';
+      const t = (raw === 'focus' || raw === 'stressed' || raw === 'curious' || raw === 'tired') ? raw : 'calm';
+      if (byTheme[t] != null) byTheme[t] += 1;
+    });
+    let topTheme = null;
+    let topThemeCount = 0;
+    Object.keys(byTheme).forEach(key => {
+      if (byTheme[key] > topThemeCount) {
+        topTheme = key;
+        topThemeCount = byTheme[key];
+      }
+    });
     const client = getSupabase();
     const payload = {
       period: stats.period,
@@ -2570,11 +2655,15 @@ async function shareAnonymously() {
       payload.fertile_count = fertileCount;
       payload.observed_count = observedCount;
     }
+    if (topTheme && topThemeCount > 0) {
+      payload.top_theme = topTheme;
+    }
     let insertResult = await client.from(STATS_TABLE).insert(payload);
     if (insertResult.error && /column.*does not exist/i.test(insertResult.error.message || '')) {
       delete payload.avoidable_count;
       delete payload.fertile_count;
       delete payload.observed_count;
+      delete payload.top_theme;
       insertResult = await client.from(STATS_TABLE).insert(payload);
     }
     const { error } = insertResult;
@@ -2625,6 +2714,10 @@ async function shareAnonymously() {
   }
 }
 
+/**
+ * Add an entry with empty note ("I can't tell" flow).
+ * @param {'avoidable'|'fertile'|'observed'} type - Entry type
+ */
 function quickAdd(type) {
   if (isAtLimit()) return;
   logStateEvent('action', 'add_entry');
@@ -2783,7 +2876,7 @@ async function fetchSharedStats() {
   }
   const client = getSupabase();
   const MAX_OTHER_RESULTS = 5;
-  const selectExtended = 'id, period, count, avg_per_day, created_at, anonymous_id, avoidable_count, fertile_count, observed_count';
+  const selectExtended = 'id, period, count, avg_per_day, created_at, anonymous_id, avoidable_count, fertile_count, observed_count, top_theme';
   const selectBase = 'id, period, count, avg_per_day, created_at, anonymous_id';
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   let statsQuery = client.from(STATS_TABLE).select(selectExtended).order('created_at', { ascending: false }).limit(MAX_OTHER_RESULTS);
@@ -2875,6 +2968,11 @@ async function fetchSharedStats() {
         if (ov > 0) parts.push('<span class="shared-share-type shared-share-type--observed">' + ov + ' ' + typeLabels.observed + '</span>');
         chartHtml += '<div class="shared-share-breakdown">' + parts.join('<span class="shared-share-type-sep"> · </span>') + '</div>';
       }
+      if (row.top_theme) {
+        const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'stressed', curious: 'curious', tired: 'tired' };
+        const themeLabel = themeLabels[row.top_theme] || row.top_theme;
+        chartHtml += '<div class="shared-share-mood"><span class="shared-share-mood-label">mostly ' + escapeHtml(themeLabel) + '</span></div>';
+      }
       chartHtml += '</div>';
     });
     chartHtml += '</div></div>';
@@ -2917,12 +3015,6 @@ function showCommunitySetupMessage() {
   if (communityMetricsChart) communityMetricsChart.innerHTML = '';
   sharedEmpty.textContent = "Set up Supabase (config.js locally or repo Secrets for deploy) to share and see others' results. See README.";
   sharedEmpty.classList.remove('hidden');
-}
-
-function formatTimeFromISO(isoStr) {
-  if (!isoStr) return '';
-  const ts = new Date(isoStr).getTime();
-  return formatTime(ts);
 }
 
 async function fetchSharedEntries() {
@@ -3054,11 +3146,12 @@ async function fetchSharedEntries() {
       topBarSlipups.classList.remove('top-bar-slipups--push-failed');
       topBarSlipups.textContent = '\uD83C\uDF0D ' + total;
       topBarSlipups.setAttribute('aria-label', 'World: ' + total);
-      if (MODE === 'inside') {
-        topBarSlipups.title = tooltip;
-      } else {
-        topBarSlipups.title = "See everyone's entries — opens world feed";
-      }
+      topBarSlipups.title = total > 0 ? tooltip : "See everyone's entries — opens world feed";
+    }
+    if (topBarWorld) {
+      topBarWorld.textContent = '\uD83C\uDF0D ' + total;
+      topBarWorld.setAttribute('aria-label', 'World feed: ' + total + ' slip-ups');
+      topBarWorld.title = total > 0 ? tooltip : "What's happening in the world";
     }
     if (typeof updateSharedEntriesLimitButtons === 'function') updateSharedEntriesLimitButtons();
     if (communityEntriesLastUpdated) {
@@ -3078,6 +3171,11 @@ async function fetchSharedEntries() {
     const noun0 = MODE === 'inside' ? 'moments' : 'slip-ups';
     if (btnSharedTotal) btnSharedTotal.textContent = '🌍 0 ' + noun0;
     if (topBarSlipups) topBarSlipups.textContent = '\uD83C\uDF0D 0';
+    if (topBarWorld) {
+      topBarWorld.textContent = '\uD83C\uDF0D 0';
+      topBarWorld.setAttribute('aria-label', 'World feed');
+      topBarWorld.title = "What's happening in the world";
+    }
     if (sharedEntriesError) {
       sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
       sharedEntriesError.classList.remove('hidden');
@@ -3111,15 +3209,15 @@ function renderGlobalPatternsChart() {
   });
   const sorted = Object.entries(wordCounts).filter(function (e) { return e[1] >= 2; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 6);
   if (sorted.length === 0) {
-    chart.innerHTML = '<p class="insight-chart-empty">Words that show up often (2+ uses) will appear here.</p>';
+    chart.innerHTML = '<p class="insight-chart-empty">Share yours. Words that repeat 2+ times will appear here.</p>';
     block.classList.remove('hidden');
   } else {
     const maxC = sorted[0][1];
     const rows = sorted.map(function (item) {
-      var phrase = item[0];
-      var count = item[1];
-      var w = (count / maxC) * 100;
-      var short = phrase.length > 22 ? phrase.slice(0, 19) + '\u2026' : phrase;
+      const phrase = item[0];
+      const count = item[1];
+      const w = (count / maxC) * 100;
+      const short = phrase.length > 22 ? phrase.slice(0, 19) + '\u2026' : phrase;
       return '<div class="insight-pattern-row"><span class="insight-pattern-label" title="' + escapeHtml(phrase) + '">' + escapeHtml(short) + '</span><div class="insight-pattern-bar-wrap"><div class="insight-pattern-bar insight-pattern-bar--global" style="width:' + w + '%"></div></div><span class="insight-pattern-count">' + count + '\u00D7</span></div>';
     }).join('');
     chart.innerHTML = '<div class="insight-patterns-chart">' + rows + '</div>';
@@ -3371,42 +3469,117 @@ async function fetchSharedCountsForInsideButton() {
   }
 }
 
+const MILESTONE_THRESHOLDS = [25, 50, 100, 250, 500];
+const MILESTONE_STORAGE_KEY = 'slipup-group-milestone-celebrated';
+
+function refreshGroupEngagement() {
+  if (MODE !== 'inside') return;
+  const groupId = getInsideGroupId();
+  const Auth = window.SlipUpInsideAuth;
+  if (!groupId || !Auth || !Auth.getGroupParticipationToday || !Auth.getGroupActivitySummary) return;
+  const partText = document.getElementById('group-participation-text');
+  const partSection = document.getElementById('group-participation-section');
+  const activitySummary = document.getElementById('group-activity-summary');
+  const activityFeedList = document.getElementById('group-activity-feed-list');
+  const activityFeedEmpty = document.getElementById('group-activity-feed-empty');
+  Auth.getGroupParticipationToday(groupId).then(function (r) {
+    if (partText && partSection) {
+      const p = r.participantCount ?? 0;
+      const m = r.memberCount ?? 0;
+      if (m > 0) {
+        partSection.classList.remove('hidden');
+        partText.textContent = p > 0 ? (p + ' of ' + m + ' checked in today') : (m > 1 ? '0 of ' + m + ' checked in today — be the first.' : '0 of 1 — add a moment to share with your group.');
+      } else {
+        partSection.classList.add('hidden');
+      }
+    }
+  });
+  Auth.getGroupActivitySummary(groupId).then(function (r) {
+    if (activitySummary) {
+      const sc = r.sharedCount ?? 0;
+      const mc = r.memberCount ?? 0;
+      const st = r.sharesToday ?? 0;
+      if (mc > 0) activitySummary.textContent = sc + ' shared moments · ' + mc + ' member' + (mc === 1 ? '' : 's') + (st > 0 ? ' · ' + st + ' today' : '');
+      else activitySummary.textContent = '';
+    }
+    if (activityFeedList && activityFeedEmpty) {
+      const items = [];
+      const pt = r.participantToday ?? 0;
+      const mc = r.memberCount ?? 0;
+      const sc = r.sharedCount ?? 0;
+      const streak = r.streakDays ?? 0;
+      if (streak > 0) items.push({ text: 'Group streak: ' + streak + ' day' + (streak === 1 ? '' : 's'), type: 'streak' });
+      if (pt > 0 && mc > 0) items.push({ text: pt + ' of ' + mc + ' checked in today', type: 'participation' });
+      if (sc >= 25) items.push({ text: 'Group has ' + sc + ' shared moments', type: 'milestone' });
+      if (mc > 0) items.push({ text: mc + ' member' + (mc === 1 ? '' : 's') + ' in the group', type: 'members' });
+      if (items.length > 0) {
+        activityFeedEmpty.classList.add('hidden');
+        activityFeedList.innerHTML = items.slice(0, 6).map(function (x) {
+          const safeType = escapeHtml(x.type || '');
+          const safeText = escapeHtml(x.text || '');
+          return '<li class="group-activity-feed-item group-activity-feed-item--' + safeType + '">' + safeText + '</li>';
+        }).join('');
+      } else {
+        activityFeedList.innerHTML = '';
+        activityFeedEmpty.classList.remove('hidden');
+      }
+    }
+    const sharedCount = r.sharedCount ?? 0;
+    try {
+      const celebrated = JSON.parse(localStorage.getItem(MILESTONE_STORAGE_KEY + '-' + groupId) || '[]');
+      const toCelebrate = MILESTONE_THRESHOLDS.find(function (t) { return sharedCount >= t && celebrated.indexOf(t) < 0; });
+      if (toCelebrate != null) {
+        celebrated.push(toCelebrate);
+        localStorage.setItem(MILESTONE_STORAGE_KEY + '-' + groupId, JSON.stringify(celebrated));
+        const milestoneSection = document.getElementById('group-milestone-section');
+        const milestoneCard = document.getElementById('group-milestone-card');
+        if (milestoneSection && milestoneCard) {
+          milestoneCard.textContent = 'Group reached ' + toCelebrate + ' shared moments.';
+          milestoneSection.classList.remove('hidden');
+        }
+      }
+    } catch (_) {}
+  });
+}
+
 function initInsideAuth() {
-  var btnSignOut = document.getElementById('btn-sign-out');
-  var btnInvite = document.getElementById('btn-invite-members');
-  var btnInviteHero = document.getElementById('btn-invite-hero');
-  var inviteBlock = document.getElementById('group-invite-block');
-  var inviteUrlInput = document.getElementById('group-invite-url');
-  var btnCopyInvite = document.getElementById('btn-copy-invite');
-  var heroGroupBadge = document.getElementById('hero-group-badge');
-  var groupSwitcher = document.getElementById('group-switcher');
-  var groupInviteMemberCount = document.getElementById('group-invite-member-count');
-  var Auth = window.SlipUpInsideAuth;
+  const btnSignOut = document.getElementById('btn-sign-out');
+  const btnInvite = document.getElementById('btn-invite-members');
+  const btnInviteHero = document.getElementById('btn-invite-hero');
+  const inviteBlock = document.getElementById('group-invite-block');
+  const inviteUrlInput = document.getElementById('group-invite-url');
+  const btnCopyInvite = document.getElementById('btn-copy-invite');
+  const heroGroupBadge = document.getElementById('hero-group-badge');
+  const groupSwitcher = document.getElementById('group-switcher');
+  const groupInviteMemberCount = document.getElementById('group-invite-member-count');
+  const Auth = window.SlipUpInsideAuth;
   if (!Auth) return;
   function updateHeroGroupBadge() {
     if (!heroGroupBadge) return;
-    var name = Auth.getActiveGroupName ? Auth.getActiveGroupName() : '';
+    const name = Auth.getActiveGroupName ? Auth.getActiveGroupName() : '';
     heroGroupBadge.textContent = name ? 'Group: ' + name : '';
   }
   updateHeroGroupBadge();
   function updateGroupSwitcher() {
     if (!groupSwitcher) return;
     Auth.getUserGroups().then(function (r) {
-      var groups = r.groups || [];
+      const groups = r.groups || [];
       if (groups.length <= 1) {
         groupSwitcher.classList.add('hidden');
         return;
       }
       groupSwitcher.classList.remove('hidden');
-      var currentId = getInsideGroupId();
+      const currentId = getInsideGroupId();
       groupSwitcher.innerHTML = groups.map(function (g) {
-        return '<option value="' + (g.id || '') + '"' + (g.id === currentId ? ' selected' : '') + '>' + (g.name || 'Group') + '</option>';
+        const safeId = escapeHtml(g.id || '');
+        const safeName = escapeHtml(g.name || 'Group');
+        return '<option value="' + safeId + '"' + (g.id === currentId ? ' selected' : '') + '>' + safeName + '</option>';
       }).join('');
     });
   }
   if (groupSwitcher) {
     groupSwitcher.addEventListener('change', function () {
-      var opt = groupSwitcher.options[groupSwitcher.selectedIndex];
+      const opt = groupSwitcher.options[groupSwitcher.selectedIndex];
       if (!opt || !opt.value) return;
       Auth.setActiveGroup(opt.value, opt.text);
       window.SLIPUP_INSIDE_GROUP_ID = opt.value;
@@ -3414,6 +3587,7 @@ function initInsideAuth() {
       if (typeof renderStats === 'function') renderStats();
       if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
       if (typeof renderShareToGroupList === 'function') renderShareToGroupList();
+      if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement();
     });
     updateGroupSwitcher();
   }
@@ -3427,7 +3601,7 @@ function initInsideAuth() {
     });
   }
   function showInviteBlock() {
-    var gid = getInsideGroupId();
+    const gid = getInsideGroupId();
     if (!gid || !inviteBlock || !inviteUrlInput) return;
     if (groupInviteMemberCount) groupInviteMemberCount.textContent = 'Creating invite…';
     inviteBlock.classList.remove('hidden');
@@ -3460,29 +3634,29 @@ function initInsideAuth() {
 
 function initGroupManagement() {
   if (MODE !== 'inside') return;
-  var Auth = window.SlipUpInsideAuth;
+  const Auth = window.SlipUpInsideAuth;
   if (!Auth || !Auth.getGroupMembers || !Auth.updateGroupName || !Auth.removeMember || !Auth.leaveGroup) return;
-  var block = document.getElementById('group-management-block');
-  var nameInput = document.getElementById('group-name-edit');
-  var btnEditName = document.getElementById('btn-edit-group-name');
-  var btnSaveName = document.getElementById('btn-save-group-name');
-  var statusEl = document.getElementById('group-management-status');
-  var membersList = document.getElementById('group-members-list');
-  var membersLoading = document.getElementById('group-members-loading');
-  var membersErrorWrap = document.getElementById('group-members-error-wrap');
-  var membersError = document.getElementById('group-members-error');
-  var btnMembersTryAgain = document.getElementById('btn-members-try-again');
-  var invitesSection = document.getElementById('group-invites-section');
-  var invitesList = document.getElementById('group-invites-list');
-  var invitesLoading = document.getElementById('group-invites-loading');
-  var invitesEmpty = document.getElementById('group-invites-empty');
-  var btnLeave = document.getElementById('btn-leave-group');
-  var btnManage = document.getElementById('btn-manage-group');
+  const block = document.getElementById('group-management-block');
+  const nameInput = document.getElementById('group-name-edit');
+  const btnEditName = document.getElementById('btn-edit-group-name');
+  const btnSaveName = document.getElementById('btn-save-group-name');
+  const statusEl = document.getElementById('group-management-status');
+  const membersList = document.getElementById('group-members-list');
+  const membersLoading = document.getElementById('group-members-loading');
+  const membersErrorWrap = document.getElementById('group-members-error-wrap');
+  const membersError = document.getElementById('group-members-error');
+  const btnMembersTryAgain = document.getElementById('btn-members-try-again');
+  const invitesSection = document.getElementById('group-invites-section');
+  const invitesList = document.getElementById('group-invites-list');
+  const invitesLoading = document.getElementById('group-invites-loading');
+  const invitesEmpty = document.getElementById('group-invites-empty');
+  const btnLeave = document.getElementById('btn-leave-group');
+  const btnManage = document.getElementById('btn-manage-group');
   if (!block || !nameInput || !membersList) return;
 
-  var currentUserId = null;
-  var isCreator = false;
-  var statusTimeout = null;
+  let currentUserId = null;
+  let isCreator = false;
+  let statusTimeout = null;
 
   function setStatus(msg, isError) {
     if (!statusEl) return;
@@ -3497,12 +3671,12 @@ function initGroupManagement() {
   }
 
   function loadGroupName() {
-    var name = Auth.getActiveGroupName ? Auth.getActiveGroupName() : '';
+    const name = Auth.getActiveGroupName ? Auth.getActiveGroupName() : '';
     setGroupName(name);
   }
 
   function loadMembers() {
-    var gid = getInsideGroupId();
+    const gid = getInsideGroupId();
     if (!gid) return;
     if (membersLoading) membersLoading.classList.remove('hidden');
     if (membersErrorWrap) membersErrorWrap.classList.add('hidden');
@@ -3512,8 +3686,8 @@ function initGroupManagement() {
       Auth.getClient().auth.getUser(),
       Auth.getGroupMembers(gid)
     ]).then(function (results) {
-      var userResult = results[0];
-      var membersResult = results[1];
+      const userResult = results[0];
+      const membersResult = results[1];
       if (membersLoading) membersLoading.classList.add('hidden');
       currentUserId = userResult?.data?.user?.id || null;
       if (membersResult.error) {
@@ -3521,7 +3695,7 @@ function initGroupManagement() {
         if (membersErrorWrap) membersErrorWrap.classList.remove('hidden');
         return;
       }
-      var members = membersResult.members || [];
+      const members = membersResult.members || [];
       isCreator = members.some(function (m) { return m.user_id === currentUserId && m.role === 'creator'; });
       if (btnEditName) btnEditName.classList.toggle('hidden', !isCreator);
       if (nameInput) nameInput.disabled = !isCreator;
@@ -3529,18 +3703,20 @@ function initGroupManagement() {
       if (invitesSection) invitesSection.classList.toggle('hidden', !isCreator);
       if (isCreator) loadInvites();
       membersList.innerHTML = members.map(function (m) {
-        var roleLabel = m.role === 'creator' ? 'Creator' : 'Member';
-        var joined = m.joined_at ? new Date(m.joined_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-        var isSelf = m.user_id === currentUserId;
-        var canRemove = isCreator && !isSelf;
-        var canTransfer = isCreator && !isSelf && members.length > 1;
-        var removeBtn = canRemove ? '<button type="button" class="btn-remove-member" data-user-id="' + (m.user_id || '') + '">Remove</button>' : '';
-        var transferBtn = canTransfer ? '<button type="button" class="btn-transfer-owner" data-user-id="' + (m.user_id || '') + '">Make creator</button>' : '';
-        return '<li class="group-member-item" data-user-id="' + (m.user_id || '') + '"><span><span class="group-member-role">' + roleLabel + '</span>' + (isSelf ? ' (you)' : '') + ' · joined ' + joined + '</span>' + removeBtn + transferBtn + '</li>';
+        const roleLabel = m.role === 'creator' ? 'Creator' : 'Member';
+        const joined = m.joined_at ? new Date(m.joined_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        const isSelf = m.user_id === currentUserId;
+        const canRemove = isCreator && !isSelf;
+        const canTransfer = isCreator && !isSelf && members.length > 1;
+        const safeUid = escapeHtml(m.user_id || '');
+        const removeBtn = canRemove ? '<button type="button" class="btn-remove-member" data-user-id="' + safeUid + '">Remove</button>' : '';
+        const transferBtn = canTransfer ? '<button type="button" class="btn-transfer-owner" data-user-id="' + safeUid + '">Make creator</button>' : '';
+        const safeJoined = escapeHtml(joined);
+        return '<li class="group-member-item" data-user-id="' + safeUid + '"><span><span class="group-member-role">' + escapeHtml(roleLabel) + '</span>' + (isSelf ? ' (you)' : '') + ' · joined ' + safeJoined + '</span>' + removeBtn + transferBtn + '</li>';
       }).join('');
       membersList.querySelectorAll('.btn-remove-member').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var uid = btn.getAttribute('data-user-id');
+          const uid = btn.getAttribute('data-user-id');
           if (!uid) return;
           if (!confirm('Remove this member from the group? They will lose access.')) return;
           btn.disabled = true;
@@ -3553,7 +3729,7 @@ function initGroupManagement() {
       });
       membersList.querySelectorAll('.btn-transfer-owner').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var uid = btn.getAttribute('data-user-id');
+          const uid = btn.getAttribute('data-user-id');
           if (!uid) return;
           if (!confirm('Transfer ownership to this member? You will become a regular member and they will be the creator.')) return;
           btn.disabled = true;
@@ -3568,14 +3744,14 @@ function initGroupManagement() {
   }
 
   function loadInvites() {
-    var gid = getInsideGroupId();
+    const gid = getInsideGroupId();
     if (!gid || !invitesSection || invitesSection.classList.contains('hidden')) return;
     if (invitesLoading) invitesLoading.classList.remove('hidden');
     if (invitesEmpty) invitesEmpty.classList.add('hidden');
     invitesList.innerHTML = '';
     (Auth.getGroupInvites || function () { return Promise.resolve({ invites: [] }); })(gid).then(function (r) {
       if (invitesLoading) invitesLoading.classList.add('hidden');
-      var list = r.invites || [];
+      const list = r.invites || [];
       if (r.error) {
         if (invitesEmpty) { invitesEmpty.textContent = r.error; invitesEmpty.classList.remove('hidden'); }
         return;
@@ -3585,15 +3761,18 @@ function initGroupManagement() {
         return;
       }
       if (invitesEmpty) invitesEmpty.classList.add('hidden');
-      var base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+      const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
       invitesList.innerHTML = list.map(function (inv) {
-        var url = base + 'inside.html?invite=' + encodeURIComponent(inv.invite_token || '');
-        var expiry = inv.expires_at ? 'Expires ' + new Date(inv.expires_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No expiry';
-        return '<li class="group-invite-item" data-invite-id="' + (inv.id || '') + '"><span><span class="invite-expiry">' + expiry + '</span> · ' + url.slice(-24) + '…</span><button type="button" class="btn-cancel-invite" data-invite-id="' + (inv.id || '') + '">Cancel</button></li>';
+        const url = base + 'inside.html?invite=' + encodeURIComponent(inv.invite_token || '');
+        const expiry = inv.expires_at ? 'Expires ' + new Date(inv.expires_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No expiry';
+        const safeId = escapeHtml(inv.id || '');
+        const safeExpiry = escapeHtml(expiry);
+        const safeUrlSnippet = escapeHtml(url.slice(-24) + '…');
+        return '<li class="group-invite-item" data-invite-id="' + safeId + '"><span><span class="invite-expiry">' + safeExpiry + '</span> · ' + safeUrlSnippet + '</span><button type="button" class="btn-cancel-invite" data-invite-id="' + safeId + '">Cancel</button></li>';
       }).join('');
       invitesList.querySelectorAll('.btn-cancel-invite').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var iid = btn.getAttribute('data-invite-id');
+          const iid = btn.getAttribute('data-invite-id');
           if (!iid) return;
           if (!confirm('Cancel this invite? The link will stop working.')) return;
           btn.disabled = true;
@@ -3622,9 +3801,9 @@ function initGroupManagement() {
   }
 
   function saveGroupName() {
-    var gid = getInsideGroupId();
-    var raw = (nameInput && nameInput.value || '').trim();
-    var name = raw.slice(0, 80) || 'My group';
+    const gid = getInsideGroupId();
+    const raw = (nameInput && nameInput.value || '').trim();
+    const name = raw.slice(0, 80) || 'My group';
     if (!gid) return;
     if (!raw || raw.length === 0) {
       setStatus('Enter a group name.', true);
@@ -3635,7 +3814,7 @@ function initGroupManagement() {
       btnSaveName.disabled = false;
       if (r.error) { setStatus(r.error, true); return; }
       Auth.setActiveGroup(gid, r.groupName || name);
-      var heroBadge = document.getElementById('hero-group-badge');
+      const heroBadge = document.getElementById('hero-group-badge');
       if (heroBadge) heroBadge.textContent = 'Group: ' + (r.groupName || name);
       setStatus('Name updated.', false);
       exitEditMode();
@@ -3655,7 +3834,7 @@ function initGroupManagement() {
 
   if (btnLeave) {
     btnLeave.addEventListener('click', function () {
-      var gid = getInsideGroupId();
+      const gid = getInsideGroupId();
       if (!gid) return;
       if (!confirm('Leave this group? You will lose access to shared moments.')) return;
       btnLeave.disabled = true;
@@ -3707,7 +3886,6 @@ function initShareToGroup() {
 }
 
 function initSharing() {
-  if (!shareSection && MODE !== 'inside') return;
   if (MODE === 'inside' && !shareSection) {
     if (topBarSlipups) {
       topBarSlipups.textContent = '\uD83C\uDF0D 0';
@@ -3727,7 +3905,7 @@ function initSharing() {
       if (btnAddFromCommunity) {
         btnAddFromCommunity.addEventListener('click', function () {
           if (typeof switchToPhase === 'function' && personalView) switchToPhase('personal');
-          var main = document.getElementById('main');
+          const main = document.getElementById('main');
           if (main) main.scrollIntoView({ behavior: 'smooth', block: 'start' });
           if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
         });
@@ -3735,30 +3913,45 @@ function initSharing() {
       sharedEntriesLimit = 10;
       updateSharedEntriesLimitButtons();
       fetchSharedEntries();
+      if (typeof document !== 'undefined' && document.addEventListener) {
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible' && SHARING_ENABLED && typeof fetchSharedEntries === 'function') {
+            fetchSharedEntries();
+          }
+        });
+      }
     }
     return;
   }
-  if (topBarSlipups) {
-    topBarSlipups.textContent = '\uD83C\uDF0D 0';
-    topBarSlipups.setAttribute('aria-label', 'World: 0');
-  }
+  if (topBarShare) topBarShare.style.display = SHARING_ENABLED ? '' : 'none';
+  if (topBarWorld) topBarWorld.style.display = SHARING_ENABLED ? '' : 'none';
+  if (reflectionShareWrap) reflectionShareWrap.style.display = SHARING_ENABLED ? '' : 'none';
+  if (topBarSlipups) topBarSlipups.style.display = SHARING_ENABLED ? '' : 'none';
   if (SHARING_ENABLED) {
-    if (topBarSlipups) topBarSlipups.style.display = '';
     if (socialBlock) socialBlock.classList.remove('hidden');
-    shareSection.classList.remove('hidden');
+    if (shareSection) shareSection.classList.remove('hidden');
     if (communitySection) communitySection.classList.remove('hidden');
-    var socialTab = document.querySelector('.phase-tab[data-phase="social"]');
+    const socialTab = document.querySelector('.phase-tab[data-phase="social"]');
     if (socialTab) socialTab.style.display = '';
     if (socialToShare) {
       socialToShare.classList.remove('hidden');
       updateSocialToShare();
     }
+    const socialConfigMsg = document.getElementById('social-config-required');
+    if (socialConfigMsg) socialConfigMsg.classList.add('hidden');
   } else {
     if (socialBlock) socialBlock.classList.add('hidden');
-    var socialTab = document.querySelector('.phase-tab[data-phase="social"]');
-    if (socialTab) socialTab.style.display = 'none';
+    if (shareSection) shareSection.classList.add('hidden');
+    if (communitySection) communitySection.classList.add('hidden');
+    const socialTab = document.querySelector('.phase-tab[data-phase="social"]');
+    if (socialTab) socialTab.style.display = '';
     if (socialToShare) socialToShare.classList.add('hidden');
+    if (topBarShare) topBarShare.style.display = 'none';
+    if (topBarWorld) topBarWorld.style.display = 'none';
     if (topBarSlipups) topBarSlipups.style.display = 'none';
+    if (reflectionShareWrap) reflectionShareWrap.style.display = 'none';
+    const socialConfigMsg = document.getElementById('social-config-required');
+    if (socialConfigMsg) socialConfigMsg.classList.remove('hidden');
   }
   if (btnShare) btnShare.addEventListener('click', shareAnonymously);
   if (btnRefreshFeed) btnRefreshFeed.addEventListener('click', function () { logStateEvent('action', 'refresh_feed'); fetchSharedStats(); });
@@ -3814,6 +4007,13 @@ function initSharing() {
     sharedEntriesLimit = 10;
     updateSharedEntriesLimitButtons();
     fetchSharedEntries();
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && SHARING_ENABLED && typeof fetchSharedEntries === 'function') {
+          fetchSharedEntries();
+        }
+      });
+    }
   } else if (communityEntriesSection) {
     communityEntriesSection.classList.add('hidden');
   }
@@ -3854,7 +4054,7 @@ function initMicroGoal() {
   if (!microGoalInput) return;
   if (microGoalHint && MODE !== 'inside') {
     microGoalHint.textContent = SHARING_ENABLED
-      ? "Anonymous — no name. Tap Share intention to add yours to the Social chart."
+      ? "Yours to keep. Share to add to the world chart — anonymous."
       : 'Just for you — stays on your device.';
   }
   microGoalInput.setAttribute('maxlength', String(MICRO_GOAL_MAXLEN));
@@ -3900,14 +4100,16 @@ function initMicroGoal() {
       fetchSharedIntentions({ includeOlder: showingOlder });
     });
   }
-  var btnIntentionsHow = document.getElementById('btn-intentions-how');
-  var intentionsHowPanel = document.getElementById('shared-intentions-how-panel');
+  const btnIntentionsHow = document.getElementById('btn-intentions-how');
+  const intentionsHowPanel = document.getElementById('shared-intentions-how-panel');
   if (btnIntentionsHow && intentionsHowPanel) {
     if (MODE === 'inside') {
       intentionsHowPanel.textContent = "Tap Share intention to add yours here. Everyone in your group can see shared intentions.";
+    } else {
+      intentionsHowPanel.textContent = "Share intention to add yours here. Anonymous. See what others are focusing on today.";
     }
     btnIntentionsHow.addEventListener('click', () => {
-      var open = intentionsHowPanel.classList.toggle('hidden');
+      const open = intentionsHowPanel.classList.toggle('hidden');
       btnIntentionsHow.setAttribute('aria-expanded', !open);
       if (!open) logStateEvent('action', 'intentions_how_click');
     });
@@ -3920,19 +4122,94 @@ function initAddToHomeBanner() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
   if (isStandalone) return;
+  let deferredPrompt = null;
+  const addToHomeInstall = document.getElementById('add-to-home-install');
+  const dismissBanner = () => {
+    addToHomeBanner.classList.add('hidden');
+    try { localStorage.setItem(ADD_TO_HOME_DISMISSED_KEY, 'true'); } catch (_) {}
+  };
   const showBanner = () => {
     addToHomeBanner.classList.remove('hidden');
+    if (deferredPrompt && addToHomeInstall) addToHomeInstall.classList.remove('hidden');
   };
   if ('beforeinstallprompt' in window) {
-    window.addEventListener('beforeinstallprompt', showBanner, { once: true });
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showBanner();
+    }, { once: true });
   } else {
     const isPWA = document.querySelector('link[rel="manifest"]') && 'serviceWorker' in navigator;
     if (isPWA) setTimeout(showBanner, 2000);
   }
+  if (addToHomeInstall) {
+    addToHomeInstall.addEventListener('click', () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(dismissBanner);
+    });
+  }
   addToHomeDismiss.addEventListener('click', () => {
     logStateEvent('action', 'add_to_home_dismiss');
-    addToHomeBanner.classList.add('hidden');
-    try { localStorage.setItem(ADD_TO_HOME_DISMISSED_KEY, 'true'); } catch (_) {}
+    dismissBanner();
+  });
+}
+
+/** Show "New version available" banner when a Service Worker update is waiting. Helps recover from stale cache (e.g. Social tab not working). */
+function initSwUpdateCheck() {
+  if (!('serviceWorker' in navigator)) return;
+  const banner = document.getElementById('sw-update-banner');
+  const refreshBtn = document.getElementById('sw-update-refresh');
+  if (!banner || !refreshBtn) return;
+
+  function showBanner() {
+    banner.classList.remove('hidden');
+  }
+
+  function doRefresh() {
+    const u = new URL(window.location.href);
+    u.searchParams.set('_', String(Date.now()));
+    u.hash = '';
+    window.location.replace(u.toString());
+  }
+
+  refreshBtn.addEventListener('click', function () {
+    navigator.serviceWorker.getRegistration().then(function (r) {
+      if (r && r.waiting) {
+        r.waiting.postMessage({ type: 'skipWaiting' });
+        navigator.serviceWorker.addEventListener('controllerchange', function onNew() {
+          navigator.serviceWorker.removeEventListener('controllerchange', onNew);
+          doRefresh();
+        });
+        setTimeout(doRefresh, 1500);
+      } else {
+        doRefresh();
+      }
+    }).catch(function () { doRefresh(); });
+  });
+
+  function checkForUpdate(reg) {
+    if (reg && reg.waiting) {
+      showBanner();
+      return;
+    }
+    if (reg && reg.installing) {
+      reg.installing.addEventListener('statechange', function () {
+        if (reg.waiting) showBanner();
+      });
+    }
+  }
+
+  navigator.serviceWorker.getRegistration().then(function (r) {
+    checkForUpdate(r);
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    navigator.serviceWorker.getRegistration().then(function (r) {
+      if (!r) return;
+      r.update().then(function () { checkForUpdate(r); });
+    });
   });
 }
 
@@ -3973,6 +4250,50 @@ function scheduleReminder() {
 
 if (addBtn) addBtn.addEventListener('click', addMistake);
 const MISTAKE_NOTE_MAXLEN = 19;
+
+const btnVoiceInput = document.getElementById('btn-voice-input');
+if (btnVoiceInput && addNoteInput) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    const rec = new SpeechRecognition();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+    rec.onstart = function () {
+      btnVoiceInput.classList.add('listening');
+      btnVoiceInput.setAttribute('aria-label', 'Listening…');
+    };
+    rec.onend = function () {
+      btnVoiceInput.classList.remove('listening');
+      btnVoiceInput.setAttribute('aria-label', 'Voice input');
+    };
+    rec.onresult = function (e) {
+      const t = (e.results[e.results.length - 1][0].transcript || '').trim();
+      if (t) {
+        addNoteInput.value = t.slice(0, MISTAKE_NOTE_MAXLEN);
+        updateAddButtonState();
+        updateMistakeNoteCharCount();
+      }
+    };
+    rec.onerror = function () {
+      btnVoiceInput.classList.remove('listening');
+    };
+    btnVoiceInput.addEventListener('click', function () {
+      try {
+        rec.start();
+      } catch (err) {
+        if (addSyncStatus) {
+          addSyncStatus.textContent = 'Voice not available.';
+          addSyncStatus.classList.remove('hidden');
+          setTimeout(function () { addSyncStatus.classList.add('hidden'); addSyncStatus.textContent = ''; }, 3000);
+        }
+      }
+    });
+  } else {
+    btnVoiceInput.style.display = 'none';
+  }
+}
+
 if (addNoteInput) {
   addNoteInput.setAttribute('maxlength', String(MISTAKE_NOTE_MAXLEN));
   addNoteInput.addEventListener('keydown', e => {
@@ -3997,7 +4318,7 @@ function updateMistakeNoteCharCount() {
   const el = document.getElementById('mistake-note-char-count');
   if (!el) return;
   if (addNoteInput) el.textContent = addNoteInput.value.length + '/' + MISTAKE_NOTE_MAXLEN;
-  var type = typeof getSelectedType === 'function' ? getSelectedType() : 'observed';
+  const type = typeof getSelectedType === 'function' ? getSelectedType() : 'observed';
   el.classList.remove('add-card-char-count--avoidable', 'add-card-char-count--fertile', 'add-card-char-count--observed');
   el.classList.add('add-card-char-count--' + type);
 }
@@ -4174,7 +4495,7 @@ if (btnExportReflections) {
 if (exportCsvBtn) {
   exportCsvBtn.addEventListener('click', () => { if (isUnlocked()) exportCsv(); });
 }
-var btnDownloadGlobalPatterns = document.getElementById('btn-download-global-patterns');
+const btnDownloadGlobalPatterns = document.getElementById('btn-download-global-patterns');
 if (btnDownloadGlobalPatterns) {
   btnDownloadGlobalPatterns.addEventListener('click', function () { if (isUnlocked()) exportGlobalPatternsCsv(); });
 }
@@ -4237,15 +4558,18 @@ updateUpgradeUI();
 renderStats();
 renderList();
 initSharing();
+initPhaseTabs();
 if (MODE === 'inside') {
   initShareToGroup();
   initInsideAuth();
   initGroupManagement();
+  setTimeout(function () { if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement(); }, 500);
 }
 initReflection();
 initMicroGoal();
 initAddToHomeBanner();
 initReminder();
+initSwUpdateCheck();
 const btnSettings = document.getElementById('btn-settings');
 const settingsDropdown = document.getElementById('settings-dropdown');
 if (btnSettings && settingsDropdown) {
@@ -4267,7 +4591,9 @@ if (btnSettings && settingsDropdown) {
 if (topBarAdd) {
   topBarAdd.addEventListener('click', function (e) {
     e.preventDefault();
-    if (personalView && socialView && personalView.classList.contains('hidden') && typeof switchToPhase === 'function') {
+    const pv = personalView || document.getElementById('personal-view');
+    const sv = socialView || document.getElementById('social-view');
+    if (pv && sv && pv.classList.contains('hidden') && typeof switchToPhase === 'function') {
       switchToPhase('personal');
     }
     const main = document.getElementById('main');
@@ -4275,16 +4601,16 @@ if (topBarAdd) {
     if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
   });
 }
-var topBarBrand = document.getElementById('top-bar-brand');
+const topBarBrand = document.getElementById('top-bar-brand');
 if (topBarBrand) {
   topBarBrand.addEventListener('click', function (e) {
-    var p = (window.location.pathname || '').toLowerCase();
-    var onIndex = !p || p === '/' || p === '/index.html' || p.endsWith('/') || p.endsWith('/index.html') || /\/index\.html(\?|#|$)/.test(p);
+    const p = (window.location.pathname || '').toLowerCase();
+    const onIndex = !p || p === '/' || p === '/index.html' || p.endsWith('/') || p.endsWith('/index.html') || /\/index\.html(\?|#|$)/.test(p);
     if (onIndex) {
       e.preventDefault();
       e.stopPropagation();
       function doReload() {
-        var u = new URL('index.html', window.location.href);
+        const u = new URL('index.html', window.location.href);
         u.searchParams.set('_', String(Date.now()));
         u.hash = '';
         window.location.replace(u.toString());
@@ -4294,7 +4620,7 @@ if (topBarBrand) {
           if (!r) { doReload(); return; }
           if (r.waiting) r.waiting.postMessage({ type: 'skipWaiting' });
           r.update();
-          var done = false;
+          let done = false;
           function finish() {
             if (done) return;
             done = true;
@@ -4311,67 +4637,69 @@ if (topBarBrand) {
     }
   }, true);
 }
+function goToShareWithMonth() {
+  const pv = document.getElementById('personal-view');
+  const sv = document.getElementById('social-view');
+  if (!pv || !sv) return;
+  if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+  switchToPhase('social');
+  switchToSocialTab('share');
+  if (typeof setPeriod === 'function') setPeriod('month');
+    const shareIntro = document.querySelector('#social-tab-share .social-share-intro');
+  if (shareIntro) {
+    requestAnimationFrame(function () {
+      shareIntro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+}
+if (topBarShare) {
+  topBarShare.addEventListener('click', function (e) {
+    e.preventDefault();
+    goToShareWithMonth();
+  });
+}
+if (btnShareAfterReflection) {
+  btnShareAfterReflection.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.location.hash = 'social';
+    if (typeof applyHashPhase === 'function') applyHashPhase();
+  });
+}
+if (topBarWorld) {
+  topBarWorld.addEventListener('click', function (e) {
+    e.preventDefault();
+    window.location.hash = 'phase-tabs';
+    if (typeof applyHashPhase === 'function') applyHashPhase();
+  });
+}
 if (topBarSlipups) {
-  const communityEntriesCard = document.getElementById('community-entries-card');
   topBarSlipups.addEventListener('click', function (e) {
     e.preventDefault();
     if (MODE === 'inside') {
       if (socialView && personalView) {
-        switchToPhase('social');
-        if (communityEntriesCard) {
-          requestAnimationFrame(function () {
-            communityEntriesCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          });
-        }
+        window.location.hash = 'social';
       } else {
-        var target = document.getElementById('progress-section') || document.getElementById('trends-section');
+        const target = document.getElementById('progress-section') || document.getElementById('trends-section');
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-      return;
-    }
-    if (!socialView || !personalView) return;
-    if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
-    switchToPhase('social');
-    switchToSocialTab('world');
-    if (communityEntriesCard) {
-      requestAnimationFrame(function () {
-        communityEntriesCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
     }
   });
 }
-var btnGlobalWorld = document.querySelector('.btn-global-world');
+const btnGlobalWorld = document.querySelector('.btn-global-world');
 if (btnGlobalWorld) {
-  var communityEntriesCardForWorld = document.getElementById('community-entries-card');
   btnGlobalWorld.addEventListener('click', function (e) {
     e.preventDefault();
-    if (MODE === 'inside') {
-      if (socialView && personalView) {
-        switchToPhase('social');
-        if (communityEntriesCardForWorld) {
-          requestAnimationFrame(function () {
-            communityEntriesCardForWorld.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          });
-        }
-      }
-      return;
-    }
-    if (!socialView || !personalView) return;
-    if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
-    switchToPhase('social');
-    switchToSocialTab('world');
-    if (communityEntriesCardForWorld) {
-      requestAnimationFrame(function () {
-        communityEntriesCardForWorld.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
+    window.location.hash = MODE === 'inside' ? 'social' : 'phase-tabs';
+    if (typeof applyHashPhase === 'function') applyHashPhase();
   });
 }
-var btnLinkRecentShares = document.getElementById('btn-link-recent-shares');
+const btnLinkRecentShares = document.getElementById('btn-link-recent-shares');
 if (btnLinkRecentShares) {
   btnLinkRecentShares.addEventListener('click', function (e) {
     e.preventDefault();
-    if (!socialView || !personalView) return;
+    const pv = document.getElementById('personal-view');
+    const sv = document.getElementById('social-view');
+    if (!pv || !sv) return;
     switchToPhase('social');
     if (typeof switchToSocialTab === 'function') switchToSocialTab('share');
     if (communitySection) {
@@ -4381,7 +4709,7 @@ if (btnLinkRecentShares) {
     }
   });
 }
-var btnLinkAddMistake = document.getElementById('btn-link-add-mistake');
+const btnLinkAddMistake = document.getElementById('btn-link-add-mistake');
 if (btnLinkAddMistake) {
   btnLinkAddMistake.addEventListener('click', function (e) {
     e.preventDefault();
@@ -4397,12 +4725,14 @@ if (btnLinkAddMistake) {
 }
 
 function switchToPhase(phase) {
-  if (!personalView || !socialView) return;
+  const pv = personalView || document.getElementById('personal-view');
+  const sv = socialView || document.getElementById('social-view');
+  if (!pv || !sv) return;
   logStateEvent('phase', phase, { source: phase + '_view' });
   const tabs = document.querySelectorAll('.phase-tab');
   if (phase === 'personal') {
-    personalView.classList.remove('hidden');
-    socialView.classList.add('hidden');
+    pv.classList.remove('hidden');
+    sv.classList.add('hidden');
     tabs.forEach(function (t) {
       const isActive = t.getAttribute('data-phase') === 'personal';
       t.classList.toggle('active', isActive);
@@ -4410,15 +4740,18 @@ function switchToPhase(phase) {
     });
     if (history.replaceState) history.replaceState(null, '', window.location.pathname + window.location.search);
   } else {
-    personalView.classList.add('hidden');
-    socialView.classList.remove('hidden');
+    pv.classList.add('hidden');
+    sv.classList.remove('hidden');
     switchToSocialTab('share');
     if (typeof renderMicroGoal === 'function') renderMicroGoal();
     if (MODE === 'personal') {
       if (typeof fetchSharedIntentions === 'function') fetchSharedIntentions();
       if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
     }
-    if (MODE === 'inside' && typeof fetchSharedEntries === 'function') fetchSharedEntries();
+    if (MODE === 'inside') {
+      if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+      if (typeof refreshGroupEngagement === 'function') refreshGroupEngagement();
+    }
     tabs.forEach(function (t) {
       const isActive = t.getAttribute('data-phase') === 'social';
       t.classList.toggle('active', isActive);
@@ -4429,43 +4762,63 @@ function switchToPhase(phase) {
 }
 
 function applyHashPhase() {
-  if (!personalView || !socialView) return;
-  var hash = (window.location.hash || '').toLowerCase();
+  const pv = personalView || document.getElementById('personal-view');
+  const sv = socialView || document.getElementById('social-view');
+  if (!pv || !sv) return;
+  const hash = (window.location.hash || '').toLowerCase();
   if (hash === '#social') {
     switchToPhase('social');
+    if (typeof switchToSocialTab === 'function') switchToSocialTab('share');
+    if (MODE === 'personal' && typeof setPeriod === 'function') setPeriod('month');
     if (MODE === 'inside') {
-      var card = document.getElementById('community-entries-card');
+      const card = document.getElementById('community-entries-card');
       if (card) requestAnimationFrame(function () { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    } else {
+      const shareIntro = document.querySelector('#social-tab-share .social-share-intro');
+      if (shareIntro) requestAnimationFrame(function () { shareIntro.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     }
   } else if (hash === '#community-section' && typeof switchToSocialTab === 'function') {
     switchToPhase('social');
     switchToSocialTab('share');
-    var section = document.getElementById('community-section');
+    const section = document.getElementById('community-section');
     if (section) requestAnimationFrame(function () { section.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   } else if (hash === '#phase-tabs' && typeof switchToSocialTab === 'function') {
     switchToPhase('social');
     switchToSocialTab('world');
-    var card = document.getElementById('community-entries-card');
+    if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+    const card = document.getElementById('community-entries-card');
     if (card) requestAnimationFrame(function () { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   }
 }
-(function initPhaseTabs() {
-  const tabs = document.querySelectorAll('.phase-tab');
-  if (!tabs.length || !personalView || !socialView) return;
+function initPhaseTabs() {
+  const pv = personalView || document.getElementById('personal-view');
+  const sv = socialView || document.getElementById('social-view');
   applyHashPhase();
   window.addEventListener('hashchange', applyHashPhase);
-  tabs.forEach(function (t) {
-    if (t.getAttribute('data-phase') == null) return;
-    t.addEventListener('click', function () {
-      var phase = t.getAttribute('data-phase');
-      if (phase) switchToPhase(phase);
+  function doPhaseSwitch(phase) {
+    if (phase && pv && sv && typeof switchToPhase === 'function') switchToPhase(phase);
+  }
+  const phaseTabsEl = document.getElementById('phase-tabs');
+  if (phaseTabsEl) {
+    phaseTabsEl.addEventListener('click', function (e) {
+      const tab = e.target.closest('.phase-tab[data-phase]');
+      if (!tab) return;
+      e.preventDefault();
+      e.stopPropagation();
+      doPhaseSwitch(tab.getAttribute('data-phase'));
     });
-  });
-})();
-
+    phaseTabsEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const tab = document.activeElement;
+      if (!tab || !tab.classList.contains('phase-tab') || !tab.hasAttribute('data-phase')) return;
+      e.preventDefault();
+      doPhaseSwitch(tab.getAttribute('data-phase'));
+    });
+  }
+}
 function switchToSocialTab(tab) {
-  var panelShare = document.getElementById('social-tab-share');
-  var panelWorld = document.getElementById('social-tab-world');
+  const panelShare = document.getElementById('social-tab-share');
+  const panelWorld = document.getElementById('social-tab-world');
   if (!panelShare || !panelWorld) return;
   if (tab === 'world') {
     logStateEvent('social_tab', 'world');
