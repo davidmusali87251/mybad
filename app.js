@@ -3203,7 +3203,7 @@ function renderSharedEntriesList() {
   const themeLabels = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
   filtered.forEach(row => {
     const li = document.createElement('li');
-    li.className = 'entry-item';
+    li.className = 'entry-item entry-item--shared';
     const badge = document.createElement('span');
     const type = row.type || 'avoidable';
     let badgeClass = 'badge-avoidable';
@@ -3218,18 +3218,18 @@ function renderSharedEntriesList() {
       note.title = row.note;
       note.dataset.fullNote = row.note;
     }
+    const time = document.createElement('span');
+    time.className = 'time';
+    time.textContent = formatTimeFromISO(row.created_at);
     const theme = document.createElement('span');
     const tRaw = row.theme || 'calm';
     const t = (tRaw === 'focus' || tRaw === 'stressed' || tRaw === 'curious' || tRaw === 'tired') ? tRaw : 'calm';
     theme.className = 'theme theme--' + t;
     theme.textContent = themeLabels[t] || themeLabels.calm;
-    const time = document.createElement('span');
-    time.className = 'time';
-    time.textContent = formatTimeFromISO(row.created_at);
     li.appendChild(badge);
     li.appendChild(note);
-    li.appendChild(theme);
     li.appendChild(time);
+    li.appendChild(theme);
     sharedEntriesList.appendChild(li);
   });
 }
