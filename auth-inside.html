@@ -6,11 +6,13 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <title>SlipUp Inside — Sign in</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=84">
+  <link rel="stylesheet" href="styles.css?v=94">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
@@ -22,6 +24,7 @@
     .auth-form .field { margin-bottom: 1rem; }
     .auth-form label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-muted); }
     .auth-form input { width: 100%; padding: 0.6rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 1rem; }
+    @media (max-width: 480px) { .auth-form input { font-size: 16px; } }
     .auth-form input:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
     .auth-form .error { font-size: 0.85rem; color: var(--danger); margin-top: 0.5rem; }
     .auth-form .success { font-size: 0.85rem; color: var(--fertile); margin-top: 0.5rem; }
@@ -86,9 +89,9 @@
   <script>
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=84"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=84"></script>
+  <script src="config.js?v=94"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js" integrity="sha384-CN6ec/YLZH98+X82LthsWvZQKFXdRvLmqd5hi7HLWXWp4Z3SXWb5ju3v3zYhypY+" crossorigin="anonymous"></script>
+  <script src="inside-auth.js?v=94"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});

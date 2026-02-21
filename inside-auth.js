@@ -15,6 +15,15 @@
   /* Use localStorage so group persists across PWA reopens; sessionStorage clears when app is killed */
   const GROUP_STORAGE = typeof localStorage !== 'undefined' ? localStorage : (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
 
+  /** Prevent open redirect: only allow same-origin relative paths. Reject http/https/javascript URLs. */
+  function isValidReturnPath(s) {
+    if (typeof s !== 'string' || !s.trim()) return false;
+    const t = s.trim().toLowerCase();
+    if (t.startsWith('http://') || t.startsWith('https://') || t.startsWith('//') || t.startsWith('javascript:')) return false;
+    if (t.includes('://')) return false;
+    return true;
+  }
+
   function getClient() {
     if (!AUTH_ENABLED || typeof supabase === 'undefined') return null;
     return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -392,7 +401,8 @@
         const { error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
         showSuccess('Signed in. Redirecting…');
-        const returnTo = new URLSearchParams(window.location.search).get('return') || 'inside.html';
+        const raw = new URLSearchParams(window.location.search).get('return') || 'inside.html';
+        const returnTo = isValidReturnPath(raw) ? raw : 'inside.html';
         window.location.href = returnTo;
       } else {
         const { error } = await client.auth.signUp({ email, password });

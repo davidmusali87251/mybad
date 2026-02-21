@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.paypal.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <title>SlipUp</title>
   <meta name="description" content="Log daily mistakes, see patterns, and turn them into deliberate learning. Your data stays on your device.">
   <script type="application/ld+json">
@@ -14,18 +16,18 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=84">
+  <link rel="stylesheet" href="styles.css?v=94">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="theme-focus">
   <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
       <a href="index.html" id="top-bar-brand" class="top-bar-brand" title="Not a judge. A mirror. — See what repeats, choose what to keep.">SlipUp</a>
-      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Calm</button>
+      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Focus</button>
     </div>
     <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
       <label class="setting-row">
@@ -34,20 +36,23 @@
       </label>
     </div>
     <div class="top-bar-actions">
-      <a href="index.html#phase-tabs" id="top-bar-world" class="top-bar-btn top-bar-world" title="What's happening in the world" aria-label="World feed" role="button">🌍 —</a>
-      <a href="index.html" class="top-bar-home" id="top-bar-add" aria-label="Add mistake">+ Add</a>
+      <a href="#phase-tabs" id="top-bar-world" class="top-bar-btn top-bar-world" title="What's happening in the world" aria-label="World feed" role="button">🌍 —</a>
+      <a href="#main" class="top-bar-home" id="top-bar-add" aria-label="Add mistake">+ Add</a>
     </div>
   </header>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
-    <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
-    <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
+    <span class="add-to-home-text">Add to home screen for one-tap access. Android: tap Install. iPhone: Share → Add to Home Screen.</span>
+    <div class="add-to-home-actions">
+      <button type="button" id="add-to-home-install" class="add-to-home-install hidden" aria-label="Install app">Install</button>
+      <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Later</button>
+    </div>
   </div>
   <div class="app">
     <header class="app-hero" id="main-hero">
       <div class="app-hero-inner">
         <h1 class="app-hero-title">SlipUp</h1>
         <p class="app-hero-tagline">Not a judge. <span class="app-hero-accent">A mirror.</span></p>
-        <p class="app-hero-sub"><span class="app-hero-sub--see">Learn what repeats.</span> <span class="app-hero-sub--choose">Run with what to keep.</span> <span class="app-hero-sub--feel">Breathe easier.</span></p>
+        <p class="app-hero-sub"><span class="app-hero-sub--see">See what happens again.</span> <span class="app-hero-sub--choose">Keep what helps.</span> <span class="app-hero-sub--feel">Feel better.</span></p>
         <a href="landing.html" class="app-hero-about">What is this?</a>
       </div>
       <div class="app-hero-glow" aria-hidden="true"></div>
@@ -64,7 +69,7 @@
       <p class="micro-goal-pause" aria-hidden="true">Before you log — one intention</p>
       <h2 class="micro-goal-heading" id="micro-goal-heading">What matters to you today?</h2>
       <div class="micro-goal-input-wrap">
-        <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-hint micro-goal-char-count" autocomplete="off">
+        <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-hint micro-goal-char-count" autocomplete="off" autofocus>
         <span class="micro-goal-char-count" id="micro-goal-char-count" aria-live="polite"></span>
       </div>
       <p class="micro-goal-hint" id="micro-goal-hint">Just for you — no one else sees this</p>
@@ -95,15 +100,16 @@
             </label>
           </div>
         </div>
-        <p class="add-card-style-hint">SlipUp style: one line, calm, notice without blame</p>
+        <p class="add-card-style-hint">One line. Calm. Notice without blame.</p>
         <div class="add-card-input-wrap">
           <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
+          <button type="button" id="btn-voice-input" class="btn-voice-input" title="Speak your note" aria-label="Voice input">🎤</button>
           <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
         </div>
         <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
         <div class="mode-row mode-row--pills" role="group" aria-label="How does this feel?">
-          <button type="button" class="mood-btn mood-btn--calm active" data-theme="calm" title="Calm">Calm</button>
-          <button type="button" class="mood-btn mood-btn--focus" data-theme="focus" title="Focus">Focus</button>
+          <button type="button" class="mood-btn mood-btn--calm" data-theme="calm" title="Calm">Calm</button>
+          <button type="button" class="mood-btn mood-btn--focus active" data-theme="focus" title="Focus">Focus</button>
           <button type="button" class="mood-btn mood-btn--stressed" data-theme="stressed" title="Stressed">Stressed</button>
           <button type="button" class="mood-btn mood-btn--curious" data-theme="curious" title="Curious">Curious</button>
           <button type="button" class="mood-btn mood-btn--tired" data-theme="tired" title="Tired">Tired</button>
@@ -191,11 +197,11 @@
 
     <section class="premium-section" id="premium-section">
       <h2>Unlock your full mistake intelligence</h2>
-      <p class="section-hint">Turn mistakes into a personal learning system. See patterns, keep history, export and reflect without limits.</p>
+      <p class="section-hint">You tried 10 free — love it? Upgrade once for $5. Unlimited entries, full history, export, and patterns. <strong>No subscription.</strong></p>
       <div class="premium-cards" id="upgrade-cards">
         <div class="premium-card premium-card-upgrade" id="upgrade-card">
           <h3>Full version — $5 one-time</h3>
-          <p>Unlimited entries, full history, advanced export. One purchase, no subscription.</p>
+          <p>Unlimited entries, full history, advanced export. One purchase, never again.</p>
           <ul class="why-upgrade-list">
             <li>Unlimited entries — no 10-entry cap</li>
             <li>Full history &amp; export (CSV + backup)</li>
@@ -313,7 +319,7 @@
       <div class="reflection-share-wrap" id="reflection-share-wrap" aria-labelledby="reflection-share-heading">
         <p class="reflection-share-prompt" id="reflection-share-heading">Add your numbers to the world chart?</p>
         <p class="reflection-share-hint">Pick month, week, or today — then share. Anonymous. No account.</p>
-        <a href="index.html#social" id="btn-share-after-reflection" class="btn-share-after-reflection" title="Share your stats — pick period, then share" aria-label="Share my result" role="button">Share my result</a>
+        <a href="#social" id="btn-share-after-reflection" class="btn-share-after-reflection" title="Share your stats — pick period, then share" aria-label="Share my result" role="button">Share my result</a>
       </div>
     </section>
     </div>
@@ -381,7 +387,7 @@
     <section class="community-section community-section--separate community-section--share" id="community-section">
       <div class="community-section-header">
         <h2>Recent shares</h2>
-        <a href="index.html#phase-tabs" class="btn-global-world" title="See everyone's entries — opens world feed" aria-label="World feed">🌍</a>
+        <a href="#phase-tabs" class="btn-global-world" title="See everyone's entries — opens world feed" aria-label="World feed">🌍</a>
       </div>
       <p class="community-hint">Anonymous period stats from everyone. Yours join above.</p>
       <div class="shared-list-chart" id="shared-list-chart"></div>
@@ -486,10 +492,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=84"></script>
+  <script src="config.js?v=94"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=84"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js" integrity="sha384-CN6ec/YLZH98+X82LthsWvZQKFXdRvLmqd5hi7HLWXWp4Z3SXWb5ju3v3zYhypY+" crossorigin="anonymous"></script>
+  <script type="module" src="app.js?v=94"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
@@ -497,7 +503,7 @@
       var moodBtns = document.querySelectorAll('.mood-btn[data-theme]');
       var btnTop = document.getElementById('btn-theme-top');
       function applyTheme() {
-        var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        var theme = localStorage.getItem(THEME_KEY) || 'focus';
         document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
         if (theme === 'focus') document.body.classList.add('theme-focus');
         else if (theme === 'stressed') document.body.classList.add('theme-stressed');
@@ -521,7 +527,7 @@
         btn.addEventListener('click', function() { selectTheme(btn.getAttribute('data-theme')); });
       });
       if (btnTop) btnTop.addEventListener('click', function() {
-        var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        var theme = localStorage.getItem(THEME_KEY) || 'focus';
         var order = ['calm', 'focus', 'stressed', 'curious', 'tired'];
         var idx = order.indexOf(theme);
         selectTheme(order[(idx + 1) % order.length]);

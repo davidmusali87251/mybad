@@ -6,13 +6,15 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <link rel="manifest" href="manifest.json">
   <title>SlipUp — A smarter relationship with mistakes</title>
   <meta name="description" content="An operational awareness tool. Reduce useless mistakes. Keep the ones that grow you. Daily system for conscious error.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=84">
-  <script src="config.js"></script>
+  <link rel="stylesheet" href="styles.css?v=94">
+  <script src="config.js?v=94"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
@@ -35,6 +37,8 @@
     .landing p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.55; }
     .landing ul { margin: 0.4rem 0 0; padding-left: 1.2rem; color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
     .landing blockquote { margin: 0.5rem 0; padding-left: 1rem; border-left: 3px solid var(--border); color: var(--text-muted); font-size: 0.9rem; font-style: italic; }
+    .landing-trust { margin: 1.25rem 0; }
+    .landing-trust blockquote { margin: 0.6rem 0; }
     .landing-divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
     .landing-footer { text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-muted); }
     .landing-footer a { color: var(--accent); text-decoration: none; }
@@ -63,6 +67,11 @@
     <h2 class="landing-h2">Why SlipUp?</h2>
     <p>SlipUp is a calm place to park mistakes so they stop spinning in your head and start turning into learning.</p>
 
+    <div class="landing-trust">
+      <blockquote>It’s like having a mirror instead of a critic. I see patterns I’d never noticed.</blockquote>
+      <blockquote>Two minutes at night. My head feels clearer.</blockquote>
+    </div>
+
     <h3 class="landing-h3">Three simple types</h3>
     <ul class="landing-types">
       <li class="landing-type landing-type--avoidable"><strong>Avoidable</strong> – “This keeps happening.” You caught a repeat or autopilot slip. Log it, see the pattern, then tweak. Goal: fewer repeats over time.</li>
@@ -77,7 +86,7 @@
       <p><strong>Later – Teams:</strong> SlipUp Inside for groups and facilitators. Heat, Shift, Support views so teams learn together without exposing individual entries.</p>
     </div>
     <div class="landing-cta-wrap">
-      <a href="index.html" class="landing-cta">Start free · 10 to try</a>
+      <a href="index.html" class="landing-cta">Start free · 10 to try · $5 to unlock</a>
       <button type="button" id="landing-install-btn" class="landing-cta landing-cta--secondary hidden" aria-label="Install SlipUp as app">Install app</button>
     </div>
 

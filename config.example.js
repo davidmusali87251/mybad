@@ -1,6 +1,9 @@
 // Optional: set these to enable anonymous sharing & viewing others' results.
-// FOR LOCAL USE ONLY. Do not commit config.js (it is in .gitignore).
-// The deployed site (e.g. GitHub Pages) gets config from repository Secrets, not from this file.
+//
+// SECURITY:
+// - FOR LOCAL USE ONLY. Do not commit config.js (it is in .gitignore).
+// - Use the Supabase ANON key only (never the service_role key) — anon is safe for client-side.
+// - The deployed site (e.g. GitHub Pages) gets config from repository Secrets, not from this file.
 //
 // 1. Copy this file to config.js:  cp config.example.js config.js  (or copy-paste and save as config.js)
 // 2. Get URL and anon key from Supabase: project → Settings → API.

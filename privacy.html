@@ -6,11 +6,13 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <link rel="manifest" href="manifest.json">
   <title>SlipUp — מדיניות פרטיות / Privacy Policy</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=84">
+  <link rel="stylesheet" href="styles.css?v=94">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
@@ -120,7 +122,7 @@
       var THEME_ORDER = ['calm', 'focus', 'stressed', 'curious', 'tired'];
       var btn = document.getElementById('btn-theme');
       function applyTheme() {
-        var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        var theme = localStorage.getItem(THEME_KEY) || 'focus';
         document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
         if (theme === 'focus') {
           document.body.classList.add('theme-focus');
@@ -140,7 +142,7 @@
       }
       applyTheme();
       if (btn) btn.addEventListener('click', function() {
-        var current = localStorage.getItem(THEME_KEY) || 'calm';
+        var current = localStorage.getItem(THEME_KEY) || 'focus';
         var idx = THEME_ORDER.indexOf(current);
         var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
         localStorage.setItem(THEME_KEY, next);
@@ -148,5 +150,6 @@
       });
     })();
   </script>
+  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {}); }</script>
 </body>
 </html>

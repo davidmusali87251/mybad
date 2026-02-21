@@ -1,9 +1,10 @@
-const CACHE_NAME = 'slip-track-v84';
+const CACHE_NAME = 'slip-track-v94';
 
 /* Don't pre-cache HTML — always fetch fresh on nav so "Inside" and others show latest */
 const STATIC_ASSETS = [
-  './styles.css?v=84',
-  './app.js?v=84',
+  './styles.css?v=94',
+  './app.js?v=94',
+  './modules/slipup-utils.js',
   './manifest.json',
   './icon.svg',
   './icon-maskable.svg'

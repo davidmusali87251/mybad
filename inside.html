@@ -6,22 +6,24 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.paypal.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=84">
+  <link rel="stylesheet" href="styles.css?v=94">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="theme-focus">
   <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
       <a href="inside.html" class="top-bar-brand" title="SlipUp Inside — Group check-ins">SlipUp Inside</a>
-      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Calm</button>
+      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Focus</button>
     </div>
     <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
       <label class="setting-row">
@@ -38,8 +40,11 @@
     </div>
   </header>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
-    <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
-    <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
+    <span class="add-to-home-text">Add to home screen for one-tap access. Android: tap Install. iPhone: Share → Add to Home Screen.</span>
+    <div class="add-to-home-actions">
+      <button type="button" id="add-to-home-install" class="add-to-home-install hidden" aria-label="Install app">Install</button>
+      <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Later</button>
+    </div>
   </div>
   <div id="group-bootstrap-loading" class="group-bootstrap-loading" aria-live="polite">
     <p class="group-bootstrap-loading-text">Loading…</p>
@@ -189,15 +194,16 @@
             </label>
           </div>
         </div>
-        <p class="add-card-style-hint">SlipUp style: one line, calm, notice without blame</p>
+        <p class="add-card-style-hint">One line. Calm. Notice without blame.</p>
         <div class="add-card-input-wrap">
-          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19">
+          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19" autofocus>
+          <button type="button" id="btn-voice-input" class="btn-voice-input" title="Speak your note" aria-label="Voice input">🎤</button>
           <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
         </div>
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
         <div class="mode-row">
           <span class="mode-label">Mood</span>
-          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
+          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Focus</button>
         </div>
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
@@ -214,7 +220,7 @@
 
     <section class="share-to-group-section" id="share-to-group-section" aria-labelledby="share-to-group-heading">
       <h2 id="share-to-group-heading">Share to group</h2>
-      <p class="share-to-group-hint">Select moments to share. Others see heat, shift, support — no names.</p>
+      <p class="share-to-group-hint">Select moments to share. Others see heat, shift, support — no names. <strong>Share what you choose.</strong></p>
       <div class="share-to-group-controls">
         <button type="button" id="btn-share-to-group-select-all" class="btn-share-select-all">Select all</button>
         <button type="button" id="btn-share-to-group" class="btn-share-to-group" disabled>Share 0 to group</button>
@@ -515,9 +521,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=84"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=84"></script>
+  <script src="config.js?v=94"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js" integrity="sha384-CN6ec/YLZH98+X82LthsWvZQKFXdRvLmqd5hi7HLWXWp4Z3SXWb5ju3v3zYhypY+" crossorigin="anonymous"></script>
+  <script src="inside-auth.js?v=94"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -623,11 +629,19 @@
         var switchPanel = document.getElementById('group-gate-switch');
         var switchList = document.getElementById('group-gate-group-list');
         var switchHint = document.getElementById('group-gate-switch-hint');
+        function escapeHtml(s) {
+          if (s == null) return '';
+          var d = document.createElement('div');
+          d.textContent = s;
+          return d.innerHTML;
+        }
         function renderSwitchList() {
           Auth.getUserGroups().then(function(r) {
             if (!switchList || !r.groups || r.groups.length === 0) return;
             switchList.innerHTML = r.groups.map(function(g) {
-              return '<button type="button" class="group-gate-group-btn" data-id="' + (g.id || '') + '" data-name="' + (g.name || '').replace(/"/g, '&quot;') + '">' + (g.name || 'Group') + '</button>';
+              var id = escapeHtml(g.id || '');
+              var name = escapeHtml(g.name || 'Group');
+              return '<button type="button" class="group-gate-group-btn" data-id="' + id + '" data-name="' + name + '">' + name + '</button>';
             }).join('');
             switchList.querySelectorAll('.group-gate-group-btn').forEach(function(btn) {
               btn.addEventListener('click', function() {
@@ -718,7 +732,7 @@
       })();
     })();
   </script>
-  <script src="app.js?v=84"></script>
+  <script type="module" src="app.js?v=94"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
@@ -728,7 +742,7 @@
       function setBtnText(el, label) { if (el) el.textContent = label; }
       var LABELS = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
       function applyTheme() {
-        var theme = localStorage.getItem(THEME_KEY) || 'calm';
+        var theme = localStorage.getItem(THEME_KEY) || 'focus';
         document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
         var label = 'Calm';
         if (theme === 'focus') { document.body.classList.add('theme-focus'); label = 'Focus'; }
@@ -741,7 +755,7 @@
         if (btnTop) { btnTop.setAttribute('data-theme', theme); btnTop.setAttribute('aria-label', 'How does this feel? Current mood: ' + label + '. Click to cycle.'); }
       }
       function cycleTheme() {
-        var current = localStorage.getItem(THEME_KEY) || 'calm';
+        var current = localStorage.getItem(THEME_KEY) || 'focus';
         var idx = THEME_ORDER.indexOf(current);
         var next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
         localStorage.setItem(THEME_KEY, next);
