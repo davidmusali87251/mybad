@@ -12,7 +12,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=96">
+  <link rel="stylesheet" href="styles.css?v=105">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
@@ -89,12 +89,14 @@
   <script>
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=96"></script>
+  <script src="config.js?v=105"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js" integrity="sha384-CN6ec/YLZH98+X82LthsWvZQKFXdRvLmqd5hi7HLWXWp4Z3SXWb5ju3v3zYhypY+" crossorigin="anonymous"></script>
-  <script src="inside-auth.js?v=96"></script>
+  <script src="inside-auth.js?v=105"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      var isLocalhost = /^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+      if (!isLocalhost) navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      else navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});});
     }
   </script>
 </body>

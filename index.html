@@ -6,8 +6,6 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.paypal.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <title>SlipUp</title>
   <meta name="description" content="Log daily mistakes, see patterns, and turn them into deliberate learning. Your data stays on your device.">
   <script type="application/ld+json">
@@ -15,18 +13,17 @@
   </script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=96">
+  <link rel="stylesheet" href="styles.css?v=105">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
-<body class="theme-focus">
+<body>
   <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
-      <a href="index.html" id="top-bar-brand" class="top-bar-brand" title="Not a judge. A mirror. — See what repeats, choose what to keep.">SlipUp</a>
+      <a href="index.html" id="top-bar-brand" class="top-bar-brand" title="Not a judge. A mirror. — See what again. Keep to learn. Feel better.">SlipUp</a>
       <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Focus</button>
     </div>
     <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
@@ -36,27 +33,20 @@
       </label>
     </div>
     <div class="top-bar-actions">
-      <a href="#phase-tabs" id="top-bar-world" class="top-bar-btn top-bar-world" title="What's happening in the world" aria-label="World feed" role="button">🌍 —</a>
+      <a href="index.html#phase-tabs" id="top-bar-slipups" class="top-bar-slipups" title="See everyone's entries — opens world feed" aria-label="World: 0" role="button">🌍 0</a>
       <a href="#main" class="top-bar-home" id="top-bar-add" aria-label="Add mistake">+ Add</a>
     </div>
   </header>
-  <div id="sw-update-banner" class="sw-update-banner hidden" role="region" aria-label="Update available">
-    <span class="sw-update-text">New version available.</span>
-    <button type="button" id="sw-update-refresh" class="sw-update-refresh" aria-label="Refresh to update">Refresh</button>
-  </div>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
-    <span class="add-to-home-text">Add to home screen for one-tap access. Android: tap Install. iPhone: Share → Add to Home Screen.</span>
-    <div class="add-to-home-actions">
-      <button type="button" id="add-to-home-install" class="add-to-home-install hidden" aria-label="Install app">Install</button>
-      <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Later</button>
-    </div>
+    <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
+    <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
   </div>
   <div class="app">
     <header class="app-hero" id="main-hero">
       <div class="app-hero-inner">
         <h1 class="app-hero-title">SlipUp</h1>
         <p class="app-hero-tagline">Not a judge. <span class="app-hero-accent">A mirror.</span></p>
-        <p class="app-hero-sub"><span class="app-hero-sub--see">See what again.</span> <span class="app-hero-sub--choose">Keep what helps.</span> <span class="app-hero-sub--feel">Feel better.</span></p>
+        <p class="app-hero-sub"><span class="app-hero-sub--see">See what again.</span> <span class="app-hero-sub--choose">Keep to learn.</span> <span class="app-hero-sub--feel">Feel better.</span></p>
         <a href="landing.html" class="app-hero-about">What is this?</a>
       </div>
       <div class="app-hero-glow" aria-hidden="true"></div>
@@ -82,6 +72,13 @@
         <button type="button" id="btn-share-intention" class="btn-share-intention" title="Add your intention to the shared chart">Share intention</button>
       </div>
     </section>
+    <section class="intentions-feed hidden" id="intentions-feed" aria-label="Shared intentions" aria-live="polite">
+      <h3 class="intentions-feed-heading" id="intentions-feed-heading">What others are focusing on</h3>
+      <div class="intentions-feed-list" id="intentions-feed-list"></div>
+      <div class="intentions-feed-actions">
+        <button type="button" id="btn-refresh-intentions" class="btn-refresh-subtle" title="Refresh shared intentions" aria-label="Refresh">Refresh</button>
+      </div>
+    </section>
     <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What happened?</label>
@@ -100,17 +97,10 @@
             <label class="type-pill">
               <input type="radio" name="mistake-type" value="observed" checked>
               <span class="pill-main">Observed</span>
-              <span class="pill-sub" title="In others: avoid or understand">Pattern in others</span>
+              <span class="pill-sub">In others: avoid or understand</span>
             </label>
           </div>
         </div>
-        <p class="add-card-style-hint">One line. Calm. Notice without blame.</p>
-        <div class="add-card-input-wrap">
-          <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
-          <button type="button" id="btn-voice-input" class="btn-voice-input" title="Speak your note" aria-label="Voice input">🎤</button>
-          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
-        </div>
-        <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
         <div class="mode-row mode-row--pills" role="group" aria-label="How does this feel?">
           <button type="button" class="mood-btn mood-btn--calm" data-theme="calm" title="Calm">Calm</button>
           <button type="button" class="mood-btn mood-btn--focus active" data-theme="focus" title="Focus">Focus</button>
@@ -118,6 +108,13 @@
           <button type="button" class="mood-btn mood-btn--curious" data-theme="curious" title="Curious">Curious</button>
           <button type="button" class="mood-btn mood-btn--tired" data-theme="tired" title="Tired">Tired</button>
         </div>
+        <div class="add-card-input-wrap">
+          <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
+          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
+        </div>
+
+        <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
+
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
         </div>
@@ -154,9 +151,9 @@
       </div>
       <div class="stats-period-summary">
         <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
-          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">This month</button>
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
           <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
-          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Today</button>
+          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
         </div>
         <div class="stats-insight-block insight-block insight-block--featured">
           <span class="insight-label" id="stats-insight-label">Today</span>
@@ -201,11 +198,11 @@
 
     <section class="premium-section" id="premium-section">
       <h2>Unlock your full mistake intelligence</h2>
-      <p class="section-hint">You tried 10 free — love it? Upgrade once for $5. Unlimited entries, full history, export, and patterns. <strong>No subscription.</strong></p>
+      <p class="section-hint">Turn mistakes into a personal learning system. See patterns, keep history, export and reflect without limits.</p>
       <div class="premium-cards" id="upgrade-cards">
         <div class="premium-card premium-card-upgrade" id="upgrade-card">
           <h3>Full version — $5 one-time</h3>
-          <p>Unlimited entries, full history, advanced export. One purchase, never again.</p>
+          <p>Unlimited entries, full history, advanced export. One purchase, no subscription.</p>
           <ul class="why-upgrade-list">
             <li>Unlimited entries — no 10-entry cap</li>
             <li>Full history &amp; export (CSV + backup)</li>
@@ -226,9 +223,14 @@
       <p class="roadmap-note">Teams &amp; reports coming later. <a href="landing.html">See roadmap</a></p>
     </section>
 
-    <section class="history" aria-labelledby="history-heading">
-      <h2 id="history-heading">Recent entries — Avoidable · Fertile · Observed</h2>
+    <section class="history">
+      <h2>Recent entries</h2>
       <p class="section-hint">Your entries (saved on this device).</p>
+      <div class="history-period-tabs" role="tablist" aria-label="Time period">
+        <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Day</button>
+        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">Week</button>
+        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">Month</button>
+      </div>
       <div class="history-controls">
         <div class="history-filters" id="history-filters">
           <button type="button" class="history-filter active" data-type="all">All</button>
@@ -237,11 +239,6 @@
           <button type="button" class="history-filter" data-type="observed">Observed</button>
         </div>
         <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
-      </div>
-      <div class="history-period-tabs" role="tablist" aria-label="Time period">
-        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Day</button>
-        <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">Week</button>
-        <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">Month</button>
       </div>
       <ul class="entry-list" id="entry-list"></ul>
       <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a slip-up">No slip-ups logged yet. Add one above.</button>
@@ -330,17 +327,14 @@
 
     <div id="social-view" class="app-view hidden">
     <div class="social-tab-panel" id="social-tab-share" aria-hidden="false">
-    <div class="social-config-placeholder hidden" id="social-config-required" role="status">
-      <p class="section-hint">Sharing requires Supabase configuration. Add <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> to <code>config.js</code> to enable sharing and viewing others&rsquo; results.</p>
-    </div>
     <div class="social-share-unified social-share-card" id="social-block">
       <p class="social-share-intro">Share your stats anonymously — no account, no name. Your numbers join the world chart.</p>
 
       <section class="social-share-stats-wrap stats-section--share" aria-label="Your stats for the selected period">
         <div class="stats">
-          <div class="stat-card secondary stat-card--observed">
+          <div class="stat-card stat-card--observed">
             <span class="stat-value" id="stat-count-social">0</span>
-            <span class="stat-label" id="stat-label-social" aria-live="polite">slip-ups today</span>
+            <span class="stat-foot" id="stat-label-social" aria-live="polite">slip-ups today</span>
           </div>
           <div class="stat-card secondary stat-card--observed">
             <span class="stat-value" id="stat-avg-social">—</span>
@@ -356,9 +350,9 @@
         </div>
         <div class="stats-period-summary">
           <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
-            <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">This month</button>
+            <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
             <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
-            <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Today</button>
+            <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
           </div>
           <div class="stats-insight-block insight-block insight-block--featured">
             <span class="insight-label" id="stats-insight-label-social">Today</span>
@@ -377,21 +371,11 @@
         <p class="share-status" id="share-status"></p>
         <p class="share-reassurance">Anonymous — no one can link this to you.</p>
       </section>
-      <div class="shared-intentions-section" id="shared-intentions-section">
-        <div class="shared-intentions-block hidden" id="shared-intentions-block" aria-label="Today's intentions from everyone">
-          <div class="shared-intentions-header">
-            <p class="shared-intentions-label" id="shared-intentions-label">Today's intentions</p>
-            <button type="button" id="btn-intentions-how" class="btn-intentions-how" title="How intentions work" aria-label="How this works">?</button>
-          </div>
-          <p class="shared-intentions-how-panel hidden" id="shared-intentions-how-panel"></p>
-          <div class="shared-intentions-chart" id="shared-intentions-chart"></div>
-        </div>
-      </div>
     </div>
     <section class="community-section community-section--separate community-section--share" id="community-section">
       <div class="community-section-header">
         <h2>Recent shares</h2>
-        <a href="#phase-tabs" class="btn-global-world" title="See everyone's entries — opens world feed" aria-label="World feed">🌍</a>
+        <a href="index.html#phase-tabs" class="btn-global-world" title="See everyone's entries — opens world feed" aria-label="World feed">🌍</a>
       </div>
       <p class="community-hint">Anonymous period stats from everyone. Yours join above.</p>
       <div class="shared-list-chart" id="shared-list-chart"></div>
@@ -412,19 +396,19 @@
             <h2>What's happening in the world</h2>
             <div class="community-entries-header-actions">
               <button type="button" id="btn-shared-total" class="btn-shared-total" title="The world's slip-up chart" aria-label="World slip-ups: 0">🌍 0 slip-ups</button>
-              <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a mistake to contribute to the world feed">+ Add</button>
+              <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a mistake to contribute to the world feed">+ Add mine</button>
             </div>
           </div>
           <p class="community-entries-hint">Anonymous moments from everyone. Browse by type and mood — notice without blame.</p>
         </div>
         <div class="community-world-card">
           <div class="global-count-chart-wrap" id="global-count-chart" aria-label="Global count of shared entries by type" aria-hidden="true"></div>
-          <div class="insight-block insight-block--patterns insight-block--global-patterns" id="global-patterns-block">
-            <div class="global-patterns-header">
-              <span class="insight-label">What words keep coming up?</span>
-              <button type="button" id="btn-download-global-patterns" class="btn-download-patterns" title="Unlock to download — Purchase for $5, then click I've paid." aria-label="Download global patterns CSV (Full version required)">Download</button>
-            </div>
-            <div class="insight-chart" id="global-patterns-chart"></div>
+        </div>
+        <div class="insight-block insight-block--patterns insight-block--global-patterns" id="global-patterns-block">
+          <span class="insight-label">Common words</span>
+          <div class="insight-chart" id="global-patterns-chart"></div>
+          <div class="global-patterns-actions">
+            <button type="button" id="btn-download-global-patterns" class="btn-download-patterns" title="Download full list as CSV (full version)" aria-label="Download global patterns CSV">Download full list</button>
           </div>
         </div>
         <div class="community-browse" aria-label="Filter and browse shared entries">
@@ -496,10 +480,10 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=96"></script>
+  <script src="config.js?v=105"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js" integrity="sha384-CN6ec/YLZH98+X82LthsWvZQKFXdRvLmqd5hi7HLWXWp4Z3SXWb5ju3v3zYhypY+" crossorigin="anonymous"></script>
-  <script type="module" src="app.js?v=96"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
+  <script src="app.js?v=105"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
@@ -538,9 +522,16 @@
       });
     })();
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { scope: './' })
-        .then(function(reg) { if (reg) reg.update(); })
-        .catch(function() {});
+      var isLocalhost = /^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+      if (!isLocalhost) {
+        navigator.serviceWorker.register('sw.js', { scope: './' })
+          .then(function(reg) { if (reg) reg.update(); })
+          .catch(function() {});
+      } else {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          if (regs.length) { regs.forEach(function(r) { r.unregister(); }); location.reload(); }
+        });
+      }
     }
   </script>
 </body>

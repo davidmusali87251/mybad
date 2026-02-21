@@ -13,8 +13,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=96">
-  <script src="config.js?v=96"></script>
+  <link rel="stylesheet" href="styles.css?v=105">
+  <script src="config.js?v=105"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
@@ -90,7 +90,9 @@
   </div>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      var isLocalhost = /^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+      if (!isLocalhost) navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+      else navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});});
     }
   </script>
 </body>

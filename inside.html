@@ -6,18 +6,15 @@
   <meta name="theme-color" content="#14141a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.paypal.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://www.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'">
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=96">
+  <link rel="stylesheet" href="styles.css?v=105">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
-<body class="theme-focus">
+<body>
   <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
     <div class="top-bar-left">
@@ -39,16 +36,9 @@
       <a href="#main" class="top-bar-home" id="top-bar-add" aria-label="Add moment">+ Add</a>
     </div>
   </header>
-  <div id="sw-update-banner" class="sw-update-banner hidden" role="region" aria-label="Update available">
-    <span class="sw-update-text">New version available.</span>
-    <button type="button" id="sw-update-refresh" class="sw-update-refresh" aria-label="Refresh to update">Refresh</button>
-  </div>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
-    <span class="add-to-home-text">Add to home screen for one-tap access. Android: tap Install. iPhone: Share → Add to Home Screen.</span>
-    <div class="add-to-home-actions">
-      <button type="button" id="add-to-home-install" class="add-to-home-install hidden" aria-label="Install app">Install</button>
-      <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Later</button>
-    </div>
+    <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
+    <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
   </div>
   <div id="group-bootstrap-loading" class="group-bootstrap-loading" aria-live="polite">
     <p class="group-bootstrap-loading-text">Loading…</p>
@@ -74,9 +64,6 @@
       <div class="group-gate-join hidden" id="group-gate-join">
         <label for="invite-token-input">Paste invite link or token</label>
         <input type="text" id="invite-token-input" placeholder="https://... or invite token">
-        <div class="group-gate-preview hidden" id="group-gate-preview" aria-live="polite">
-          <p class="group-gate-preview-text" id="group-gate-preview-text"></p>
-        </div>
         <button type="button" id="btn-join-group" class="btn-join-group">Join group</button>
       </div>
       <p class="group-gate-status" id="group-gate-status" aria-live="polite"></p>
@@ -158,26 +145,31 @@
       <p class="micro-goal-pause" aria-hidden="true">Before you log — one intention</p>
       <h2 class="micro-goal-heading" id="micro-goal-heading-inside">What matters to you today?</h2>
       <div class="micro-goal-input-wrap">
-        <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-char-count" autocomplete="off">
+        <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-char-count" autocomplete="off" autofocus>
         <span class="micro-goal-char-count" id="micro-goal-char-count" aria-live="polite"></span>
       </div>
       <div class="micro-goal-actions">
         <button type="button" id="btn-share-intention" class="btn-share-intention" title="Share so everyone in your group can see">Share intention</button>
       </div>
       <div class="micro-goal-result" id="micro-goal-result" aria-live="polite"></div>
-      <div class="shared-intentions-block hidden" id="shared-intentions-block" aria-label="Your group's shared intentions">
-        <div class="shared-intentions-header">
-          <p class="shared-intentions-label" id="shared-intentions-label">Your group's focus (last 2 days)</p>
-          <button type="button" id="btn-intentions-how" class="btn-intentions-how" title="How intentions work" aria-label="How this works">?</button>
-        </div>
-        <p class="shared-intentions-how-panel hidden" id="shared-intentions-how-panel"></p>
-        <div class="shared-intentions-chart" id="shared-intentions-chart"></div>
+      <section class="intentions-feed hidden" id="intentions-feed" aria-label="Shared intentions">
+        <h3 class="intentions-feed-heading" id="intentions-feed-heading">Your group's focus</h3>
+        <div class="intentions-feed-list" id="intentions-feed-list"></div>
         <button type="button" id="btn-view-older-intentions" class="shared-intentions-view-older hidden">View older</button>
-      </div>
+      </section>
     </section>
     <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What moment do you want to remember?</label>
+        <div class="add-card-input-wrap">
+          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19">
+          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
+        </div>
+
+        <div class="mode-row">
+          <span class="mode-label">Mood</span>
+          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
+        </div>
         <div class="type-row">
           <span class="type-label">Kind of moment</span>
           <div class="type-options">
@@ -198,17 +190,8 @@
             </label>
           </div>
         </div>
-        <p class="add-card-style-hint">One line. Calm. Notice without blame.</p>
-        <div class="add-card-input-wrap">
-          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19" autofocus>
-          <button type="button" id="btn-voice-input" class="btn-voice-input" title="Speak your note" aria-label="Voice input">🎤</button>
-          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
-        </div>
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
-        <div class="mode-row">
-          <span class="mode-label">Mood</span>
-          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Focus</button>
-        </div>
+
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
         </div>
@@ -224,7 +207,7 @@
 
     <section class="share-to-group-section" id="share-to-group-section" aria-labelledby="share-to-group-heading">
       <h2 id="share-to-group-heading">Share to group</h2>
-      <p class="share-to-group-hint">Select moments to share. Others see heat, shift, support — no names. <strong>Share what you choose.</strong></p>
+      <p class="share-to-group-hint">Select moments to share. Others see heat, shift, support — no names.</p>
       <div class="share-to-group-controls">
         <button type="button" id="btn-share-to-group-select-all" class="btn-share-select-all">Select all</button>
         <button type="button" id="btn-share-to-group" class="btn-share-to-group" disabled>Share 0 to group</button>
@@ -234,21 +217,11 @@
       <p class="share-to-group-empty hidden" id="share-to-group-empty">No unshared moments. Add one above.</p>
     </section>
 
-    <section class="group-participation-section" id="group-participation-section" aria-labelledby="group-participation-heading">
-      <h3 id="group-participation-heading">Group today</h3>
-      <p class="group-participation-text" id="group-participation-text" aria-live="polite">—</p>
-      <p class="group-activity-summary" id="group-activity-summary" aria-live="polite"></p>
-    </section>
-
-    <section class="group-milestone-section hidden" id="group-milestone-section" aria-live="polite">
-      <div class="group-milestone-card" id="group-milestone-card"></div>
-    </section>
-
     <section class="stats-section" id="stats-section" aria-label="Your stats for the selected period">
       <section class="period-tabs" role="tablist" aria-label="Time period">
-        <button type="button" class="tab active" role="tab" aria-selected="true" data-period="month" title="See patterns across the full month — heat, shift, support">This month</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-period="month" title="See patterns across the full month — heat, shift, support">This month</button>
         <button type="button" class="tab" role="tab" aria-selected="false" data-period="week" title="Focus on this week's check-ins">This week</button>
-        <button type="button" class="tab" role="tab" aria-selected="false" data-period="day" title="Just today — a fresh snapshot">Today</button>
+        <button type="button" class="tab active" role="tab" aria-selected="true" data-period="day" title="Just today — a fresh snapshot">Today</button>
       </section>
       <div class="stats">
         <div class="stat-card stat-card--observed">
@@ -271,9 +244,9 @@
       </div>
       <div class="stats-period-summary">
         <div class="stats-period-tabs" role="tablist" aria-label="Switch period">
-          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="month">This month</button>
+          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="month">This month</button>
           <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="week">This week</button>
-          <button type="button" class="tab tab--mini" role="tab" aria-selected="false" data-period="day">Today</button>
+          <button type="button" class="tab tab--mini active" role="tab" aria-selected="true" data-period="day">Today</button>
         </div>
         <div class="stats-insight-block insight-block insight-block--featured">
           <span class="insight-label" id="stats-insight-label">Today</span>
@@ -368,8 +341,8 @@
       <p class="line-chart-empty" id="line-chart-empty">Add a few moments over the next days to see your chart here.</p>
     </section>
 
-    <section class="history" aria-labelledby="history-heading-inside">
-      <h2 id="history-heading-inside">Recent moments — Heat · Shift · Support</h2>
+    <section class="history">
+      <h2>Recent moments</h2>
       <p class="section-hint">Saved on this device. Use in group or 1‑on‑1 sessions.</p>
       <div class="history-controls">
         <div class="history-filters" id="history-filters">
@@ -436,11 +409,6 @@
     </div>
 
     <div id="social-view" class="app-view hidden">
-      <section class="group-activity-feed-section" id="group-activity-feed-section" aria-labelledby="group-activity-feed-heading">
-        <h3 id="group-activity-feed-heading">Activity</h3>
-        <ul class="group-activity-feed-list" id="group-activity-feed-list" aria-label="Recent group activity"></ul>
-        <p class="group-activity-feed-empty hidden" id="group-activity-feed-empty">No recent activity yet.</p>
-      </section>
       <section class="community-entries-section community-entries-section--standalone" id="community-entries-section">
         <div class="community-entries-card" id="community-entries-card" aria-label="Browse shared moments from your group">
           <div class="community-entries-top">
@@ -448,7 +416,7 @@
               <h2>What's happening in your group</h2>
               <div class="community-entries-header-actions">
                 <button type="button" id="btn-shared-total" class="btn-shared-total" title="Group shared moments" aria-label="Group moments: 0">🌍 0 moments</button>
-                <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a moment to contribute">+ Add</button>
+                <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a moment to contribute">+ Add mine</button>
               </div>
             </div>
             <p class="community-entries-hint">Anonymous moments from your group. Browse by type and mood — notice without blame.</p>
@@ -525,9 +493,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=96"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js" integrity="sha384-CN6ec/YLZH98+X82LthsWvZQKFXdRvLmqd5hi7HLWXWp4Z3SXWb5ju3v3zYhypY+" crossorigin="anonymous"></script>
-  <script src="inside-auth.js?v=96"></script>
+  <script src="config.js?v=105"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
+  <script src="inside-auth.js?v=105"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -633,19 +601,11 @@
         var switchPanel = document.getElementById('group-gate-switch');
         var switchList = document.getElementById('group-gate-group-list');
         var switchHint = document.getElementById('group-gate-switch-hint');
-        function escapeHtml(s) {
-          if (s == null) return '';
-          var d = document.createElement('div');
-          d.textContent = s;
-          return d.innerHTML;
-        }
         function renderSwitchList() {
           Auth.getUserGroups().then(function(r) {
             if (!switchList || !r.groups || r.groups.length === 0) return;
             switchList.innerHTML = r.groups.map(function(g) {
-              var id = escapeHtml(g.id || '');
-              var name = escapeHtml(g.name || 'Group');
-              return '<button type="button" class="group-gate-group-btn" data-id="' + id + '" data-name="' + name + '">' + name + '</button>';
+              return '<button type="button" class="group-gate-group-btn" data-id="' + (g.id || '') + '" data-name="' + (g.name || '').replace(/"/g, '&quot;') + '">' + (g.name || 'Group') + '</button>';
             }).join('');
             switchList.querySelectorAll('.group-gate-group-btn').forEach(function(btn) {
               btn.addEventListener('click', function() {
@@ -694,33 +654,12 @@
           });
         }
 
-        var previewEl = document.getElementById('group-gate-preview');
-        var previewText = document.getElementById('group-gate-preview-text');
-        function extractToken(raw) {
-          var m = (raw || '').trim().match(/invite=([^&\s#]+)/);
-          return m ? m[1] : (raw || '').trim();
-        }
-        function updateInvitePreview() {
-          var token = extractToken(tokenInput ? tokenInput.value : '');
-          if (!token || !Auth.getInvitePreview || !previewEl || !previewText) {
-            if (previewEl) previewEl.classList.add('hidden');
-            return;
-          }
-          Auth.getInvitePreview(token).then(function(r) {
-            if (!r.exists || r.expired) { previewEl.classList.add('hidden'); return; }
-            previewText.textContent = 'Preview: ' + (r.groupName || 'Group') + ' — ' + (r.memberCount || 0) + ' member' + (r.memberCount === 1 ? '' : 's');
-            previewEl.classList.remove('hidden');
-          }).catch(function() { if (previewEl) previewEl.classList.add('hidden'); });
-        }
-        if (tokenInput && Auth.getInvitePreview) {
-          var previewTimeout;
-          tokenInput.addEventListener('input', function() { clearTimeout(previewTimeout); previewTimeout = setTimeout(updateInvitePreview, 400); });
-          tokenInput.addEventListener('paste', function() { setTimeout(updateInvitePreview, 100); });
-        }
         if (btnJoin && tokenInput) {
           btnJoin.addEventListener('click', function() {
             var raw = (tokenInput.value || '').trim();
-            var token = extractToken(raw);
+            var token = raw;
+            var m = raw.match(/invite=([^&\s#]+)/);
+            if (m) token = m[1];
             if (!token) { setStatus('Paste an invite link or token.', true); return; }
             setStatus('Joining…');
             btnJoin.disabled = true;
@@ -736,7 +675,7 @@
       })();
     })();
   </script>
-  <script type="module" src="app.js?v=96"></script>
+  <script src="app.js?v=105"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
@@ -770,9 +709,16 @@
       if (btnTop) btnTop.addEventListener('click', cycleTheme);
     })();
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js', { scope: './' })
-        .then(function(reg) { if (reg) reg.update(); })
-        .catch(function() {});
+      var isLocalhost = /^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+      if (!isLocalhost) {
+        navigator.serviceWorker.register('sw.js', { scope: './' })
+          .then(function(reg) { if (reg) reg.update(); })
+          .catch(function() {});
+      } else {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          if (regs.length) { regs.forEach(function(r) { r.unregister(); }); location.reload(); }
+        });
+      }
     }
   </script>
 </body>

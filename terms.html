@@ -12,7 +12,7 @@
   <title>SlipUp — Terms and Conditions</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=96">
+  <link rel="stylesheet" href="styles.css?v=105">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
@@ -33,7 +33,7 @@
   <a href="#main" class="skip-link">Skip to main content</a>
   <header class="top-bar">
     <div class="top-bar-left">
-      <a href="index.html" class="top-bar-brand" title="Not a judge. A mirror. — See what repeats, choose what to keep.">SlipUp</a>
+      <a href="index.html" class="top-bar-brand" title="Not a judge. A mirror. — See what again. Keep to learn. Feel better.">SlipUp</a>
     </div>
     <div class="top-bar-actions">
       <button type="button" id="btn-theme" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Calm</button>
@@ -121,6 +121,6 @@
       });
     })();
   </script>
-  <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {}); }</script>
+  <script>if ('serviceWorker' in navigator) { var h=/^localhost$|^127\.0\.0\.1$/.test(location.hostname); if(!h)navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(function(){}); else navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}); }</script>
 </body>
 </html>
