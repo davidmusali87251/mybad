@@ -13,7 +13,7 @@
   </script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=105">
+  <link rel="stylesheet" href="styles.css?v=107">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
       <a href="index.html" id="top-bar-brand" class="top-bar-brand" title="Not a judge. A mirror. — See what again. Keep to learn. Feel better.">SlipUp</a>
-      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Focus</button>
+      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Focused</button>
     </div>
     <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
       <label class="setting-row">
@@ -46,8 +46,8 @@
       <div class="app-hero-inner">
         <h1 class="app-hero-title">SlipUp</h1>
         <p class="app-hero-tagline">Not a judge. <span class="app-hero-accent">A mirror.</span></p>
-        <p class="app-hero-sub"><span class="app-hero-sub--see">See what again.</span> <span class="app-hero-sub--choose">Keep to learn.</span> <span class="app-hero-sub--feel">Feel better.</span></p>
-        <a href="landing.html" class="app-hero-about">What is this?</a>
+        <p class="app-hero-sub"><span class="app-hero-sub--see">See your patterns.</span> <span class="app-hero-sub--choose">Keep what supports you.</span> <span class="app-hero-sub--feel">Gently release the rest.</span></p>
+        <a href="landing.html" class="app-hero-about">Why SlipUp?</a>
       </div>
       <div class="app-hero-glow" aria-hidden="true"></div>
       <div class="app-hero-glow-bottom" aria-hidden="true"></div>
@@ -74,7 +74,7 @@
     </section>
     <section class="add-section" id="main">
       <div class="add-card">
-        <label for="mistake-note">What happened?</label>
+        <label for="mistake-note">What slipped?</label>
         <div class="type-row">
           <div class="type-options">
             <label class="type-pill">
@@ -96,10 +96,10 @@
         </div>
         <div class="mode-row mode-row--pills" role="group" aria-label="How does this feel?">
           <button type="button" class="mood-btn mood-btn--calm" data-theme="calm" title="Calm">Calm</button>
-          <button type="button" class="mood-btn mood-btn--focus active" data-theme="focus" title="Focus">Focus</button>
-          <button type="button" class="mood-btn mood-btn--stressed" data-theme="stressed" title="Stressed">Stressed</button>
+          <button type="button" class="mood-btn mood-btn--focus active" data-theme="focus" title="Focused">Focused</button>
+          <button type="button" class="mood-btn mood-btn--stressed" data-theme="stressed" title="Overwhelmed">Overwhelmed</button>
           <button type="button" class="mood-btn mood-btn--curious" data-theme="curious" title="Curious">Curious</button>
-          <button type="button" class="mood-btn mood-btn--tired" data-theme="tired" title="Tired">Tired</button>
+          <button type="button" class="mood-btn mood-btn--tired" data-theme="tired" title="Drained">Drained</button>
         </div>
         <div class="add-card-input-wrap">
           <input type="text" id="mistake-note" placeholder="e.g. Forgot to save, spoke harshly…" maxlength="19">
@@ -107,6 +107,7 @@
         </div>
 
         <p class="type-hint" id="type-hint">Notice the trigger. How can I reduce repeats?</p>
+        <p class="entry-insight hidden" id="entry-insight" aria-live="polite"></p>
 
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
@@ -432,10 +433,10 @@
               <div class="filter-chips">
                 <button type="button" class="filter-chip active" data-filter-theme="all">All</button>
                 <button type="button" class="filter-chip" data-filter-theme="calm">Calm</button>
-                <button type="button" class="filter-chip" data-filter-theme="focus">Focus</button>
-                <button type="button" class="filter-chip" data-filter-theme="stressed">Stressed</button>
+                <button type="button" class="filter-chip" data-filter-theme="focus">Focused</button>
+                <button type="button" class="filter-chip" data-filter-theme="stressed">Overwhelmed</button>
                 <button type="button" class="filter-chip" data-filter-theme="curious">Curious</button>
-                <button type="button" class="filter-chip" data-filter-theme="tired">Tired</button>
+                <button type="button" class="filter-chip" data-filter-theme="tired">Drained</button>
               </div>
             </div>
           </div>
@@ -480,14 +481,15 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=105"></script>
+  <script src="config.js?v=107"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=105"></script>
+  <script src="entryInsightsData.js?v=107"></script>
+  <script src="app.js?v=107"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
-      var LABELS = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
+      var LABELS = { calm: 'Calm', focus: 'Focused', stressed: 'Overwhelmed', curious: 'Curious', tired: 'Drained' };
       var moodBtns = document.querySelectorAll('.mood-btn[data-theme]');
       var btnTop = document.getElementById('btn-theme-top');
       function applyTheme() {

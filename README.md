@@ -189,6 +189,8 @@ If you created `shared_what_happened` earlier without the `theme` column, add it
 alter table shared_what_happened add column if not exists theme text not null default 'calm';
 ```
 
+**Bias Check in shared entries** — To show observed bias reasons (Harm, Failed, Different, etc.) in the world feed, run `supabase-shared-entries-bias-reason.sql` in SQL Editor.
+
 Then reload the app. After this, "Others' results" will group shares by anonymous user.
 
 ### "Couldn't sync: new row violates row-level security policy"

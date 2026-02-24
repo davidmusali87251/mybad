@@ -282,13 +282,17 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
 }
 
 .top-bar-home {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   padding: 0.35rem 0.75rem;
   background: linear-gradient(135deg, var(--fertile-dim), var(--fertile));
   color: var(--bg);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.8rem;
+  line-height: 1;
   border-radius: 6px;
   border: 1px solid rgba(107, 168, 138, 0.4);
   transition: filter 0.2s, box-shadow 0.2s;
@@ -489,6 +493,7 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
 .top-bar-theme {
   position: relative;
   min-height: 36px;
+  min-width: 0;
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
@@ -501,6 +506,8 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
   font-family: var(--font-sans);
   transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .top-bar-theme::before {
@@ -2707,6 +2714,8 @@ a.phase-tab--link,
   transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
   opacity: 0.5;
   min-height: 36px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .mood-btn:hover {
   opacity: 0.85;
@@ -3262,6 +3271,32 @@ body.theme-tired .btn-bias-check {
 
 .type-hint.hidden {
   display: none;
+}
+
+.entry-insight {
+  margin: 0.15rem 0 0.6rem 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  color: var(--text-muted);
+  font-size: 0.77rem;
+  line-height: 1.35;
+  font-style: italic;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.entry-insight.entry-insight--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-insight {
+    transition: none;
+  }
 }
 
 .add-card input::placeholder {

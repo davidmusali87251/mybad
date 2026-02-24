@@ -51,6 +51,7 @@ const addBtn = document.getElementById('add-mistake');
 const addSyncStatus = document.getElementById('add-sync-status');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const typeHint = document.getElementById('type-hint');
+const entryInsightEl = document.getElementById('entry-insight');
 
 const TYPE_PHRASES = {
   avoidable: 'Notice the trigger. How can I reduce repeats?',
@@ -86,6 +87,20 @@ const TYPE_PLACEHOLDERS = {
   fertile: 'e.g. Tried a new approach, missed the mark…',
   observed: 'What did I see? What lesson applies to me?'
 };
+const ENTRY_INSIGHT_LAST_KEY = MODE === 'inside' ? 'slipup-last-entry-insight-inside' : 'slipup-last-entry-insight';
+const ENTRY_INSIGHT_HIDE_MS = 7000;
+const ENTRY_INSIGHT_THEMES = ['calm', 'focus', 'stressed', 'curious', 'tired'];
+let entryInsightHideTimer = null;
+const FALLBACK_ENTRY_INSIGHTS = [
+  { id: 'FB001', type: 'any', themes: ['any'], keywords: ['empty'], text: 'A small mark still leaves a clear signal.' },
+  { id: 'FB002', type: 'avoidable', themes: ['any'], keywords: ['rush', 'late'], text: 'The pattern looked faster than it felt.' },
+  { id: 'FB003', type: 'avoidable', themes: ['focus', 'stressed'], keywords: ['scroll', 'phone'], text: 'Attention drift left a quiet fingerprint.' },
+  { id: 'FB004', type: 'fertile', themes: ['any'], keywords: ['try', 'new'], text: 'A stretch often looks messy in real time.' },
+  { id: 'FB005', type: 'fertile', themes: ['curious', 'focus'], keywords: ['experiment', 'risk'], text: 'Uncertainty showed up as movement, not noise.' },
+  { id: 'FB006', type: 'observed', themes: ['any'], keywords: ['assumption', 'context'], text: 'Context changed the shape of what was seen.' },
+  { id: 'FB007', type: 'observed', themes: ['stressed', 'tired'], keywords: ['triggered', 'pressure'], text: 'Pressure can make one angle feel like the whole.' },
+  { id: 'FB008', type: 'any', themes: ['calm', 'focus'], keywords: ['pause', 'breathe'], text: 'Naming it made the moment easier to hold.' }
+];
 const periodTabs = document.querySelectorAll('.tab');
 const statCount = document.getElementById('stat-count');
 const statAvg = document.getElementById('stat-avg');
@@ -343,6 +358,143 @@ function updateAddButtonState() {
   const hasText = (addNoteInput.value || '').trim().length > 0;
   const atLimit = isAtLimit();
   addBtn.disabled = !hasText || atLimit;
+}
+
+function normalizeInsightType(v) {
+  return v === 'avoidable' || v === 'fertile' || v === 'observed' || v === 'any' ? v : 'any';
+}
+
+function normalizeInsightThemes(themes) {
+  if (!Array.isArray(themes) || themes.length === 0) return ['any'];
+  const out = themes
+    .map(function (t) { return String(t || '').toLowerCase(); })
+    .filter(function (t) { return t === 'any' || ENTRY_INSIGHT_THEMES.indexOf(t) >= 0; });
+  return out.length ? out : ['any'];
+}
+
+function normalizeInsightKeywords(words) {
+  if (!Array.isArray(words)) return [];
+  return words
+    .map(function (w) { return String(w || '').trim().toLowerCase(); })
+    .filter(function (w) { return !!w; });
+}
+
+function getEntryInsightsPool() {
+  const raw = (typeof window !== 'undefined' && Array.isArray(window.ENTRY_INSIGHTS)) ? window.ENTRY_INSIGHTS : FALLBACK_ENTRY_INSIGHTS;
+  const normalized = raw
+    .map(function (item, idx) {
+      if (!item || typeof item !== 'object') return null;
+      const text = String(item.text || '').trim();
+      if (!text) return null;
+      const id = String(item.id || ('AUTO' + String(idx + 1))).trim();
+      return {
+        id: id || ('AUTO' + String(idx + 1)),
+        type: normalizeInsightType(item.type),
+        themes: normalizeInsightThemes(item.themes),
+        keywords: normalizeInsightKeywords(item.keywords),
+        text: text
+      };
+    })
+    .filter(Boolean);
+  return normalized.length ? normalized : FALLBACK_ENTRY_INSIGHTS;
+}
+
+function getBiasHintKeywords(reason) {
+  if (reason === 'harm') return ['harm', 'impact', 'consequence', 'responsibility', 'repair'];
+  if (reason === 'failed') return ['failed', 'result', 'plan', 'expectation', 'outcome'];
+  if (reason === 'different') return ['different', 'assumption', 'style', 'values', 'context'];
+  if (reason === 'triggered') return ['triggered', 'projection', 'pressure', 'reaction', 'tone'];
+  if (reason === 'unsure') return ['unclear', 'assumption', 'context', 'unknown'];
+  return [];
+}
+
+function hasKeywordMatch(noteText, tokenSet, keyword) {
+  if (!keyword) return false;
+  if (keyword.indexOf(' ') >= 0) return noteText.indexOf(keyword) >= 0;
+  return tokenSet.has(keyword) || noteText.indexOf(keyword) >= 0;
+}
+
+function pickEntryInsight(entry) {
+  if (!entry) return null;
+  const pool = getEntryInsightsPool();
+  const type = normalizeInsightType(entry.type || 'avoidable');
+  const theme = normalizeInsightThemes([entry.theme || 'calm'])[0];
+  const note = String(entry.note || '').trim().toLowerCase();
+  const noteTokens = new Set((note.match(/[a-z0-9]+/g) || []));
+  const biasReason = String(entry.biasReason || '').toLowerCase();
+  const biasHintKeywords = getBiasHintKeywords(biasReason);
+  const observedHintWords = ['assumption', 'projection', 'pressure', 'context'];
+  const candidates = [];
+  let bestScore = -9999;
+
+  for (let i = 0; i < pool.length; i += 1) {
+    const item = pool[i];
+    if (!(item.type === type || item.type === 'any')) continue;
+    if (!(item.themes.indexOf('any') >= 0 || item.themes.indexOf(theme) >= 0)) continue;
+    let score = 0;
+    for (let k = 0; k < item.keywords.length; k += 1) {
+      const kw = item.keywords[k];
+      if (hasKeywordMatch(note, noteTokens, kw)) score += 2;
+    }
+    if (!note && item.keywords.indexOf('empty') >= 0) score += 1;
+    if (type === 'observed') {
+      for (let o = 0; o < observedHintWords.length; o += 1) {
+        if (item.keywords.indexOf(observedHintWords[o]) >= 0) {
+          score += 1;
+          break;
+        }
+      }
+      if (biasHintKeywords.length) {
+        for (let b = 0; b < biasHintKeywords.length; b += 1) {
+          if (item.keywords.indexOf(biasHintKeywords[b]) >= 0) {
+            score += 3;
+            break;
+          }
+        }
+      }
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      candidates.length = 0;
+      candidates.push(item);
+    } else if (score === bestScore) {
+      candidates.push(item);
+    }
+  }
+
+  if (!candidates.length) return null;
+  const lastInsightId = localStorage.getItem(ENTRY_INSIGHT_LAST_KEY) || '';
+  const withoutRepeat = candidates.filter(function (item) { return item.id !== lastInsightId; });
+  const poolToUse = withoutRepeat.length ? withoutRepeat : candidates;
+  return poolToUse[Math.floor(Math.random() * poolToUse.length)];
+}
+
+function hideEntryInsight() {
+  if (!entryInsightEl) return;
+  if (entryInsightHideTimer) {
+    clearTimeout(entryInsightHideTimer);
+    entryInsightHideTimer = null;
+  }
+  entryInsightEl.classList.remove('entry-insight--visible');
+  entryInsightEl.classList.add('hidden');
+}
+
+function showEntryInsightForEntry(entry) {
+  if (!entryInsightEl) return;
+  const insight = pickEntryInsight(entry);
+  if (!insight || !insight.text) {
+    hideEntryInsight();
+    return;
+  }
+  if (entryInsightHideTimer) clearTimeout(entryInsightHideTimer);
+  entryInsightEl.textContent = insight.text;
+  entryInsightEl.classList.remove('hidden');
+  void entryInsightEl.offsetWidth;
+  entryInsightEl.classList.add('entry-insight--visible');
+  localStorage.setItem(ENTRY_INSIGHT_LAST_KEY, insight.id);
+  entryInsightHideTimer = setTimeout(function () {
+    hideEntryInsight();
+  }, ENTRY_INSIGHT_HIDE_MS);
 }
 
 // Optional scope for future team/context: "personal" | "observed" | "team". Default "personal".
@@ -754,7 +906,7 @@ function renderStats() {
       else if (streak < 7) foot = streak + ' days running';
       else foot = streak + '-day streak';
     } else if (topTheme && topThemeCount > 0 && count > 0) {
-      const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'stressed', curious: 'curious', tired: 'tired' };
+      const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'overwhelmed', curious: 'curious', tired: 'drained' };
       foot = 'mostly ' + (themeLabels[topTheme] || topTheme);
     }
     statCountFoot.textContent = foot;
@@ -838,7 +990,7 @@ function renderStats() {
       }
       let html = parts.join(sep);
       if (topTheme && topThemeCount > 0) {
-        const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'stressed', curious: 'curious', tired: 'tired' };
+        const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'overwhelmed', curious: 'curious', tired: 'drained' };
         const themeLabel = themeLabels[topTheme] || topTheme;
         html += (parts.length ? '<span class="stats-insight-sep"> — </span>' : '') + '<span class="stats-insight-mood">mostly ' + escapeHtml(themeLabel) + '</span>';
       }
@@ -869,7 +1021,7 @@ function renderStats() {
       }
       let html = parts.join(sep);
       if (topTheme && topThemeCount > 0) {
-        const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'stressed', curious: 'curious', tired: 'tired' };
+        const themeLabels = { calm: 'calm', focus: 'focused', stressed: 'overwhelmed', curious: 'curious', tired: 'drained' };
         const themeLabel = themeLabels[topTheme] || topTheme;
         html += (parts.length ? '<span class="stats-insight-sep"> — </span>' : '') + '<span class="stats-insight-mood">mostly ' + escapeHtml(themeLabel) + '</span>';
       }
@@ -1044,7 +1196,7 @@ function renderList() {
   const typeLabelsHist = MODE === 'inside'
     ? { avoidable: 'Heat', fertile: 'Shift', observed: 'Support' }
     : { avoidable: 'Avoidable', fertile: 'Fertile', observed: 'Observed' };
-  const themeLabelsHist = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
+  const themeLabelsHist = { calm: 'Calm', focus: 'Focused', stressed: 'Overwhelmed', curious: 'Curious', tired: 'Drained' };
   show.forEach(entry => {
     const li = document.createElement('li');
     li.className = 'entry-item';
@@ -2175,6 +2327,7 @@ function addMistake() {
   logStateEvent('entry_type', type);
   renderStats();
   renderList();
+  showEntryInsightForEntry(entry);
   if (SHARING_ENABLED && MODE !== 'inside') {
     pushEntryToShared({ note, type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
@@ -2621,6 +2774,7 @@ function quickAdd(type) {
   updateUpgradeUI();
   renderStats();
   renderList();
+  showEntryInsightForEntry(entry);
   if (SHARING_ENABLED && MODE !== 'inside') {
     pushEntryToShared({ note: '', type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
@@ -2649,6 +2803,7 @@ function repeatLastNote() {
   updateUpgradeUI();
   renderStats();
   renderList();
+  showEntryInsightForEntry(entry);
   if (SHARING_ENABLED && MODE !== 'inside') {
     pushEntryToShared({ note: entry.note, type: entry.type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
@@ -3224,7 +3379,7 @@ function renderSharedEntriesList() {
   const typeLabels = MODE === 'inside'
     ? { avoidable: 'Heat', fertile: 'Shift', observed: 'Support' }
     : { avoidable: 'Avoidable', fertile: 'Fertile', observed: 'Observed' };
-  const themeLabels = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
+  const themeLabels = { calm: 'Calm', focus: 'Focused', stressed: 'Overwhelmed', curious: 'Curious', tired: 'Drained' };
   filtered.forEach(row => {
     const li = document.createElement('li');
     li.className = 'entry-item entry-item--shared';
@@ -3982,6 +4137,7 @@ if (addNoteInput) {
     if (addNoteInput.value.length > MISTAKE_NOTE_MAXLEN) addNoteInput.value = addNoteInput.value.slice(0, MISTAKE_NOTE_MAXLEN);
     updateAddButtonState();
     updateMistakeNoteCharCount();
+    hideEntryInsight();
   });
   addNoteInput.addEventListener('keyup', updateAddButtonState);
   addNoteInput.addEventListener('paste', () => {
@@ -4030,6 +4186,7 @@ function updateTypeHint() {
   if (typeHint) typeHint.textContent = phrase;
   if (addNoteInput) addNoteInput.placeholder = placeholder;
   if (biasCheckRow) biasCheckRow.classList.toggle('hidden', type !== 'observed');
+  hideEntryInsight();
   updateMistakeNoteCharCount();
 }
 
@@ -4078,6 +4235,9 @@ if (typeInputs && typeInputs.length) {
     if (input) input.addEventListener('change', updateTypeHint);
   });
 }
+document.querySelectorAll('.mood-btn[data-theme], #btn-theme, #btn-theme-top').forEach(function (el) {
+  el.addEventListener('click', hideEntryInsight);
+});
 if (typeHint) updateTypeHint();
 if (biasCheckRow) updateTypeHint();
 

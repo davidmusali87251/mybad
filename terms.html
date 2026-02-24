@@ -12,7 +12,7 @@
   <title>SlipUp — Terms and Conditions</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css?v=105">
+  <link rel="stylesheet" href="styles.css?v=107">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
@@ -97,16 +97,16 @@
         document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
         if (theme === 'focus') {
           document.body.classList.add('theme-focus');
-          if (btn) btn.textContent = 'Focus';
+          if (btn) btn.textContent = 'Focused';
         } else if (theme === 'stressed') {
           document.body.classList.add('theme-stressed');
-          if (btn) btn.textContent = 'Stressed';
+          if (btn) btn.textContent = 'Overwhelmed';
         } else if (theme === 'curious') {
           document.body.classList.add('theme-curious');
           if (btn) btn.textContent = 'Curious';
         } else if (theme === 'tired') {
           document.body.classList.add('theme-tired');
-          if (btn) btn.textContent = 'Tired';
+          if (btn) btn.textContent = 'Drained';
         } else {
           if (btn) btn.textContent = 'Calm';
         }

@@ -9,7 +9,7 @@
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=105">
+  <link rel="stylesheet" href="styles.css?v=107">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
       <a href="inside.html" class="top-bar-brand" title="SlipUp Inside — Group check-ins">SlipUp Inside</a>
-      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Focus</button>
+      <button type="button" id="btn-theme-top" class="top-bar-theme" title="How does this feel?" aria-label="Mood">Focused</button>
     </div>
     <div class="top-bar-settings-dropdown" id="settings-dropdown" aria-hidden="true">
       <label class="setting-row">
@@ -191,6 +191,7 @@
           </div>
         </div>
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
+        <p class="entry-insight hidden" id="entry-insight" aria-live="polite"></p>
 
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
@@ -444,10 +445,10 @@
                 <div class="filter-chips">
                   <button type="button" class="filter-chip active" data-filter-theme="all">All</button>
                   <button type="button" class="filter-chip" data-filter-theme="calm">Calm</button>
-                  <button type="button" class="filter-chip" data-filter-theme="focus">Focus</button>
-                  <button type="button" class="filter-chip" data-filter-theme="stressed">Stressed</button>
+                  <button type="button" class="filter-chip" data-filter-theme="focus">Focused</button>
+                  <button type="button" class="filter-chip" data-filter-theme="stressed">Overwhelmed</button>
                   <button type="button" class="filter-chip" data-filter-theme="curious">Curious</button>
-                  <button type="button" class="filter-chip" data-filter-theme="tired">Tired</button>
+                  <button type="button" class="filter-chip" data-filter-theme="tired">Drained</button>
                 </div>
               </div>
             </div>
@@ -493,9 +494,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=105"></script>
+  <script src="config.js?v=107"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=105"></script>
+  <script src="inside-auth.js?v=107"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -675,7 +676,8 @@
       })();
     })();
   </script>
-  <script src="app.js?v=105"></script>
+  <script src="entryInsightsData.js?v=107"></script>
+  <script src="app.js?v=107"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
@@ -683,15 +685,15 @@
       var btn = document.getElementById('btn-theme');
       var btnTop = document.getElementById('btn-theme-top');
       function setBtnText(el, label) { if (el) el.textContent = label; }
-      var LABELS = { calm: 'Calm', focus: 'Focus', stressed: 'Stressed', curious: 'Curious', tired: 'Tired' };
+      var LABELS = { calm: 'Calm', focus: 'Focused', stressed: 'Overwhelmed', curious: 'Curious', tired: 'Drained' };
       function applyTheme() {
         var theme = localStorage.getItem(THEME_KEY) || 'focus';
         document.body.classList.remove('theme-focus', 'theme-stressed', 'theme-curious', 'theme-tired');
         var label = 'Calm';
-        if (theme === 'focus') { document.body.classList.add('theme-focus'); label = 'Focus'; }
-        else if (theme === 'stressed') { document.body.classList.add('theme-stressed'); label = 'Stressed'; }
+        if (theme === 'focus') { document.body.classList.add('theme-focus'); label = 'Focused'; }
+        else if (theme === 'stressed') { document.body.classList.add('theme-stressed'); label = 'Overwhelmed'; }
         else if (theme === 'curious') { document.body.classList.add('theme-curious'); label = 'Curious'; }
-        else if (theme === 'tired') { document.body.classList.add('theme-tired'); label = 'Tired'; }
+        else if (theme === 'tired') { document.body.classList.add('theme-tired'); label = 'Drained'; }
         setBtnText(btn, label);
         setBtnText(btnTop, label);
         if (btn) { btn.setAttribute('data-theme', theme); btn.setAttribute('aria-label', 'Mood: ' + label + '. Click to cycle.'); }
