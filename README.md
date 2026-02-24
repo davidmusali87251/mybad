@@ -80,6 +80,8 @@ node bump-version.js
 
 This bumps `?v=` in all HTML files and `CACHE_NAME` in `sw.js`. Optionally pass a version: `node bump-version.js 12`.
 
+**Si no tienes Node en el PATH (Windows):** usa el script en PowerShell: `.\bump-version.ps1` o `.\bump-version.ps1 12`.
+
 ---
 
 ## Enable anonymous sharing (optional)

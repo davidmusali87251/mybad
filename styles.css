@@ -131,6 +131,10 @@ body.theme-tired {
   outline-offset: 2px;
 }
 
+#personal-view {
+  scroll-margin-top: 72px;
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--bg);
@@ -327,8 +331,8 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
     white-space: nowrap;
   }
   .top-bar-theme {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.7rem;
     min-width: 0;
   }
   .top-bar-actions {
@@ -494,8 +498,10 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
   position: relative;
   min-height: 36px;
   min-width: 0;
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
+  max-width: clamp(5.4rem, 16vw, 6.4rem);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.76rem;
+  line-height: 1.1;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--mood-calm-light);
@@ -535,7 +541,7 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
 }
 
 @media (pointer: coarse) {
-  .top-bar-theme { min-height: 44px; padding: 0.5rem 0.9rem; }
+  .top-bar-theme { min-height: 44px; padding: 0.45rem 0.75rem; }
 }
 
 .top-bar-home:focus-visible,
@@ -1322,8 +1328,9 @@ body.theme-tired .top-bar-theme:hover {
 }
 
 .insight-mood-label {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 600;
+  line-height: 1.2;
   color: var(--text);
   width: 4.5rem;
   flex-shrink: 0;
@@ -1357,12 +1364,19 @@ body.theme-tired .top-bar-theme:hover {
 .insight-mood-bar-seg--tired { background: linear-gradient(90deg, var(--mood-tired-dim), var(--mood-tired)); }
 
 .insight-mood-count {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-muted);
   width: 1.25rem;
   text-align: right;
   flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .insight-mood-label,
+  .insight-mood-count {
+    font-size: 0.72rem;
+  }
 }
 
 /* Reflection context prompt */
@@ -1732,7 +1746,11 @@ body.theme-tired .top-bar-theme:hover {
 
 .app-hero-sub--see { color: var(--observed); }
 .app-hero-sub--choose { color: var(--fertile); }
-.app-hero-sub--feel { color: var(--accent-text); }
+.app-hero-sub--feel {
+  color: var(--accent-text);
+  display: block;
+  margin-top: 0.35em;
+}
 
 .app-hero-about {
   display: inline-flex;
@@ -2481,6 +2499,16 @@ a.phase-tab--link,
   font-size: 0.9rem;
 }
 .group-member-role { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+.group-member-tag {
+  display: inline-block;
+  padding: 0.05rem 0.38rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-text);
+  font-size: 0.67rem;
+  font-weight: 700;
+}
 .group-member-item .btn-remove-member {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
@@ -5232,6 +5260,16 @@ body.theme-tired .btn-bias-check {
   border-color: var(--accent-dim);
   box-shadow: 0 2px 8px var(--accent-glow);
 }
+.reflection-share-echo {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 0.35rem 0;
+  line-height: 1.35;
+  font-weight: 400;
+  font-style: italic;
+  text-align: center;
+}
+
 .reflection-share-prompt {
   font-size: 0.9rem;
   font-weight: 600;
@@ -5274,6 +5312,30 @@ body.theme-tired .btn-bias-check {
 .btn-share-after-reflection:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+
+.btn-reflection-share-dismiss {
+  display: inline-block;
+  margin-top: 0.6rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-reflection-share-dismiss:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-reflection-share-dismiss:hover {
+    text-decoration: underline;
+  }
 }
 
 .reflection-title {
@@ -6177,6 +6239,15 @@ body.theme-tired .btn-bias-check {
   margin-bottom: 0;
 }
 
+/* World panel only: subtle observational line (index #social-tab-world) */
+.world-header-line {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 0.35rem 0;
+  line-height: 1.35;
+  font-weight: 400;
+}
+
 .community-entries-hint {
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -6935,4 +7006,58 @@ body.theme-tired .btn-bias-check {
 /* Utility: margin-left */
 .ml\+ {
   margin-left: 1rem;
+}
+
+/* Global focus-visible ring (low specificity so existing rules can override) */
+:where(a, button, input, textarea, select, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"])):focus {
+  outline: none;
+}
+:where(a, button, input, textarea, select, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(255,255,255,.35));
+}
+
+/* Offline notice (Social/Sharing) */
+.offline-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.35;
+  font-style: italic;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Soft toast (unified feedback) */
+.soft-toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(520px, calc(100% - 24px));
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(20, 20, 26, 0.92);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.soft-toast.soft-toast--visible {
+  opacity: 1;
+}
+.soft-toast.hidden {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .soft-toast {
+    transition: none;
+  }
 }

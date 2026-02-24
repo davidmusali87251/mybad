@@ -7,20 +7,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>SlipUp</title>
-  <meta name="description" content="Log daily mistakes, see patterns, and turn them into deliberate learning. Your data stays on your device.">
+  <meta name="description" content="Note daily slip-ups, see patterns, and turn them into deliberate learning. Your data stays on your device.">
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebApplication","name":"SlipUp","description":"Log daily mistakes, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.","url":"https://www.slipup.io/","applicationCategory":"LifestyleApplication"}
+  {"@context":"https://schema.org","@type":"WebApplication","name":"SlipUp","description":"Note daily slip-ups, see patterns, and turn them into deliberate learning. Reduce useless mistakes and keep the ones that grow you.","url":"https://www.slipup.io/","applicationCategory":"LifestyleApplication"}
   </script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=107">
+  <link rel="stylesheet" href="styles.css?v=113">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <a href="#main" class="skip-link">Skip to main content</a>
-  <header class="top-bar">
+  <a href="#personal-view" class="skip-link">Skip to content</a>
+  <header class="top-bar" role="navigation" aria-label="Primary">
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
       <a href="index.html" id="top-bar-brand" class="top-bar-brand" title="Not a judge. A mirror. — See what again. Keep to learn. Feel better.">SlipUp</a>
@@ -33,15 +33,15 @@
       </label>
     </div>
     <div class="top-bar-actions">
-      <a href="index.html#phase-tabs" id="top-bar-slipups" class="top-bar-slipups" title="See everyone's entries — opens world feed" aria-label="World: 0" role="button">🌍 0</a>
-      <a href="#main" class="top-bar-home" id="top-bar-add" aria-label="Add mistake">+ Add</a>
+      <a href="index.html#phase-tabs" id="top-bar-slipups" class="top-bar-slipups" title="See everyone's entries — opens world chart" aria-label="World: 0" role="button">🌍 0</a>
+      <a href="#main" class="top-bar-home" id="top-bar-add" aria-label="Add slip-up">+ Add</a>
     </div>
   </header>
   <div id="add-to-home-banner" class="add-to-home-banner hidden" role="region" aria-label="Add to home screen">
     <span class="add-to-home-text">Add SlipUp to your home screen from your browser menu for quick access.</span>
     <button type="button" id="add-to-home-dismiss" class="add-to-home-dismiss" aria-label="Dismiss">Got it</button>
   </div>
-  <div class="app">
+  <div class="app" role="main" aria-label="SlipUp">
     <header class="app-hero" id="main-hero">
       <div class="app-hero-inner">
         <h1 class="app-hero-title">SlipUp</h1>
@@ -58,9 +58,9 @@
       <button type="button" class="phase-tab" role="tab" aria-selected="false" data-phase="social">Social</button>
       <a href="inside.html" class="phase-tab phase-tab--link" title="SlipUp Inside — for group check-ins">Inside</a>
     </div>
-    <div id="personal-view" class="app-view">
+    <div id="personal-view" class="app-view" tabindex="-1">
     <section class="micro-goal-section micro-goal-card" id="micro-goal-section" aria-labelledby="micro-goal-heading" role="region">
-      <p class="micro-goal-pause" aria-hidden="true">Before you log — one intention</p>
+      <p class="micro-goal-pause" aria-hidden="true">Before you note — one intention</p>
       <h2 class="micro-goal-heading" id="micro-goal-heading">What matters to you today?</h2>
       <div class="micro-goal-input-wrap">
         <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-hint micro-goal-char-count" autocomplete="off" autofocus>
@@ -119,7 +119,7 @@
           <button type="button" id="btn-cant-tell" class="btn-quick">I can't tell</button>
         </div>
         <p class="limit-message hidden" id="limit-message">Free version: 10 entries. Unlock full version for $5.</p>
-        <p class="first-time-nudge" id="first-time-nudge">Add your first mistake above — one line is enough, or tap I can't tell if you're unsure.</p>
+        <p class="first-time-nudge" id="first-time-nudge">One line is enough — or tap "I can't tell."</p>
       </div>
     </section>
 
@@ -169,7 +169,7 @@
         <p class="insight-text insight-chart-summary" id="day-vs-average"></p>
       </div>
       <div class="insight-block insight-block--time">
-        <span class="insight-label">When you log</span>
+        <span class="insight-label">When you added</span>
         <div class="insight-chart" id="time-of-day-chart"></div>
         <p class="insight-text insight-chart-summary" id="time-of-day"></p>
       </div>
@@ -178,7 +178,7 @@
         <div class="insight-chart" id="top-patterns-chart"></div>
       </div>
       <div class="insight-block insight-block--mood insight-patterns">
-        <span class="insight-label">Your mood when logging</span>
+        <span class="insight-label">Mood when you added</span>
         <div class="insight-chart" id="more-patterns-chart"></div>
       </div>
       <div class="insight-block insight-block-bias-check" id="bias-check-insight-block">
@@ -235,21 +235,21 @@
         <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
       </div>
       <ul class="entry-list" id="entry-list"></ul>
-      <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a slip-up">No slip-ups logged yet. Add one above.</button>
+      <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a slip-up">Quiet.</button>
     </section>
 
     <section class="progress-section" id="progress-section">
       <h2>This week vs last week</h2>
       <p class="section-hint">Fewer repeats, more experiments — that's the trend.</p>
       <div class="progress-cards" id="progress-cards"></div>
-      <p class="progress-empty" id="progress-empty">Log in this week and last to compare.</p>
+      <p class="progress-empty" id="progress-empty">Two weeks make a comparison.</p>
     </section>
 
     <section class="trends-section" id="trends-section">
       <h2>Your trends</h2>
       <p class="section-hint">Avoidable ↓ · Fertile ↔ or ↑</p>
       <div class="trends-chart" id="trends-chart"></div>
-      <p class="trends-empty" id="trends-empty">Log mistakes over a few days to see your curves.</p>
+      <p class="trends-empty" id="trends-empty">A few days sketch a curve.</p>
       <p class="trends-highlight" id="trends-highlight"></p>
     </section>
 
@@ -269,6 +269,7 @@
         <p class="reflection-hint">A mirror, not a judge. One line each: what to reduce, what to keep.</p>
         <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
         <div class="auto-reflection" id="auto-reflection"></div>
+        <p class="reflection-note hidden" id="latest-entry-insight"></p>
         <div class="reflection-grid">
           <div class="reflection-card reflection-card--avoidable">
             <h3>Reduce</h3>
@@ -311,15 +312,18 @@
           </div>
         </details>
       </div>
-      <div class="reflection-share-wrap" id="reflection-share-wrap" aria-labelledby="reflection-share-heading">
+      <div class="reflection-share-wrap hidden" id="reflection-share-wrap" aria-labelledby="reflection-share-heading">
+        <p class="reflection-share-echo" id="reflection-share-echo">Not alone in this</p>
         <p class="reflection-share-prompt" id="reflection-share-heading">Add your numbers to the world chart?</p>
         <p class="reflection-share-hint">Pick month, week, or today — then share. Anonymous. No account.</p>
         <a href="#social" id="btn-share-after-reflection" class="btn-share-after-reflection" title="Share your stats — pick period, then share" aria-label="Share my result" role="button">Share my result</a>
+        <button type="button" id="btn-dismiss-share-after-reflection" class="btn-reflection-share-dismiss" aria-label="Dismiss share prompt">Not now</button>
       </div>
     </section>
     </div>
 
     <div id="social-view" class="app-view hidden">
+    <p id="offline-note" class="offline-note hidden" aria-live="polite">Offline. Sharing will return when you're online.</p>
     <div class="social-tab-panel" id="social-tab-share" aria-hidden="false">
     <div class="social-share-unified social-share-card" id="social-block">
       <p class="social-share-intro">Share your stats anonymously — no account, no name. Your numbers join the world chart.</p>
@@ -376,7 +380,7 @@
     <section class="community-section community-section--separate community-section--share" id="community-section">
       <div class="community-section-header">
         <h2>Recent shares</h2>
-        <a href="index.html#phase-tabs" class="btn-global-world" title="See everyone's entries — opens world feed" aria-label="World feed">🌍</a>
+        <a href="index.html#phase-tabs" class="btn-global-world" title="See everyone's entries — opens world chart" aria-label="World chart">🌍</a>
       </div>
       <p class="community-hint">Anonymous period stats from everyone. Yours join above.</p>
       <div class="shared-list-chart" id="shared-list-chart"></div>
@@ -393,11 +397,12 @@
     <section class="community-entries-section community-entries-section--standalone" id="community-entries-section">
       <div class="community-entries-card" id="community-entries-card" aria-label="Browse shared slip-ups from everyone">
         <div class="community-entries-top">
+          <p class="world-header-line">Not alone in this.</p>
           <div class="community-entries-header">
             <h2>What's happening in the world</h2>
             <div class="community-entries-header-actions">
               <button type="button" id="btn-shared-total" class="btn-shared-total" title="The world's slip-up chart" aria-label="World slip-ups: 0">🌍 0 slip-ups</button>
-              <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add a mistake to contribute to the world feed">+ Add mine</button>
+              <button type="button" id="btn-add-from-community" class="btn-add-mine" aria-label="Add one to contribute to the world chart">+ Add mine</button>
             </div>
           </div>
           <p class="community-entries-hint">Anonymous moments from everyone. Browse by type and mood — notice without blame.</p>
@@ -442,7 +447,7 @@
           </div>
         </div>
         <ul class="entry-list" id="shared-entries-list"></ul>
-        <p class="empty-state empty-state--clickable" id="shared-entries-empty">No shared entries yet. Add a mistake above to contribute yours.</p>
+        <p class="empty-state empty-state--clickable" id="shared-entries-empty">No shared entries yet. Add a slip-up above to contribute yours.</p>
         <p class="community-error hidden" id="shared-entries-error"></p>
       </div>
       <a href="#community-section" id="btn-link-recent-shares" class="btn-link-recent-shares" title="Go to Recent shares to see period stats and share yours">See recent shares →</a>
@@ -464,11 +469,11 @@
   <div class="bias-check-overlay hidden" id="bias-check-overlay" role="dialog" aria-modal="true" aria-labelledby="bias-check-title" aria-hidden="true">
     <div class="bias-check-panel">
       <p class="bias-check-panel-stat" id="bias-check-panel-stat" aria-live="polite"></p>
-      <p class="bias-check-panel-intent" id="bias-check-panel-intent">Reflect before you save. Why do you see this as a mistake?</p>
+      <p class="bias-check-panel-intent" id="bias-check-panel-intent">Reflect before you save. Why does this one stand out?</p>
       <h3 class="bias-check-title" id="bias-check-title">Choose the closest reason</h3>
       <div class="bias-check-options" id="bias-check-options">
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="harm"><span>It caused real harm</span></label>
-        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>It failed</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>Not this time.</span></label>
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="different"><span>It's different from what I would do</span></label>
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="triggered"><span>I felt annoyed or triggered</span></label>
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="unsure"><span>I'm not sure</span></label>
@@ -481,11 +486,11 @@
   </div>
 
   <script>window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};</script>
-  <script src="config.js?v=107"></script>
+  <script src="config.js?v=113"></script>
   <!-- Supabase JS v2 UMD bundle (defines window.supabase) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="entryInsightsData.js?v=107"></script>
-  <script src="app.js?v=107"></script>
+  <script src="entryInsightsData.js?v=113"></script>
+  <script src="app.js?v=113"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
@@ -536,5 +541,6 @@
       }
     }
   </script>
+  <div id="soft-toast" class="soft-toast hidden" role="status" aria-live="polite"></div>
 </body>
 </html>

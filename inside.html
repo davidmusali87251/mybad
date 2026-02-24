@@ -9,14 +9,14 @@
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=107">
+  <link rel="stylesheet" href="styles.css?v=113">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <a href="#main" class="skip-link">Skip to main content</a>
-  <header class="top-bar">
+  <a href="#personal-view" class="skip-link">Skip to content</a>
+  <header class="top-bar" role="navigation" aria-label="Primary">
     <div class="top-bar-left">
       <button type="button" id="btn-settings" class="top-bar-settings" title="Settings" aria-label="Settings" aria-expanded="false" aria-haspopup="true">🔔</button>
       <a href="inside.html" class="top-bar-brand" title="SlipUp Inside — Group check-ins">SlipUp Inside</a>
@@ -70,7 +70,7 @@
       <p class="group-gate-empty-hint hidden" id="group-gate-empty-hint">Create your first group or paste an invite link to join one.</p>
     </div>
   </div>
-  <div id="inside-app-wrap" class="app hidden">
+  <div id="inside-app-wrap" class="app hidden" role="main" aria-label="SlipUp">
     <header class="app-hero" id="main-hero">
       <div class="app-hero-inner">
         <div class="app-hero-group-row">
@@ -119,13 +119,13 @@
           </div>
           <div class="group-members-error-wrap hidden" id="group-members-error-wrap">
             <p class="group-members-error" id="group-members-error" role="alert"></p>
-            <button type="button" id="btn-members-try-again" class="btn-try-again">Try again</button>
+            <button type="button" id="btn-members-try-again" class="btn-try-again">Try later</button>
           </div>
           <ul class="group-members-list" id="group-members-list" aria-label="Group members"></ul>
         </div>
         <div class="group-invites-section hidden" id="group-invites-section">
           <h4 class="group-invites-heading">Active invite links</h4>
-          <p class="group-invites-hint">Only creators see these. Cancel to invalidate a link.</p>
+          <p class="group-invites-hint">Only creators see these. Cancel to revoke a link.</p>
           <div class="group-invites-loading hidden" id="group-invites-loading">Loading…</div>
           <ul class="group-invites-list" id="group-invites-list"></ul>
           <p class="group-invites-empty hidden" id="group-invites-empty">No active invites. Use Invite members above to create one.</p>
@@ -140,9 +140,9 @@
       <button type="button" class="phase-tab active" role="tab" aria-selected="true" data-phase="personal">Group</button>
       <button type="button" class="phase-tab" role="tab" aria-selected="false" data-phase="social">Shares</button>
     </div>
-    <div id="personal-view" class="app-view">
+    <div id="personal-view" class="app-view" tabindex="-1">
     <section class="micro-goal-section micro-goal-card" id="micro-goal-section" aria-labelledby="micro-goal-heading-inside" role="region">
-      <p class="micro-goal-pause" aria-hidden="true">Before you log — one intention</p>
+      <p class="micro-goal-pause" aria-hidden="true">Before you note — one intention</p>
       <h2 class="micro-goal-heading" id="micro-goal-heading-inside">What matters to you today?</h2>
       <div class="micro-goal-input-wrap">
         <input type="text" id="micro-goal-input" class="micro-goal-input" placeholder="e.g. Less heat · One shift · Breathe first" maxlength="13" aria-describedby="micro-goal-char-count" autocomplete="off" autofocus>
@@ -161,15 +161,6 @@
     <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What moment do you want to remember?</label>
-        <div class="add-card-input-wrap">
-          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19">
-          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
-        </div>
-
-        <div class="mode-row">
-          <span class="mode-label">Mood</span>
-          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
-        </div>
         <div class="type-row">
           <span class="type-label">Kind of moment</span>
           <div class="type-options">
@@ -190,6 +181,14 @@
             </label>
           </div>
         </div>
+        <div class="mode-row">
+          <span class="mode-label">Mood</span>
+          <button type="button" id="btn-theme" class="btn-mode" title="How does this feel?">Calm</button>
+        </div>
+        <div class="add-card-input-wrap">
+          <input type="text" id="mistake-note" placeholder="e.g. Argument cooled down, I walked away…" maxlength="19">
+          <span class="add-card-char-count" id="mistake-note-char-count" aria-live="polite">0/19</span>
+        </div>
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
         <p class="entry-insight hidden" id="entry-insight" aria-live="polite"></p>
 
@@ -202,7 +201,7 @@
           <button type="button" id="btn-cant-tell" class="btn-quick">I can't tell</button>
         </div>
         <p class="limit-message hidden" id="limit-message">Free version: 10 moments. Unlock full version for $5.</p>
-        <p class="first-time-nudge" id="first-time-nudge">Add your first moment above — one line is enough, or tap I can't tell if you're unsure.</p>
+        <p class="first-time-nudge" id="first-time-nudge">One line is enough — or tap "I can't tell."</p>
       </div>
     </section>
 
@@ -255,6 +254,13 @@
           <div class="stats-insight-chart" id="stats-insight-chart" aria-hidden="true"></div>
           <p class="streak-note" id="streak-note"></p>
         </div>
+        <div class="insight-block insight-block-bias-check" id="bias-check-insight-block">
+          <div class="bias-check-insight-header">
+            <span class="insight-label">Moments observed &amp; Bias Check</span>
+          </div>
+          <p class="bias-check-period-breakdown" id="bias-check-period-breakdown" aria-label="Observed by period"></p>
+          <div class="bias-check-insight-content" id="bias-check-insight"></div>
+        </div>
       </div>
     </section>
 
@@ -269,7 +275,7 @@
         <p class="insight-text insight-chart-summary" id="day-vs-average"></p>
       </div>
       <div class="insight-block insight-block--time">
-        <span class="insight-label">When you log</span>
+        <span class="insight-label">When you added</span>
         <div class="insight-chart" id="time-of-day-chart"></div>
         <p class="insight-text insight-chart-summary" id="time-of-day"></p>
       </div>
@@ -278,15 +284,8 @@
         <div class="insight-chart" id="top-patterns-chart"></div>
       </div>
       <div class="insight-block insight-block--mood insight-patterns">
-        <span class="insight-label">Your mood when logging</span>
+        <span class="insight-label">Mood when you added</span>
         <div class="insight-chart" id="more-patterns-chart"></div>
-      </div>
-      <div class="insight-block insight-block-bias-check" id="bias-check-insight-block">
-        <div class="bias-check-insight-header">
-          <span class="insight-label">Moments observed &amp; Bias Check</span>
-        </div>
-        <p class="bias-check-period-breakdown" id="bias-check-period-breakdown" aria-label="Observed by period"></p>
-        <div class="bias-check-insight-content" id="bias-check-insight"></div>
       </div>
     </section>
 
@@ -321,14 +320,14 @@
       <h2>This week vs last week</h2>
       <p class="section-hint">Less heat, more shift — that's the trend.</p>
       <div class="progress-cards" id="progress-cards"></div>
-      <p class="progress-empty" id="progress-empty">Log in this week and last to compare.</p>
+      <p class="progress-empty" id="progress-empty">Two weeks make a comparison.</p>
     </section>
 
     <section class="trends-section" id="trends-section">
       <h2>Your trends</h2>
       <p class="section-hint">Heat ↓ · Shift / Support ↔ or ↑</p>
       <div class="trends-chart" id="trends-chart"></div>
-      <p class="trends-empty" id="trends-empty">Log moments over a few days to see your curves.</p>
+      <p class="trends-empty" id="trends-empty">A few days sketch a curve.</p>
       <p class="trends-highlight" id="trends-highlight"></p>
     </section>
 
@@ -355,7 +354,7 @@
         <button type="button" id="btn-export-csv" class="btn-export">Export CSV</button>
       </div>
       <ul class="entry-list" id="entry-list"></ul>
-      <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a moment">No moments logged yet. Add one above.</button>
+      <button type="button" class="empty-state empty-state-add" id="empty-state" aria-label="Add a moment">Quiet.</button>
     </section>
 
     <section class="reflection-section" id="reflection-section">
@@ -364,6 +363,7 @@
         <p class="reflection-hint">Notice the heat, notice the shifts. One line each.</p>
         <p class="reflection-context-prompt" id="reflection-context-prompt"></p>
         <div class="auto-reflection" id="auto-reflection"></div>
+        <p class="reflection-note hidden" id="latest-entry-insight"></p>
         <div class="reflection-grid">
           <div class="reflection-card reflection-card--avoidable">
             <h3>Heat</h3>
@@ -410,6 +410,7 @@
     </div>
 
     <div id="social-view" class="app-view hidden">
+      <p id="offline-note" class="offline-note hidden" aria-live="polite">Offline. Sharing will return when you're online.</p>
       <section class="community-entries-section community-entries-section--standalone" id="community-entries-section">
         <div class="community-entries-card" id="community-entries-card" aria-label="Browse shared moments from your group">
           <div class="community-entries-top">
@@ -478,7 +479,7 @@
       <h3 class="bias-check-title" id="bias-check-title">Choose the closest reason</h3>
       <div class="bias-check-options" id="bias-check-options">
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="harm"><span>It caused real harm</span></label>
-        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>It failed</span></label>
+        <label class="bias-check-option"><input type="radio" name="bias-reason" value="failed"><span>Not this time.</span></label>
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="different"><span>It's different from what I would do</span></label>
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="triggered"><span>I felt annoyed or triggered</span></label>
         <label class="bias-check-option"><input type="radio" name="bias-reason" value="unsure"><span>I'm not sure</span></label>
@@ -494,9 +495,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=107"></script>
+  <script src="config.js?v=113"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=107"></script>
+  <script src="inside-auth.js?v=113"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -544,7 +545,7 @@
               window.SLIPUP_INSIDE_GROUP_ID = groupId;
               showApp();
             } else {
-              showGate({ joinError: j.error || 'Invalid or expired invite.' });
+              showGate({ joinError: j.error || "Link expired or doesn't work." });
             }
           });
           return;
@@ -637,7 +638,16 @@
         Auth.getUserGroups().then(function(r) {
           var hasGroups = r.groups && r.groups.length > 0;
           var switchTab = gate.querySelector('.group-gate-tab[data-tab="switch"]');
+          var createTab = gate.querySelector('.group-gate-tab[data-tab="create"]');
+          var emptyHint = document.getElementById('group-gate-empty-hint');
           if (switchTab) switchTab.classList.toggle('hidden', !hasGroups);
+          if (hasGroups) {
+            if (switchTab) switchTab.click();
+            if (emptyHint) emptyHint.classList.add('hidden');
+          } else {
+            if (createTab) createTab.click();
+            if (emptyHint) emptyHint.classList.remove('hidden');
+          }
         });
 
         if (btnCreate && nameInput) {
@@ -676,8 +686,8 @@
       })();
     })();
   </script>
-  <script src="entryInsightsData.js?v=107"></script>
-  <script src="app.js?v=107"></script>
+  <script src="entryInsightsData.js?v=113"></script>
+  <script src="app.js?v=113"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
@@ -723,6 +733,7 @@
       }
     }
   </script>
+  <div id="soft-toast" class="soft-toast hidden" role="status" aria-live="polite"></div>
 </body>
 </html>
 

@@ -23,8 +23,10 @@ const TODAYS_REFLECTIONS_TABLE = (CONFIG.SUPABASE_TODAYS_REFLECTIONS_TABLE || ''
 let entries = [];
 let currentPeriod = 'day';
 let currentTypeFilter = 'all';
+let currentPhase = 'personal';
 let lastEntry = null;
 let lastShareAt = 0;
+let lastOnlineRefreshAt = 0;
 
 // Normalize Supabase URL: trim and remove trailing slash (avoids "Invalid API key" from wrong URL format)
 const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim().replace(/\/+$/, '');
@@ -60,15 +62,15 @@ const TYPE_PHRASES = {
 };
 
 const BIAS_REFLECTIONS = {
-  harm: 'This may be a useful observed mistake. Ask yourself what you can learn from it.',
-  failed: 'This may be a useful observed mistake. Ask yourself what you can learn from it.',
-  different: 'This might not be a mistake. It could be a difference in values, style, or perspective.',
-  triggered: 'This might not be a mistake. It could be a difference in values, style, or perspective.',
-  unsure: "Not every observed mistake needs a conclusion. Sometimes awareness is enough."
+  harm: 'This may be useful to notice. What did you learn?',
+  failed: 'This may be useful to notice. What did you learn?',
+  different: 'Might be a difference in values, style, or perspective.',
+  triggered: 'Might be a difference in values, style, or perspective.',
+  unsure: "Not every observation needs a conclusion. Sometimes awareness is enough."
 };
 const BIAS_LABELS = { harm: 'harm', failed: 'failed', different: 'different', triggered: 'triggered', unsure: 'unsure' };
 const BIAS_DISPLAY = { harm: 'Harm', failed: 'Failed', different: 'Different', triggered: 'Triggered', unsure: 'Unsure' };
-const BIAS_TITLES = { harm: 'It caused real harm', failed: 'It failed', different: "Different from what I'd do", triggered: 'I felt annoyed or triggered', unsure: "I'm not sure" };
+const BIAS_TITLES = { harm: 'It caused real harm', failed: "Not this time.", different: "Different from what I'd do", triggered: 'I felt annoyed or triggered', unsure: "I'm not sure" };
 
 const STREAK_REFLECTION_STORAGE_KEY = MODE === 'inside' ? 'slipup-streak-reflection-inside' : 'slipup-streak-reflection';
 const STREAK_REFLECTION_QUESTION = "2 days in a row — what helped you show up?";
@@ -88,7 +90,10 @@ const TYPE_PLACEHOLDERS = {
   observed: 'What did I see? What lesson applies to me?'
 };
 const ENTRY_INSIGHT_LAST_KEY = MODE === 'inside' ? 'slipup-last-entry-insight-inside' : 'slipup-last-entry-insight';
-const ENTRY_INSIGHT_HIDE_MS = 7000;
+const ENTRY_INSIGHT_HIDE_MS = 9000;
+const ENTRY_INSIGHT_TODAY_KEY = MODE === 'inside' ? 'slipup-latest-entry-insight-inside' : 'slipup-latest-entry-insight';
+const ENTRY_INSIGHT_RECENT_KEY = MODE === 'inside' ? 'slipup-recent-entry-insights-inside' : 'slipup-recent-entry-insights';
+const ENTRY_INSIGHT_RECENT_WINDOW = 5;
 const ENTRY_INSIGHT_THEMES = ['calm', 'focus', 'stressed', 'curious', 'tired'];
 let entryInsightHideTimer = null;
 const FALLBACK_ENTRY_INSIGHTS = [
@@ -178,6 +183,7 @@ const btnBiasCheckClose = document.getElementById('btn-bias-check-close');
 const reflectionAvoidable = document.getElementById('reflection-avoidable');
 const reflectionFertile = document.getElementById('reflection-fertile');
 const reflectionNote = document.getElementById('reflection-note');
+const latestEntryInsight = document.getElementById('latest-entry-insight');
 const reflectionContextPrompt = document.getElementById('reflection-context-prompt');
 const reflectionAvoidableCounter = document.getElementById('reflection-avoidable-counter');
 const reflectionFertileCounter = document.getElementById('reflection-fertile-counter');
@@ -186,7 +192,13 @@ const reflectionHistoryBody = document.getElementById('reflection-history-body')
 const reflectionHistorySection = document.getElementById('reflection-history');
 const reflectionIntentionMatch = document.getElementById('reflection-intention-match');
 const btnExportReflections = document.getElementById('btn-export-reflections');
+const reflectionShareWrap = document.getElementById('reflection-share-wrap');
+const btnDismissShareAfterReflection = document.getElementById('btn-dismiss-share-after-reflection');
+const offlineNote = document.getElementById('offline-note');
+const toastEl = document.getElementById('soft-toast');
 const limitMessage = document.getElementById('limit-message');
+let toastTimer = null;
+let prevOnline = true;
 const upgradeCards = document.getElementById('upgrade-cards');
 const unlockedBadge = document.getElementById('unlocked-badge');
 const btnBuy = document.getElementById('btn-buy');
@@ -198,6 +210,9 @@ const REFLECTIONS_KEY = MODE === 'inside' ? 'mistake-tracker-reflections-inside'
 const MICRO_GOAL_KEY = MODE === 'inside' ? 'mistake-tracker-micro-goal-inside' : 'mistake-tracker-micro-goal';
 const REMINDER_KEY = MODE === 'inside' ? 'mistake-tracker-reminder-inside' : 'mistake-tracker-reminder';
 const ADD_TO_HOME_DISMISSED_KEY = 'mistake-tracker-add-to-home-dismissed';
+const REFLECTION_SHARE_DISMISSED_DAY_KEY = 'slipup-reflection-share-dismissed-day';
+const REFLECTION_SHARE_SHARED_DAY_KEY = 'slipup-reflection-share-shared-day';
+const REFLECTION_SHARE_MIN_HOUR = 18;
 let paypalButtonRendered = false;
 
 const microGoalInput = document.getElementById('micro-goal-input');
@@ -411,7 +426,38 @@ function getBiasHintKeywords(reason) {
 function hasKeywordMatch(noteText, tokenSet, keyword) {
   if (!keyword) return false;
   if (keyword.indexOf(' ') >= 0) return noteText.indexOf(keyword) >= 0;
+  if (keyword.endsWith('*')) {
+    const prefix = keyword.slice(0, -1);
+    if (!prefix) return false;
+    if (noteText.indexOf(prefix) >= 0) return true;
+    const tokenList = Array.from(tokenSet);
+    for (let i = 0; i < tokenList.length; i += 1) {
+      if (tokenList[i].indexOf(prefix) === 0) return true;
+    }
+    return false;
+  }
   return tokenSet.has(keyword) || noteText.indexOf(keyword) >= 0;
+}
+
+function loadRecentInsightIds() {
+  try {
+    const raw = localStorage.getItem(ENTRY_INSIGHT_RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(function (id) { return String(id || ''); }).filter(Boolean).slice(0, ENTRY_INSIGHT_RECENT_WINDOW);
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentInsightId(id) {
+  if (!id) return;
+  const recent = loadRecentInsightIds().filter(function (x) { return x !== id; });
+  recent.unshift(id);
+  try {
+    localStorage.setItem(ENTRY_INSIGHT_RECENT_KEY, JSON.stringify(recent.slice(0, ENTRY_INSIGHT_RECENT_WINDOW)));
+  } catch (_) {}
 }
 
 function pickEntryInsight(entry) {
@@ -463,6 +509,9 @@ function pickEntryInsight(entry) {
   }
 
   if (!candidates.length) return null;
+  const recentIds = loadRecentInsightIds();
+  const outsideRecent = candidates.filter(function (item) { return recentIds.indexOf(item.id) === -1; });
+  if (outsideRecent.length) candidates.splice(0, candidates.length, ...outsideRecent);
   const lastInsightId = localStorage.getItem(ENTRY_INSIGHT_LAST_KEY) || '';
   const withoutRepeat = candidates.filter(function (item) { return item.id !== lastInsightId; });
   const poolToUse = withoutRepeat.length ? withoutRepeat : candidates;
@@ -479,6 +528,39 @@ function hideEntryInsight() {
   entryInsightEl.classList.add('hidden');
 }
 
+function loadLatestEntryInsight() {
+  try {
+    const raw = localStorage.getItem(ENTRY_INSIGHT_TODAY_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLatestEntryInsight(insightText, insightId) {
+  try {
+    localStorage.setItem(ENTRY_INSIGHT_TODAY_KEY, JSON.stringify({
+      dayKey: getTodayKey(),
+      text: String(insightText || ''),
+      id: String(insightId || ''),
+      at: Date.now()
+    }));
+  } catch (_) {}
+}
+
+function renderLatestEntryInsightInReflection() {
+  if (!latestEntryInsight) return;
+  const data = loadLatestEntryInsight();
+  const text = data && data.dayKey === getTodayKey() ? String(data.text || '').trim() : '';
+  if (!text) {
+    latestEntryInsight.textContent = '';
+    latestEntryInsight.classList.add('hidden');
+    return;
+  }
+  latestEntryInsight.textContent = 'Latest insight: ' + text;
+  latestEntryInsight.classList.remove('hidden');
+}
+
 function showEntryInsightForEntry(entry) {
   if (!entryInsightEl) return;
   const insight = pickEntryInsight(entry);
@@ -492,6 +574,9 @@ function showEntryInsightForEntry(entry) {
   void entryInsightEl.offsetWidth;
   entryInsightEl.classList.add('entry-insight--visible');
   localStorage.setItem(ENTRY_INSIGHT_LAST_KEY, insight.id);
+  saveRecentInsightId(insight.id);
+  saveLatestEntryInsight(insight.text, insight.id);
+  renderLatestEntryInsightInReflection();
   entryInsightHideTimer = setTimeout(function () {
     hideEntryInsight();
   }, ENTRY_INSIGHT_HIDE_MS);
@@ -581,6 +666,7 @@ function renderReflection() {
   reflectionFertile.value = today.fertile || '';
 
   if (reflectionContextPrompt) reflectionContextPrompt.textContent = getReflectionPrompt();
+  renderLatestEntryInsightInReflection();
   if (reflectionNote) {
     if (!today.avoidable && !today.fertile) {
       reflectionNote.textContent = '';
@@ -794,6 +880,14 @@ function getStartOfDay(d) {
   return x.getTime();
 }
 
+function getLocalDayKey(d) {
+  d = d instanceof Date ? d : new Date(d);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
 function getStartOfWeek(d) {
   const x = new Date(d);
   const day = x.getDay();
@@ -971,7 +1065,7 @@ function renderStats() {
     if (count === 0) {
       statsInsight.textContent = MODE === 'inside'
         ? "No moments yet. Add one when you're ready."
-        : "Nothing logged yet. Add one when something comes up.";
+        : "Nothing here yet. Note one when something comes up.";
     } else {
       const sep = '<span class="stats-insight-sep"> · </span>';
       const seg = function (type, n, text) {
@@ -1002,7 +1096,7 @@ function renderStats() {
     if (count === 0) {
       statsInsightSocial.textContent = MODE === 'inside'
         ? "No moments yet. Add one when you're ready."
-        : "Nothing logged yet. Add one when something comes up.";
+        : "Nothing here yet. Note one when something comes up.";
     } else {
       const sep = '<span class="stats-insight-sep"> · </span>';
       const seg = function (type, n, text) {
@@ -1122,6 +1216,7 @@ function renderStats() {
   renderMicroGoal();
   renderInsights();
   updateSocialToShare();
+  updateReflectionShareCTA();
 }
 
 function getExplorationSoWhat(pct) {
@@ -1241,6 +1336,24 @@ function renderList() {
     if (emptyState.classList.contains('empty-state-add')) emptyState.disabled = isAtLimit();
   }
   if (firstTimeNudge) firstTimeNudge.classList.toggle('hidden', entries.length > 0);
+  updateEmptyCopy(show.length, entries.length, currentPeriod);
+}
+
+function updateEmptyCopy(showCount, totalCount, period) {
+  const noun = MODE === 'inside' ? 'moments' : 'slip-ups';
+  if (emptyState) {
+    if (showCount > 0) return;
+    if (totalCount === 0) {
+      emptyState.textContent = MODE === 'inside' ? 'No moments yet.' : 'No slip-ups yet.';
+    } else {
+      if (period === 'day') emptyState.textContent = 'Quiet today.';
+      else if (period === 'week') emptyState.textContent = 'Quiet week.';
+      else emptyState.textContent = 'Quiet month.';
+    }
+  }
+  if (firstTimeNudge && totalCount === 0) {
+    firstTimeNudge.textContent = 'One line is enough — or tap "I can\'t tell."';
+  }
 }
 
 function getWeekBounds(weeksAgo) {
@@ -1355,8 +1468,8 @@ function renderProgress() {
     ? thisWeek.exploration - lastWeek.exploration
     : null;
   let diffText = '';
-  if (lastWeek.total === 0 && thisWeek.total > 0) diffText = "You've started logging this week.";
-  else if (thisWeek.total === 0 && lastWeek.total > 0) diffText = MODE === 'inside' ? 'No moments this week yet.' : 'No mistakes logged this week yet.';
+  if (lastWeek.total === 0 && thisWeek.total > 0) diffText = MODE === 'inside' ? 'Started this week.' : 'Started this week.';
+  else if (thisWeek.total === 0 && lastWeek.total > 0) diffText = MODE === 'inside' ? 'Quiet week so far.' : 'Quiet week so far.';
   else if (totalDiff !== 0 || (explDiff !== null && explDiff !== 0)) {
     const parts = [];
     if (totalDiff < 0) parts.push('Fewer ' + noun + '.');
@@ -2093,18 +2206,20 @@ function renderInsights() {
 
   if (morePatternsChart) {
     const themes = { calm: 0, focus: 0, stressed: 0, curious: 0, tired: 0 };
+    const themeLabels = { calm: 'Calm', focus: 'Focused', stressed: 'Overwhelmed', curious: 'Curious', tired: 'Drained' };
     entries.forEach(e => {
       const t = (e.theme === 'focus' || e.theme === 'stressed' || e.theme === 'curious' || e.theme === 'tired') ? e.theme : 'calm';
       themes[t] = (themes[t] || 0) + 1;
     });
     const sorted = Object.entries(themes).filter(([, c]) => c > 0).sort((a, b) => b[1] - a[1]);
     if (sorted.length === 0) {
-      morePatternsChart.innerHTML = '<p class="insight-chart-empty">Log with different moods to see patterns.</p>';
+      morePatternsChart.innerHTML = '<p class="insight-chart-empty">A few moods sketch a pattern.</p>';
     } else {
       const maxC = sorted[0][1];
       const rows = sorted.map(([theme, count]) => {
         const w = (count / maxC) * 100;
-        return '<div class="insight-mood-row"><span class="insight-mood-label insight-mood-label--' + theme + '">' + theme + '</span><div class="insight-mood-bar-wrap"><div class="insight-mood-bar-seg insight-mood-bar-seg--' + theme + '" style="width:' + w + '%"></div></div><span class="insight-mood-count">' + count + '</span></div>';
+        const themeLabel = themeLabels[theme] || theme;
+        return '<div class="insight-mood-row"><span class="insight-mood-label insight-mood-label--' + theme + '">' + themeLabel + '</span><div class="insight-mood-bar-wrap"><div class="insight-mood-bar-seg insight-mood-bar-seg--' + theme + '" style="width:' + w + '%"></div></div><span class="insight-mood-count">' + count + '</span></div>';
       }).join('');
       morePatternsChart.innerHTML = '<div class="insight-mood-chart">' + rows + '</div>';
     }
@@ -2153,7 +2268,7 @@ function renderInsights() {
     } else {
       biasCheckInsight.innerHTML =
         '<div class="bias-check-insight-row">' +
-          '<div class="bias-check-data bias-check-empty">No ' + oLabel + ' yet. Spot a pattern in others? Log one when you notice.</div>' +
+          '<div class="bias-check-data bias-check-empty">No ' + oLabel + ' yet. Spot a pattern in others? Note one when you notice.</div>' +
         '</div>';
     }
     biasCheckInsightBlock.classList.remove('hidden');
@@ -2332,7 +2447,7 @@ function addMistake() {
     pushEntryToShared({ note, type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
   } else if (!SHARING_ENABLED && MODE === 'personal' && addSyncStatus) {
-    showAddSyncStatus('Saved locally — add config.js to sync to world feed', false);
+    showAddSyncStatus('Saved locally — add config.js to sync to world chart', false);
   }
   if (MODE === 'inside' && shareToGroupSection) {
     renderShareToGroupList();
@@ -2450,7 +2565,7 @@ function showAddSyncStatus(text, isError) {
 
 function pushEntryToShared(entry) {
   if (!SHARING_ENABLED) return;
-  showAddSyncStatus('Syncing to world feed…', false);
+  showAddSyncStatus('Syncing to world chart…', false);
   try {
     const now = new Date();
     const payload = {
@@ -2471,12 +2586,12 @@ function pushEntryToShared(entry) {
           const msg = error.message || error.error_description || (error.msg && error.msg.message) || JSON.stringify(error);
           showAddSyncStatus('Couldn\'t sync: ' + (msg.length > 50 ? msg.slice(0, 50) + '…' : msg), true);
           if (sharedEntriesError) {
-            sharedEntriesError.textContent = 'Could not add to feed: ' + msg + ' (see console)';
+            sharedEntriesError.textContent = "Couldn't add it right now.";
             sharedEntriesError.classList.remove('hidden');
           }
           if (topBarSlipups) {
             topBarSlipups.classList.add('top-bar-slipups--push-failed');
-            topBarSlipups.setAttribute('title', 'Could not sync to world feed — tap to refresh');
+            topBarSlipups.setAttribute('title', "Didn't sync. Tap to refresh.");
             setTimeout(function () {
               if (topBarSlipups) {
                 topBarSlipups.classList.remove('top-bar-slipups--push-failed');
@@ -2497,12 +2612,12 @@ function pushEntryToShared(entry) {
         const msg = (err && (err.message || err.toString())) || 'Network error';
         showAddSyncStatus('Couldn\'t sync: ' + (msg.length > 50 ? msg.slice(0, 50) + '…' : msg), true);
         if (sharedEntriesError) {
-          sharedEntriesError.textContent = 'Could not add this entry to the feed: ' + (msg || 'Network or request error');
+          sharedEntriesError.textContent = "Couldn't add this entry.";
           sharedEntriesError.classList.remove('hidden');
         }
         if (topBarSlipups) {
           topBarSlipups.classList.add('top-bar-slipups--push-failed');
-          topBarSlipups.setAttribute('title', 'Could not sync to world feed — tap to refresh');
+          topBarSlipups.setAttribute('title', "Didn't sync. Tap to refresh.");
           setTimeout(function () {
             if (topBarSlipups) topBarSlipups.classList.remove('top-bar-slipups--push-failed');
           }, 6000);
@@ -2510,14 +2625,14 @@ function pushEntryToShared(entry) {
         console.warn('SlipUp: shared_what_happened insert error', err);
       });
   } catch (e) {
-    showAddSyncStatus('Couldn\'t sync — check config', true);
+    showAddSyncStatus("Didn't sync.", true);
     if (sharedEntriesError) {
-      sharedEntriesError.textContent = 'Could not share entry: ' + (e && e.message ? e.message : 'Check config (Supabase URL and anon key).');
+      sharedEntriesError.textContent = "Sharing didn't go through.";
       sharedEntriesError.classList.remove('hidden');
     }
     if (topBarSlipups) {
       topBarSlipups.classList.add('top-bar-slipups--push-failed');
-      topBarSlipups.setAttribute('title', 'Could not sync — check config');
+      topBarSlipups.setAttribute('title', "Didn't sync.");
     }
     console.warn('SlipUp: pushEntryToShared failed', e);
   }
@@ -2663,7 +2778,64 @@ function saveStreakReflectionToSupabase(choice) {
   }
 }
 
+function showToast(message, opts) {
+  opts = opts || {};
+  var duration = opts.duration !== undefined ? opts.duration : 1800;
+  if (!toastEl) return;
+  toastEl.textContent = message;
+  toastEl.classList.remove('hidden');
+  toastEl.classList.add('soft-toast--visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, duration);
+}
+
+function hideToast() {
+  if (!toastEl) return;
+  toastEl.classList.remove('soft-toast--visible');
+  setTimeout(function () { toastEl.classList.add('hidden'); }, 200);
+}
+
+function setOfflineDisabled(el, isOffline) {
+  if (!el) return;
+  if (isOffline) {
+    if (el.dataset.offlineDisabled !== '1') {
+      el.dataset.prevDisabled = el.disabled ? '1' : '0';
+      el.dataset.offlineDisabled = '1';
+    }
+    el.disabled = true;
+    el.setAttribute('aria-disabled', 'true');
+  } else {
+    if (el.dataset.offlineDisabled === '1') {
+      el.disabled = el.dataset.prevDisabled === '1';
+      delete el.dataset.prevDisabled;
+      delete el.dataset.offlineDisabled;
+    }
+    if (!el.disabled) el.removeAttribute('aria-disabled');
+  }
+}
+
+function updateOnlineStateUI() {
+  const online = typeof navigator !== 'undefined' && navigator.onLine;
+  if (prevOnline && !online) {
+    showToast("Offline. Sharing will return when you're online.", { duration: 2200 });
+  }
+  prevOnline = online;
+  if (offlineNote) offlineNote.classList.toggle('hidden', online);
+  const networkButtons = [btnShare, btnRefreshFeed, btnRefreshEntries, btnRefreshIntentions, btnShareToGroup, btnShareIntention];
+  networkButtons.forEach(function (el) {
+    setOfflineDisabled(el, !online);
+  });
+  if (online && SHARING_ENABLED && currentPhase === 'social') {
+    const now = Date.now();
+    if (now - lastOnlineRefreshAt < 3000) return;
+    lastOnlineRefreshAt = now;
+    if (typeof fetchSharedStats === 'function') fetchSharedStats();
+    if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
+  }
+}
+
 async function shareAnonymously() {
+  if (!navigator.onLine) return;
   if (!SHARING_ENABLED) {
     if (shareStatus) {
       shareStatus.textContent = 'Set SUPABASE_URL and SUPABASE_ANON_KEY (config.js locally, or repo Secrets for deploy) to enable sharing.';
@@ -2674,12 +2846,13 @@ async function shareAnonymously() {
   const now = Date.now();
   if (now - lastShareAt < 15000) {
     if (shareStatus) {
-      shareStatus.textContent = 'Please wait a few seconds between shares.';
+      shareStatus.textContent = 'A few seconds between shares.';
       shareStatus.className = 'share-status error';
     }
     return;
   }
   logStateEvent('action', 'share');
+  showToast('Sharing…', { duration: 1200 });
   if (shareStatus) {
     shareStatus.textContent = 'Sharing…';
     shareStatus.className = 'share-status';
@@ -2738,10 +2911,18 @@ async function shareAnonymously() {
       }
     }
     lastShareAt = Date.now();
+    hideToast();
+    showToast('Shared anonymously.', { duration: 2000 });
     if (shareStatus) {
       shareStatus.textContent = 'Shared anonymously.';
       shareStatus.className = 'share-status success';
-      setTimeout(() => { shareStatus.textContent = ''; }, 3000);
+      setTimeout(function () { shareStatus.textContent = ''; }, 3000);
+    }
+    if (MODE === 'personal' && currentPeriod === 'day') {
+      try {
+        localStorage.setItem(REFLECTION_SHARE_SHARED_DAY_KEY, getLocalDayKey(new Date()));
+      } catch (e) {}
+      updateReflectionShareCTA();
     }
     fetchSharedStats();
   } catch (err) {
@@ -2750,12 +2931,43 @@ async function shareAnonymously() {
     const isUnregisteredKey = /unregistered\s*api\s*key/i.test(msg);
     console.error('SlipUp: share failed', { table: STATS_TABLE, err });
     if (shareStatus) {
-      shareStatus.textContent = 'Failed: ' + (isUnregisteredKey ? 'Unregistered API key' : msg);
+      shareStatus.textContent = "Sharing didn't go through.";
       shareStatus.className = 'share-status error';
     }
   } finally {
     if (btnShare) btnShare.disabled = false;
   }
+}
+
+function updateReflectionShareCTA() {
+  if (!reflectionShareWrap) return;
+  if (!SHARING_ENABLED) return;
+  if (MODE !== 'personal') return;
+  if (currentPeriod !== 'day') {
+    reflectionShareWrap.classList.add('hidden');
+    return;
+  }
+  const todayKey = getLocalDayKey(new Date());
+  if (localStorage.getItem(REFLECTION_SHARE_DISMISSED_DAY_KEY) === todayKey) {
+    reflectionShareWrap.classList.add('hidden');
+    return;
+  }
+  if (localStorage.getItem(REFLECTION_SHARE_SHARED_DAY_KEY) === todayKey) {
+    reflectionShareWrap.classList.add('hidden');
+    return;
+  }
+  const dayFiltered = filterByPeriod('day');
+  const todayCount = dayFiltered.length;
+  if (todayCount === 0) {
+    reflectionShareWrap.classList.add('hidden');
+    return;
+  }
+  const now = new Date();
+  if (now.getHours() < REFLECTION_SHARE_MIN_HOUR) {
+    reflectionShareWrap.classList.add('hidden');
+    return;
+  }
+  reflectionShareWrap.classList.remove('hidden');
 }
 
 function quickAdd(type) {
@@ -2779,7 +2991,7 @@ function quickAdd(type) {
     pushEntryToShared({ note: '', type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
   } else if (!SHARING_ENABLED && MODE === 'personal' && addSyncStatus) {
-    showAddSyncStatus('Saved locally — add config.js to sync to world feed', false);
+    showAddSyncStatus('Saved locally — add config.js to sync to world chart', false);
   }
   if (MODE === 'inside' && shareToGroupSection) {
     renderShareToGroupList();
@@ -2808,7 +3020,7 @@ function repeatLastNote() {
     pushEntryToShared({ note: entry.note, type: entry.type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
   } else if (!SHARING_ENABLED && MODE === 'personal' && addSyncStatus) {
-    showAddSyncStatus('Saved locally — add config.js to sync to world feed', false);
+    showAddSyncStatus('Saved locally — add config.js to sync to world chart', false);
   }
   if (MODE === 'inside' && shareToGroupSection) {
     renderShareToGroupList();
@@ -2900,7 +3112,7 @@ function exportFeedCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = MODE === 'inside' ? 'slipup-inside-feed.csv' : 'slipup-world-feed.csv';
+  a.download = MODE === 'inside' ? 'slipup-inside-intentions.csv' : 'slipup-world-intentions.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -2912,6 +3124,7 @@ async function fetchSharedStats() {
     showCommunitySetupMessage();
     return;
   }
+  if (!navigator.onLine) return;
   if (communityError) {
     communityError.classList.add('hidden');
     communityError.textContent = '';
@@ -2941,7 +3154,7 @@ async function fetchSharedStats() {
     const raw = error.message || error.error_description || error.msg || '';
     const isUnregisteredKey = /unregistered\s*api\s*key/i.test(raw);
     if (communityError) {
-      communityError.textContent = 'Could not load: ' + (isUnregisteredKey ? 'Unregistered API key' : (raw || 'Unknown error'));
+      communityError.textContent = 'Not available right now.';
       communityError.classList.remove('hidden');
     }
     if (communityMetricsChart) communityMetricsChart.innerHTML = '';
@@ -3065,6 +3278,7 @@ async function fetchSharedEntries() {
     if (communityEntriesSection) communityEntriesSection.classList.add('hidden');
     return;
   }
+  if (!navigator.onLine) return;
   if (!sharedEntriesList || !sharedEntriesEmpty) return;
   if (communityEntriesSection) communityEntriesSection.classList.remove('hidden');
   if (sharedEntriesError) {
@@ -3166,7 +3380,7 @@ async function fetchSharedEntries() {
 
     sharedEntriesEmpty.classList.toggle('hidden', list.length > 0);
     sharedEntriesEmpty.textContent = list.length === 0
-      ? (MODE === 'inside' ? "No shared moments yet. Add one to contribute yours." : "No shared entries yet. Add a mistake above to contribute yours.")
+      ? (MODE === 'inside' ? "No shared moments yet. Add one to contribute yours." : "No shared entries yet. Add a slip-up above to contribute yours.")
       : "";
     if (sharedEntriesError) {
       sharedEntriesError.classList.add('hidden');
@@ -3210,7 +3424,7 @@ async function fetchSharedEntries() {
       if (MODE === 'inside') {
         topBarSlipups.title = tooltip;
       } else {
-        topBarSlipups.title = "See everyone's entries — opens world feed";
+        topBarSlipups.title = "See everyone's entries — opens world chart";
       }
     }
     if (typeof updateSharedEntriesLimitButtons === 'function') updateSharedEntriesLimitButtons();
@@ -3232,12 +3446,12 @@ async function fetchSharedEntries() {
     if (btnSharedTotal) btnSharedTotal.textContent = '🌍 0 ' + noun0;
     if (topBarSlipups) topBarSlipups.textContent = '\uD83C\uDF0D 0';
     if (sharedEntriesError) {
-      sharedEntriesError.textContent = 'Could not load: ' + (/unregistered\s*api\s*key/i.test(msg) ? 'Unregistered API key' : msg);
+      sharedEntriesError.textContent = 'Not available right now.';
       sharedEntriesError.classList.remove('hidden');
     }
     sharedEntriesList.innerHTML = '';
     if (sharedEntriesEmpty) {
-      sharedEntriesEmpty.textContent = "Could not load everyone's entries. Check config and try again.";
+      sharedEntriesEmpty.textContent = "Not available right now. Try later.";
       sharedEntriesEmpty.classList.remove('hidden');
     }
     if (MODE !== 'inside' && typeof renderGlobalPatternsChart === 'function') renderGlobalPatternsChart();
@@ -3364,7 +3578,7 @@ function renderSharedEntriesList() {
       const hasAny = source.length > 0;
       sharedEntriesEmpty.textContent = hasAny
         ? (MODE === 'inside' ? 'No shared moments for this combination. Add one above.' : 'No shared entries for this combination. Add one above.')
-        : (MODE === 'inside' ? "No shared moments yet. Add one above to contribute yours." : "No shared entries yet. Add a mistake above to contribute yours.");
+        : (MODE === 'inside' ? "No shared moments yet. Add one above to contribute yours." : "No shared entries yet. Add a slip-up above to contribute yours.");
       sharedEntriesEmpty.classList.remove('hidden');
       sharedEntriesEmpty.classList.add('empty-state--clickable');
     }
@@ -3545,8 +3759,17 @@ function initInsideAuth() {
   if (!Auth) return;
   function updateHeroGroupBadge() {
     if (!heroGroupBadge) return;
+    var gid = getInsideGroupId();
     var name = Auth.getActiveGroupName ? Auth.getActiveGroupName() : '';
     heroGroupBadge.textContent = name ? 'Group: ' + name : '';
+    if (name && gid && Auth.getGroupMemberCount) {
+      Auth.getGroupMemberCount(gid).then(function (c) {
+        if (!heroGroupBadge || !name) return;
+        if (c && c.count != null) {
+          heroGroupBadge.textContent = 'Group: ' + name + ' · ' + c.count;
+        }
+      }).catch(function () {});
+    }
   }
   updateHeroGroupBadge();
   function updateGroupSwitcher() {
@@ -3612,8 +3835,38 @@ function initInsideAuth() {
   if (btnInviteHero && Auth.createInvite) btnInviteHero.addEventListener('click', showInviteBlock);
   if (btnCopyInvite && inviteUrlInput) {
     btnCopyInvite.addEventListener('click', function () {
+      if (!inviteUrlInput.value) return;
+      var original = btnCopyInvite.textContent;
+      var done = function (ok) {
+        showToast(ok ? 'Copied' : 'Copy failed', { duration: 1600 });
+        btnCopyInvite.textContent = ok ? 'Copied' : 'Copy failed';
+        setTimeout(function () {
+          btnCopyInvite.textContent = original || 'Copy';
+        }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(inviteUrlInput.value).then(function () {
+          done(true);
+        }).catch(function () {
+          inviteUrlInput.focus();
+          inviteUrlInput.select();
+          try {
+            var ok = document.execCommand('copy');
+            done(!!ok);
+          } catch (_) {
+            done(false);
+          }
+        });
+        return;
+      }
+      inviteUrlInput.focus();
       inviteUrlInput.select();
-      try { navigator.clipboard.writeText(inviteUrlInput.value); } catch (_) {}
+      try {
+        var copied = document.execCommand('copy');
+        done(!!copied);
+      } catch (_) {
+        done(false);
+      }
     });
   }
 }
@@ -3689,7 +3942,7 @@ function initGroupManagement() {
       if (invitesSection) invitesSection.classList.toggle('hidden', !isCreator);
       if (isCreator) loadInvites();
       membersList.innerHTML = members.map(function (m) {
-        var roleLabel = m.role === 'creator' ? 'Creator' : 'Member';
+        var roleLabel = m.role === 'creator' ? '<span class="group-member-tag">Creator</span>' : 'Member';
         var joined = m.joined_at ? new Date(m.joined_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
         var isSelf = m.user_id === currentUserId;
         var canRemove = isCreator && !isSelf;
@@ -3702,7 +3955,7 @@ function initGroupManagement() {
         btn.addEventListener('click', function () {
           var uid = btn.getAttribute('data-user-id');
           if (!uid) return;
-          if (!confirm('Remove this member from the group? They will lose access.')) return;
+          if (!confirm('Remove this member?')) return;
           btn.disabled = true;
           Auth.removeMember(gid, uid).then(function (res) {
             if (res.error) { setStatus(res.error, true); btn.disabled = false; return; }
@@ -3755,7 +4008,7 @@ function initGroupManagement() {
         btn.addEventListener('click', function () {
           var iid = btn.getAttribute('data-invite-id');
           if (!iid) return;
-          if (!confirm('Cancel this invite? The link will stop working.')) return;
+          if (!confirm('Cancel this invite link?')) return;
           btn.disabled = true;
           (Auth.cancelGroupInvite || function () { return Promise.resolve({ success: false }); })(gid, iid).then(function (res) {
             if (res.error) { setStatus(res.error, true); btn.disabled = false; return; }
@@ -3817,7 +4070,7 @@ function initGroupManagement() {
     btnLeave.addEventListener('click', function () {
       var gid = getInsideGroupId();
       if (!gid) return;
-      if (!confirm('Leave this group? You will lose access to shared moments.')) return;
+      if (!confirm('Leave this group?')) return;
       btnLeave.disabled = true;
       Auth.leaveGroup(gid).then(function (r) {
         btnLeave.disabled = false;
@@ -3907,8 +4160,15 @@ function initSharing() {
     if (socialBlock) socialBlock.classList.remove('hidden');
     shareSection.classList.remove('hidden');
     if (communitySection) communitySection.classList.remove('hidden');
-    var reflectionShareWrap = document.getElementById('reflection-share-wrap');
-    if (reflectionShareWrap) reflectionShareWrap.classList.remove('hidden');
+    updateReflectionShareCTA();
+    if (btnDismissShareAfterReflection) {
+      btnDismissShareAfterReflection.addEventListener('click', function () {
+        try {
+          localStorage.setItem(REFLECTION_SHARE_DISMISSED_DAY_KEY, getLocalDayKey(new Date()));
+        } catch (e) {}
+        if (reflectionShareWrap) reflectionShareWrap.classList.add('hidden');
+      });
+    }
     var socialTab = document.querySelector('.phase-tab[data-phase="social"]');
     if (socialTab) socialTab.style.display = '';
     if (socialToShare) {
@@ -4396,7 +4656,12 @@ loadEntries();
 updateUpgradeUI();
 renderStats();
 renderList();
+updateOnlineStateUI();
 initSharing();
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', updateOnlineStateUI);
+  window.addEventListener('offline', updateOnlineStateUI);
+}
 if (MODE === 'inside') {
   initShareToGroup();
   initInsideAuth();
@@ -4478,9 +4743,13 @@ if (topBarSlipups) {
     if (MODE === 'inside') {
       if (socialView && personalView) {
         switchToPhase('social');
+        if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
         if (communityEntriesCard) {
           requestAnimationFrame(function () {
             communityEntriesCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(function () {
+              communityEntriesCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 140);
           });
         }
       } else {
@@ -4558,6 +4827,7 @@ if (btnLinkAddMistake) {
 
 function switchToPhase(phase) {
   if (!personalView || !socialView) return;
+  currentPhase = phase;
   logStateEvent('phase', phase, { source: phase + '_view' });
   const tabs = document.querySelectorAll('.phase-tab');
   if (phase === 'personal') {
@@ -4568,6 +4838,7 @@ function switchToPhase(phase) {
       t.classList.toggle('active', isActive);
       t.setAttribute('aria-selected', isActive);
     });
+    updateReflectionShareCTA();
     if (history.replaceState) history.replaceState(null, '', window.location.pathname + window.location.search);
   } else {
     personalView.classList.add('hidden');

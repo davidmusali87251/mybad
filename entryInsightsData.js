@@ -177,5 +177,72 @@ window.ENTRY_INSIGHTS = (function () {
   add('any', ['calm'], ['steady'], 'Steady noticing changed the quality of recall.');
   add('any', ['any'], ['pattern', 'again'], 'Same signal, clearer day.');
 
+  // Micro-notes + wildcard tuning (+ Inside vocabulary)
+  add('any', ['any'], ['procras*', 'later'], 'Delay has a shape. You caught it.');
+  add('any', ['any'], ['scroll*', 'phone'], 'The feed pulled the line off-center.');
+  add('any', ['any'], ['overwhelm*', 'rush*'], 'Load rose before clarity did.');
+  add('any', ['any'], ['empty'], 'Short entry, full signal.');
+  add('any', ['focus'], ['check*', 'review*'], 'One quick check changed the map.');
+  add('any', ['stressed'], ['urgent*', 'deadline*'], 'Urgency narrowed the frame.');
+  add('any', ['curious'], ['why', 'ask*'], 'A small question opened the room.');
+  add('any', ['tired'], ['sleep*', 'drain*'], 'Energy shaped the margin today.');
+  add('any', ['any'], ['heat', 'shift', 'support'], 'Heat, shift, support — all three are data.');
+  add('any', ['any'], ['context*', 'assum*'], 'Context softened the first read.');
+
+  add('avoidable', ['any'], ['procras*'], 'Delay added weight to the moment.');
+  add('avoidable', ['any'], ['rush*', 'fast'], 'Speed clipped one useful edge.');
+  add('avoidable', ['focus'], ['tab*', 'multi*'], 'Too many lanes, one missed step.');
+  add('avoidable', ['stressed'], ['react*', 'snap*'], 'Reaction arrived first.');
+  add('avoidable', ['any'], ['scroll*'], 'Attention drift left a trace.');
+  add('avoidable', ['any'], ['late', 'delay*'], 'Timing carried hidden cost.');
+  add('avoidable', ['any'], ['forget*', 'miss*'], 'A small miss became visible.');
+  add('avoidable', ['tired'], ['tired', 'fog*'], 'Fatigue narrowed precision.');
+  add('avoidable', ['any'], ['avoid*'], 'Avoidance made the loop heavier.');
+  add('avoidable', ['any'], ['autop*', 'habit'], 'Autopilot stayed in charge too long.');
+  add('avoidable', ['any'], ['heat'], 'Heat rose before clarity settled.');
+  add('avoidable', ['focus'], ['save', 'send'], 'One checkpoint stayed implicit.');
+  add('avoidable', ['any'], ['compare*'], 'Comparison took the wheel briefly.');
+  add('avoidable', ['stressed'], ['control*'], 'Tight control reduced options.');
+  add('avoidable', ['any'], ['noise', 'distract*'], 'Noise won a small round.');
+  add('avoidable', ['any'], ['blame'], 'Blame appeared before context.');
+  add('avoidable', ['any'], ['skip*'], 'A skipped step echoed forward.');
+  add('avoidable', ['any'], ['hurry*'], 'Hurry traded detail for speed.');
+
+  add('fertile', ['any'], ['shift'], 'A shift appeared and held.');
+  add('fertile', ['any'], ['try', 'attempt*'], 'An attempt left useful texture.');
+  add('fertile', ['curious'], ['exper*', 'probe*'], 'Experiment turned uncertainty into signal.');
+  add('fertile', ['focus'], ['iter*', 'repeat'], 'Iteration clarified the path.');
+  add('fertile', ['any'], ['learn*', 'lesson'], 'Learning showed up in motion.');
+  add('fertile', ['any'], ['adjust*', 'tweak*'], 'A small tweak changed direction.');
+  add('fertile', ['calm'], ['pause', 'breathe'], 'A calmer pace expanded options.');
+  add('fertile', ['stressed'], ['recover*'], 'Recovery itself became progress.');
+  add('fertile', ['any'], ['retry', 'again'], 'Second pass, cleaner signal.');
+  add('fertile', ['any'], ['feedback'], 'Feedback stayed information.');
+  add('fertile', ['any'], ['support'], 'Support shifted the outcome.');
+  add('fertile', ['any'], ['start*', 'begin*'], 'Starting moved the system.');
+  add('fertile', ['focus'], ['simple', 'scope'], 'Smaller scope made momentum visible.');
+  add('fertile', ['any'], ['risk*'], 'Risk created fresh data.');
+  add('fertile', ['curious'], ['question'], 'A better question moved first.');
+  add('fertile', ['any'], ['small'], 'Small shifts still compound.');
+
+  add('observed', ['any'], ['support'], 'Support showed up in the scene.');
+  add('observed', ['any'], ['heat'], 'Heat in the room changed interpretation.');
+  add('observed', ['any'], ['assum*'], 'Assumption filled missing context.');
+  add('observed', ['any'], ['projection*'], 'Projection may be part of this read.');
+  add('observed', ['any'], ['trigger*'], 'A trigger signal appeared.');
+  add('observed', ['any'], ['harm'], 'Impact asked for clear boundaries.');
+  add('observed', ['any'], ['failed'], 'Outcome and conditions both matter.');
+  add('observed', ['any'], ['different', 'style'], 'Difference can feel sharper than it is.');
+  add('observed', ['stressed'], ['pressure'], 'Pressure compressed the view.');
+  add('observed', ['calm'], ['context'], 'Context restored some nuance.');
+  add('observed', ['any'], ['blame'], 'Blame surfaced quickly.');
+  add('observed', ['any'], ['tone'], 'Tone carried more than words.');
+  add('observed', ['any'], ['unsure', 'maybe'], 'Uncertainty is a valid step.');
+  add('observed', ['any'], ['system'], 'Part of this may be structural.');
+  add('observed', ['tired'], ['tired'], 'Fatigue may be coloring the read.');
+  add('observed', ['any'], ['respect'], 'Respect felt close to the center.');
+  add('observed', ['any'], ['shift'], 'A shift in someone else still teaches.');
+  add('observed', ['any'], ['context*', 'pressure'], 'Context and pressure crossed here.');
+
   return items;
 })();
