@@ -1882,23 +1882,21 @@ body.theme-tired .top-bar-theme:hover {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: color 0.25s ease, background 0.25s ease, transform 0.22s ease, box-shadow 0.25s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   text-align: center;
 }
 .phase-tab:hover {
   color: var(--text);
   background: color-mix(in srgb, var(--mood-active) 8%, var(--surface-hover));
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--mood-active) 0.15);
+  transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.phase-tab:active:not(.active) {
+  opacity: 0.92;
 }
 .phase-tab.active {
   color: var(--bg);
   background: linear-gradient(180deg, var(--mood-active) 0%, var(--mood-active-dim) 100%);
   box-shadow: 0 2px 12px color-mix(in srgb, var(--mood-active) 0.3), inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
-  transform: none;
-}
-.phase-tab:active:hover:not(.active) {
-  transform: translateY(0);
 }
 .phase-tab:focus-visible {
   outline: none;
@@ -1927,7 +1925,7 @@ a.phase-tab--link,
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
-  transition: color 0.25s ease, background 0.25s ease, transform 0.22s ease, box-shadow 0.25s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1935,8 +1933,9 @@ a.phase-tab--link,
 .phase-tab--link:hover {
   color: var(--accent-text);
   background: color-mix(in srgb, var(--mood-active) 8%, var(--surface-hover));
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--mood-active) 0.15);
+}
+.phase-tab--link:active {
+  opacity: 0.92;
 }
 .phase-tab--link:focus-visible {
   outline: none;
@@ -2480,8 +2479,14 @@ a.phase-tab--link,
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
 }
 .btn-try-again:hover { filter: brightness(1.05); }
+.btn-try-again:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.btn-try-again:active { opacity: 0.92; }
 .group-members-list {
   list-style: none;
   padding: 0;
@@ -2633,7 +2638,7 @@ a.phase-tab--link,
   margin-bottom: 0.75rem;
 }
 .add-card-input-wrap input {
-  padding-right: 4.5rem;
+  padding-right: 5.5rem;
 }
 .btn-voice-input {
   position: absolute;
@@ -2692,6 +2697,10 @@ a.phase-tab--link,
   .micro-goal-input {
     font-size: 16px;
   }
+  /* Evitar que el placeholder largo (p. ej. observed) se superponga con 0/19 en móvil */
+  .add-card-input-wrap input {
+    padding-right: 6rem;
+  }
 }
 
 /* Type pills: prevent overflow on narrow Android screens */
@@ -2739,7 +2748,7 @@ a.phase-tab--link,
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: opacity 0.2s, box-shadow 0.2s, transform 0.15s;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
   opacity: 0.5;
   min-height: 36px;
   overflow-wrap: break-word;
@@ -2747,12 +2756,14 @@ a.phase-tab--link,
 }
 .mood-btn:hover {
   opacity: 0.85;
-  transform: translateY(-1px);
+  transition: opacity 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.mood-btn:active {
+  opacity: 0.92;
 }
 .mood-btn.active {
   opacity: 1;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  transform: none;
 }
 .mood-btn--calm { background: var(--mood-calm); }
 .mood-btn--calm.active { border-color: var(--mood-calm-light); }
@@ -2786,8 +2797,10 @@ a.phase-tab--link,
 .btn-mode:hover {
   background: var(--accent-dim);
   color: var(--bg);
-  transform: translateY(-1px);
   box-shadow: 0 4px 10px var(--accent-glow-strong);
+}
+.btn-mode:active {
+  opacity: 0.92;
 }
 .btn-mode:focus-visible {
   outline: none;
@@ -2831,7 +2844,7 @@ a.phase-tab--link,
   gap: 0.25rem;
   text-align: center;
   overflow: hidden;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
   -webkit-tap-highlight-color: rgba(114, 96, 255, 0.2);
 }
 
@@ -2849,12 +2862,10 @@ a.phase-tab--link,
 
 .type-pill:hover {
   background: var(--surface-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 .type-pill:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  opacity: 0.92;
 }
 
 .type-pill:has(input:focus-visible) {
@@ -3302,7 +3313,8 @@ body.theme-tired .btn-bias-check {
 }
 
 .entry-insight {
-  margin: 0.15rem 0 0.6rem 0;
+  margin-top: 0.25rem;
+  margin-bottom: 0.6rem;
   padding: 0.45rem 0.55rem;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -3310,15 +3322,22 @@ body.theme-tired .btn-bias-check {
   color: var(--text-muted);
   font-size: 0.77rem;
   line-height: 1.35;
+  letter-spacing: 0.01em;
   font-style: italic;
+  visibility: hidden;
   opacity: 0;
   transform: translateY(2px);
-  transition: opacity 220ms ease, transform 220ms ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-
 .entry-insight.entry-insight--visible {
+  visibility: visible;
   opacity: 1;
   transform: translateY(0);
+}
+.entry-insight.hidden {
+  display: block !important;
+  visibility: hidden;
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5047,6 +5066,37 @@ body.theme-tired .btn-bias-check {
 .entry-item .theme--curious { color: var(--mood-curious); }
 .entry-item .theme--tired { color: var(--mood-tired); }
 
+.entry-item-delete {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  margin: -8px -8px -8px 0;
+  margin-left: 0.35rem;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.entry-item-delete:hover,
+.entry-item-delete:focus-visible {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+.entry-item-delete:focus-visible {
+  outline: none;
+}
+.entry-item-delete:active {
+  opacity: 0.92;
+}
+
 /* Shared entries (world feed): privilege note, mood on right — clearer for mobile */
 .entry-item--shared {
   flex-wrap: wrap;
@@ -6558,7 +6608,9 @@ body.theme-tired .btn-bias-check {
 }
 
 .btn-refresh-subtle {
-  padding: 0.2rem 0.5rem;
+  min-height: 44px;
+  padding: 10px 0.5rem;
+  margin: -6px 0;
   font-size: 0.72rem;
   font-family: var(--font-sans);
   color: var(--text-muted);
@@ -6566,11 +6618,19 @@ body.theme-tired .btn-bias-check {
   border: none;
   cursor: pointer;
   border-radius: 4px;
-  transition: color 0.2s;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .btn-refresh-subtle:hover {
   color: var(--text);
+  background: var(--surface-hover);
+}
+.btn-refresh-subtle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.btn-refresh-subtle:active {
+  opacity: 0.92;
 }
 
 .community-metrics-chart {
@@ -7022,6 +7082,7 @@ body.theme-tired .btn-bias-check {
   color: var(--text-muted);
   margin: 0 0 0.75rem 0;
   line-height: 1.35;
+  letter-spacing: 0.01em;
   font-style: italic;
 }
 
@@ -7053,11 +7114,76 @@ button:disabled {
 .soft-toast.soft-toast--visible {
   opacity: 1;
 }
+.soft-toast.has-action {
+  pointer-events: auto;
+}
 .soft-toast.hidden {
+  display: none;
+}
+.soft-toast-action {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 10px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto;
+  text-decoration: none;
+}
+.soft-toast-action:hover,
+.soft-toast-action:focus-visible {
+  text-decoration: underline;
+}
+.soft-toast-action.hidden {
   display: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .soft-toast {
+    transition: none;
+  }
+  .phase-tab,
+  .phase-tab:hover,
+  .phase-tab--link,
+  .phase-tab--link:hover,
+  .mood-btn,
+  .mood-btn:hover,
+  .btn-mode,
+  .btn-mode:hover,
+  .type-pill,
+  .type-pill:hover,
+  .entry-item-delete,
+  .btn-refresh-subtle,
+  .btn-refresh-subtle:hover,
+  .btn-try-again,
+  .btn-try-again:hover {
+    transition: none;
+  }
+}
+
+/* First-time nudge (one-time per mode) */
+.first-nudge {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  font-style: italic;
+  margin-top: 0.25rem;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.first-nudge.first-nudge--visible {
+  visibility: visible;
+  opacity: 1;
+}
+/* No reserved space when hidden — first-nudge is one-time only; avoids double gap with entry-insight */
+.first-nudge.hidden {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .first-nudge {
     transition: none;
   }
 }

@@ -54,6 +54,7 @@ const addSyncStatus = document.getElementById('add-sync-status');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const typeHint = document.getElementById('type-hint');
 const entryInsightEl = document.getElementById('entry-insight');
+const firstNudgeEl = document.getElementById('first-nudge');
 
 const TYPE_PHRASES = {
   avoidable: 'Notice the trigger. How can I reduce repeats?',
@@ -93,6 +94,8 @@ const ENTRY_INSIGHT_LAST_KEY = MODE === 'inside' ? 'slipup-last-entry-insight-in
 const ENTRY_INSIGHT_HIDE_MS = 9000;
 const ENTRY_INSIGHT_TODAY_KEY = MODE === 'inside' ? 'slipup-latest-entry-insight-inside' : 'slipup-latest-entry-insight';
 const ENTRY_INSIGHT_RECENT_KEY = MODE === 'inside' ? 'slipup-recent-entry-insights-inside' : 'slipup-recent-entry-insights';
+const FIRST_ENTRY_INSIGHT_SHOWN_KEY = MODE === 'inside' ? 'slipup-inside-first-entry-insight-shown' : 'slipup-first-entry-insight-shown';
+const FIRST_NUDGE_SHOWN_KEY = MODE === 'inside' ? 'slipup-inside-first-nudge-shown' : 'slipup-first-nudge-shown';
 const ENTRY_INSIGHT_RECENT_WINDOW = 5;
 const ENTRY_INSIGHT_THEMES = ['calm', 'focus', 'stressed', 'curious', 'tired'];
 let entryInsightHideTimer = null;
@@ -196,8 +199,12 @@ const reflectionShareWrap = document.getElementById('reflection-share-wrap');
 const btnDismissShareAfterReflection = document.getElementById('btn-dismiss-share-after-reflection');
 const offlineNote = document.getElementById('offline-note');
 const toastEl = document.getElementById('soft-toast');
+const toastMsgEl = document.getElementById('soft-toast-msg');
+const toastActionEl = document.getElementById('soft-toast-action');
 const limitMessage = document.getElementById('limit-message');
 let toastTimer = null;
+let pendingUndo = null;
+let undoToastActionHandler = null;
 let prevOnline = true;
 const upgradeCards = document.getElementById('upgrade-cards');
 const unlockedBadge = document.getElementById('unlocked-badge');
@@ -528,6 +535,30 @@ function hideEntryInsight() {
   entryInsightEl.classList.add('hidden');
 }
 
+function maybeShowFirstNudge() {
+  if (!firstNudgeEl) return;
+  if (localStorage.getItem(FIRST_NUDGE_SHOWN_KEY) === '1') return;
+  if (entries && entries.length === 0) {
+    firstNudgeEl.classList.remove('hidden');
+    firstNudgeEl.classList.add('first-nudge--visible');
+  }
+}
+
+function dismissFirstNudge() {
+  if (!firstNudgeEl) return;
+  firstNudgeEl.classList.remove('first-nudge--visible');
+  firstNudgeEl.classList.add('hidden');
+  try { localStorage.setItem(FIRST_NUDGE_SHOWN_KEY, '1'); } catch (_) {}
+}
+
+function getCuratedFirstInsight(entry) {
+  var curatedIds = ['E001', 'E011', 'E027', 'E030', 'E038', 'FB001', 'FB008'];
+  var pool = getEntryInsightsPool();
+  var hits = pool.filter(function (x) { return curatedIds.indexOf(x.id) !== -1; });
+  if (hits.length) return hits[Math.floor(Math.random() * hits.length)].text;
+  return 'Noticing is enough.';
+}
+
 function loadLatestEntryInsight() {
   try {
     const raw = localStorage.getItem(ENTRY_INSIGHT_TODAY_KEY);
@@ -563,12 +594,28 @@ function renderLatestEntryInsightInReflection() {
 
 function showEntryInsightForEntry(entry) {
   if (!entryInsightEl) return;
+  try {
+    if (localStorage.getItem(FIRST_ENTRY_INSIGHT_SHOWN_KEY) !== '1') {
+      var curatedText = getCuratedFirstInsight(entry);
+      clearTimeout(entryInsightHideTimer);
+      entryInsightEl.textContent = curatedText;
+      entryInsightEl.classList.remove('hidden');
+      void entryInsightEl.offsetWidth;
+      entryInsightEl.classList.add('entry-insight--visible');
+      try { localStorage.setItem(FIRST_ENTRY_INSIGHT_SHOWN_KEY, '1'); } catch (_) {}
+      localStorage.setItem(ENTRY_INSIGHT_LAST_KEY, 'first');
+      saveLatestEntryInsight(curatedText, 'first');
+      renderLatestEntryInsightInReflection();
+      entryInsightHideTimer = setTimeout(function () { hideEntryInsight(); }, ENTRY_INSIGHT_HIDE_MS);
+      return;
+    }
+  } catch (_) {}
   const insight = pickEntryInsight(entry);
   if (!insight || !insight.text) {
     hideEntryInsight();
     return;
   }
-  if (entryInsightHideTimer) clearTimeout(entryInsightHideTimer);
+  clearTimeout(entryInsightHideTimer);
   entryInsightEl.textContent = insight.text;
   entryInsightEl.classList.remove('hidden');
   void entryInsightEl.offsetWidth;
@@ -851,27 +898,32 @@ function exportReflectionsCsv() {
   });
   if (rows.length === 1) return;
 
-  const csv = rows.map(function (cols) {
-    return cols.map(function (c) {
-      const v = c == null ? '' : String(c);
-      if (/[",\n]/.test(v)) {
-        return '"' + v.replace(/"/g, '""') + '"';
-      }
-      return v;
-    }).join(',');
-  }).join('\n');
+  try {
+    const csv = rows.map(function (cols) {
+      return cols.map(function (c) {
+        const v = c == null ? '' : String(c);
+        if (/[",\n]/.test(v)) {
+          return '"' + v.replace(/"/g, '""') + '"';
+        }
+        return v;
+      }).join(',');
+    }).join('\n');
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const prefix = MODE === 'inside' ? 'slipup-inside-reflections-' : 'slipup-reflections-';
-  const today = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = prefix + today + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const prefix = MODE === 'inside' ? 'slipup-inside-reflections-' : 'slipup-reflections-';
+    const today = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = prefix + today + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export ready.', { duration: 1600 });
+  } catch (e) {
+    showToast('Not available right now.', { duration: 1800 });
+  }
 }
 
 function getStartOfDay(d) {
@@ -1328,6 +1380,18 @@ function renderList() {
     }
     li.appendChild(theme);
     li.appendChild(time);
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.className = 'entry-item-delete';
+    btnDelete.setAttribute('aria-label', 'Delete entry');
+    btnDelete.title = 'Remove';
+    btnDelete.textContent = '\u00D7';
+    btnDelete.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteEntry(entry);
+    });
+    li.appendChild(btnDelete);
     entryList.appendChild(li);
   });
 
@@ -2443,6 +2507,7 @@ function addMistake() {
   renderStats();
   renderList();
   showEntryInsightForEntry(entry);
+  dismissFirstNudge();
   if (SHARING_ENABLED && MODE !== 'inside') {
     pushEntryToShared({ note, type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
@@ -2781,8 +2846,33 @@ function saveStreakReflectionToSupabase(choice) {
 function showToast(message, opts) {
   opts = opts || {};
   var duration = opts.duration !== undefined ? opts.duration : 1800;
+  var actionText = opts.actionText;
+  var onAction = opts.onAction;
   if (!toastEl) return;
-  toastEl.textContent = message;
+  if (toastMsgEl) toastMsgEl.textContent = message; else toastEl.textContent = message;
+  if (toastActionEl) {
+    toastActionEl.classList.add('hidden');
+    toastActionEl.textContent = 'Undo';
+    toastEl.classList.remove('has-action');
+    if (undoToastActionHandler) {
+      toastActionEl.removeEventListener('click', undoToastActionHandler);
+      undoToastActionHandler = null;
+    }
+    if (actionText && typeof onAction === 'function') {
+      toastActionEl.textContent = actionText;
+      toastActionEl.classList.remove('hidden');
+      toastEl.classList.add('has-action');
+      undoToastActionHandler = function () {
+        if (toastActionEl && undoToastActionHandler) {
+          toastActionEl.removeEventListener('click', undoToastActionHandler);
+          undoToastActionHandler = null;
+        }
+        onAction();
+        hideToast();
+      };
+      toastActionEl.addEventListener('click', undoToastActionHandler);
+    }
+  }
   toastEl.classList.remove('hidden');
   toastEl.classList.add('soft-toast--visible');
   clearTimeout(toastTimer);
@@ -2792,7 +2882,44 @@ function showToast(message, opts) {
 function hideToast() {
   if (!toastEl) return;
   toastEl.classList.remove('soft-toast--visible');
+  toastEl.classList.remove('has-action');
+  if (toastActionEl) toastActionEl.classList.add('hidden');
   setTimeout(function () { toastEl.classList.add('hidden'); }, 200);
+}
+
+function restoreDeletedEntry(entry) {
+  if (!entry) return;
+  clearTimeout(toastTimer);
+  toastTimer = null;
+  if (pendingUndo && pendingUndo.timerId) clearTimeout(pendingUndo.timerId);
+  pendingUndo = null;
+  entries.push(entry);
+  entries.sort(function (a, b) { return b.at - a.at; });
+  saveEntries();
+  renderStats();
+  renderList();
+  showToast('Restored.', { duration: 1600 });
+}
+
+function deleteEntry(entry) {
+  if (!entry) return;
+  var cloned = { at: entry.at, note: entry.note, type: entry.type, scope: entry.scope, theme: entry.theme };
+  if (entry.biasReason) cloned.biasReason = entry.biasReason;
+  if (entry.sharedAt) cloned.sharedAt = entry.sharedAt;
+  if (pendingUndo && pendingUndo.timerId) clearTimeout(pendingUndo.timerId);
+  entries = entries.filter(function (e) { return e !== entry; });
+  saveEntries();
+  renderStats();
+  renderList();
+  pendingUndo = {
+    entry: cloned,
+    timerId: setTimeout(function () { pendingUndo = null; }, 5000)
+  };
+  showToast('Removed.', {
+    duration: 5000,
+    actionText: 'Undo',
+    onAction: function () { restoreDeletedEntry(cloned); }
+  });
 }
 
 function setOfflineDisabled(el, isOffline) {
@@ -2934,6 +3061,7 @@ async function shareAnonymously() {
       shareStatus.textContent = "Sharing didn't go through.";
       shareStatus.className = 'share-status error';
     }
+    showToast("Sharing didn't go through.", { duration: 2000 });
   } finally {
     if (btnShare) btnShare.disabled = false;
   }
@@ -2987,6 +3115,7 @@ function quickAdd(type) {
   renderStats();
   renderList();
   showEntryInsightForEntry(entry);
+  dismissFirstNudge();
   if (SHARING_ENABLED && MODE !== 'inside') {
     pushEntryToShared({ note: '', type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
@@ -3016,6 +3145,7 @@ function repeatLastNote() {
   renderStats();
   renderList();
   showEntryInsightForEntry(entry);
+  dismissFirstNudge();
   if (SHARING_ENABLED && MODE !== 'inside') {
     pushEntryToShared({ note: entry.note, type: entry.type, theme: entry.theme, biasReason: entry.biasReason });
     setTimeout(function () { if (typeof fetchSharedEntries === 'function') fetchSharedEntries(); }, 1200);
@@ -3030,96 +3160,116 @@ function repeatLastNote() {
 
 function exportCsv() {
   logStateEvent('action', 'export_csv');
-  const rows = [];
-  rows.push(['timestamp_iso', 'type', 'note']);
-  entries.forEach(e => {
-    const ts = new Date(e.at).toISOString();
-    const type = e.type || 'avoidable';
-    const note = (e.note || '').replace(/"/g, '""');
-    rows.push([ts, type, `"${note}"`]);
-  });
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = MODE === 'inside' ? 'slipup-inside-mistakes.csv' : 'mistakes.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const rows = [];
+    rows.push(['timestamp_iso', 'type', 'note']);
+    entries.forEach(e => {
+      const ts = new Date(e.at).toISOString();
+      const type = e.type || 'avoidable';
+      const note = (e.note || '').replace(/"/g, '""');
+      rows.push([ts, type, `"${note}"`]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = MODE === 'inside' ? 'slipup-inside-mistakes.csv' : 'mistakes.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export ready.', { duration: 1600 });
+  } catch (e) {
+    showToast('Not available right now.', { duration: 1800 });
+  }
 }
 
 function exportJson() {
   logStateEvent('action', 'export_json');
-  const data = {
-    exportedAt: new Date().toISOString(),
-    mode: MODE,
-    entries: entries.map(e => ({
-      at: e.at,
-      type: e.type || 'avoidable',
-      note: e.note || '',
-      theme: e.theme || 'calm'
-    }))
-  };
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = MODE === 'inside' ? 'slipup-inside-backup.json' : 'slipup-backup.json';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      mode: MODE,
+      entries: entries.map(e => ({
+        at: e.at,
+        type: e.type || 'avoidable',
+        note: e.note || '',
+        theme: e.theme || 'calm'
+      }))
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = MODE === 'inside' ? 'slipup-inside-backup.json' : 'slipup-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export ready.', { duration: 1600 });
+  } catch (e) {
+    showToast('Not available right now.', { duration: 1800 });
+  }
 }
 
 function exportIntentionsCsv() {
   if (!isUnlocked()) return;
   logStateEvent('action', 'export_intentions_csv');
-  const items = lastSharedIntentionsItems || [];
-  const rows = [['Intention', 'Shared']];
-  items.forEach(item => {
-    const text = (item.text || '').replace(/"/g, '""');
-    rows.push([`"${text}"`, item.count]);
-  });
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = MODE === 'inside' ? 'slipup-inside-intentions.csv' : 'slipup-intentions.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const items = lastSharedIntentionsItems || [];
+    const rows = [['Intention', 'Shared']];
+    items.forEach(item => {
+      const text = (item.text || '').replace(/"/g, '""');
+      rows.push([`"${text}"`, item.count]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = MODE === 'inside' ? 'slipup-inside-intentions.csv' : 'slipup-intentions.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export ready.', { duration: 1600 });
+  } catch (e) {
+    showToast('Not available right now.', { duration: 1800 });
+  }
 }
 
 function exportFeedCsv() {
   if (!isUnlocked()) return;
   logStateEvent('action', 'export_feed_csv');
-  const source = Array.isArray(lastSharedEntries) ? lastSharedEntries : [];
-  const rows = [['type', 'note', 'theme', 'created_at']];
-  source.forEach(row => {
-    const note = (row.note || '').replace(/"/g, '""');
-    const type = row.type || 'avoidable';
-    const theme = row.theme || 'calm';
-    const created = row.created_at || '';
-    rows.push([type, `"${note}"`, theme, created]);
-  });
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = MODE === 'inside' ? 'slipup-inside-intentions.csv' : 'slipup-world-intentions.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const source = Array.isArray(lastSharedEntries) ? lastSharedEntries : [];
+    const rows = [['type', 'note', 'theme', 'created_at']];
+    source.forEach(row => {
+      const note = (row.note || '').replace(/"/g, '""');
+      const type = row.type || 'avoidable';
+      const theme = row.theme || 'calm';
+      const created = row.created_at || '';
+      rows.push([type, `"${note}"`, theme, created]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = MODE === 'inside' ? 'slipup-inside-intentions.csv' : 'slipup-world-intentions.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export ready.', { duration: 1600 });
+  } catch (e) {
+    showToast('Not available right now.', { duration: 1800 });
+  }
 }
 
-async function fetchSharedStats() {
+async function fetchSharedStats(showToastOnSuccess) {
   if (!SHARING_ENABLED) {
     showCommunitySetupMessage();
     return;
@@ -3257,6 +3407,7 @@ async function fetchSharedStats() {
         '</div>' +
         '<p class="community-metrics-note">Last 7 days</p></div>';
   }
+  if (showToastOnSuccess) showToast('Updated.', { duration: 1400 });
 }
 
 function showCommunitySetupMessage() {
@@ -3273,7 +3424,7 @@ function formatTimeFromISO(isoStr) {
   return formatTime(ts);
 }
 
-async function fetchSharedEntries() {
+async function fetchSharedEntries(showToastOnSuccess) {
   if (!SHARING_ENABLED) {
     if (communityEntriesSection) communityEntriesSection.classList.add('hidden');
     return;
@@ -3438,6 +3589,7 @@ async function fetchSharedEntries() {
     }
     renderSharedEntriesList();
     if (MODE !== 'inside' && typeof renderGlobalPatternsChart === 'function') renderGlobalPatternsChart();
+    if (showToastOnSuccess) showToast('Updated.', { duration: 1400 });
   } catch (err) {
     const raw = err && (err.message || err.error_description || err.msg) || '';
     const msg = typeof raw === 'string' ? raw : (raw && raw.message) || 'Unknown error';
@@ -3497,32 +3649,37 @@ function renderGlobalPatternsChart() {
 function exportGlobalPatternsCsv() {
   if (!isUnlocked()) return;
   logStateEvent('action', 'export_global_patterns_csv');
-  const source = Array.isArray(lastSharedEntries) ? lastSharedEntries : [];
-  const STOP_WORDS = new Set(['a', 'an', 'the', 'is', 'it', 'to', 'of', 'in', 'on', 'at', 'by', 'for', 'with', 'i', 'me', 'my', 'we', 'be', 'so', 'no', 'or', 'and', 'but', 'if', 'as', 'up', 'do', 'go', 'get', 'got']);
-  const wordCounts = {};
-  source.forEach(function (row) {
-    const note = ((row && row.note) || '').trim().toLowerCase();
-    if (note.length < 2) return;
-    const words = note.replace(/[^\w\s'-]/g, ' ').split(/\s+/).filter(function (w) { return w.length >= 2 && !STOP_WORDS.has(w); });
-    const seen = new Set();
-    words.forEach(function (w) {
-      if (seen.has(w)) return;
-      seen.add(w);
-      wordCounts[w] = (wordCounts[w] || 0) + 1;
+  try {
+    const source = Array.isArray(lastSharedEntries) ? lastSharedEntries : [];
+    const STOP_WORDS = new Set(['a', 'an', 'the', 'is', 'it', 'to', 'of', 'in', 'on', 'at', 'by', 'for', 'with', 'i', 'me', 'my', 'we', 'be', 'so', 'no', 'or', 'and', 'but', 'if', 'as', 'up', 'do', 'go', 'get', 'got']);
+    const wordCounts = {};
+    source.forEach(function (row) {
+      const note = ((row && row.note) || '').trim().toLowerCase();
+      if (note.length < 2) return;
+      const words = note.replace(/[^\w\s'-]/g, ' ').split(/\s+/).filter(function (w) { return w.length >= 2 && !STOP_WORDS.has(w); });
+      const seen = new Set();
+      words.forEach(function (w) {
+        if (seen.has(w)) return;
+        seen.add(w);
+        wordCounts[w] = (wordCounts[w] || 0) + 1;
+      });
     });
-  });
-  const sorted = Object.entries(wordCounts).filter(function (e) { return e[1] >= 2; }).sort(function (a, b) { return b[1] - a[1]; });
-  const rows = [['word', 'count']].concat(sorted.map(function (e) { return [e[0], String(e[1])]; }));
-  const csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'slipup-global-common-words-' + new Date().toISOString().slice(0, 10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+    const sorted = Object.entries(wordCounts).filter(function (e) { return e[1] >= 2; }).sort(function (a, b) { return b[1] - a[1]; });
+    const rows = [['word', 'count']].concat(sorted.map(function (e) { return [e[0], String(e[1])]; }));
+    const csv = rows.map(function (r) { return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'slipup-global-common-words-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export ready.', { duration: 1600 });
+  } catch (e) {
+    showToast('Not available right now.', { duration: 1800 });
+  }
 }
 
 function renderGlobalCountChart(avoidable, fertile, observed) {
@@ -4185,11 +4342,11 @@ function initSharing() {
     if (topBarSlipups) topBarSlipups.style.display = 'none';
   }
   if (btnShare) btnShare.addEventListener('click', shareAnonymously);
-  if (btnRefreshFeed) btnRefreshFeed.addEventListener('click', function () { logStateEvent('action', 'refresh_feed'); fetchSharedStats(); });
+  if (btnRefreshFeed) btnRefreshFeed.addEventListener('click', function () { logStateEvent('action', 'refresh_feed'); fetchSharedStats(true); });
   fetchSharedStats();
   if (SHARING_ENABLED && communityEntriesSection) {
     communityEntriesSection.classList.remove('hidden');
-    if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', function () { logStateEvent('action', 'refresh_entries'); fetchSharedEntries(); });
+    if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', function () { logStateEvent('action', 'refresh_entries'); fetchSharedEntries(true); });
     if (btnSharedEntriesToggle) btnSharedEntriesToggle.addEventListener('click', function () { logStateEvent('action', 'shared_entries_toggle'); toggleSharedEntriesView(); });
     if (btnShowAllShared) btnShowAllShared.addEventListener('click', function () { logStateEvent('action', 'show_all_shared'); showAllSharedEntries(); });
     if (sharedEntriesFilters) sharedEntriesFilters.addEventListener('click', handleSharedEntriesFilterClick);
@@ -4398,6 +4555,7 @@ if (addNoteInput) {
     updateAddButtonState();
     updateMistakeNoteCharCount();
     hideEntryInsight();
+    dismissFirstNudge();
   });
   addNoteInput.addEventListener('keyup', updateAddButtonState);
   addNoteInput.addEventListener('paste', () => {
@@ -4405,6 +4563,7 @@ if (addNoteInput) {
       if (addNoteInput.value.length > MISTAKE_NOTE_MAXLEN) addNoteInput.value = addNoteInput.value.slice(0, MISTAKE_NOTE_MAXLEN);
       updateAddButtonState();
       updateMistakeNoteCharCount();
+      dismissFirstNudge();
     }, 0);
   });
   updateMistakeNoteCharCount();
@@ -4447,6 +4606,7 @@ function updateTypeHint() {
   if (addNoteInput) addNoteInput.placeholder = placeholder;
   if (biasCheckRow) biasCheckRow.classList.toggle('hidden', type !== 'observed');
   hideEntryInsight();
+  dismissFirstNudge();
   updateMistakeNoteCharCount();
 }
 
@@ -4496,7 +4656,7 @@ if (typeInputs && typeInputs.length) {
   });
 }
 document.querySelectorAll('.mood-btn[data-theme], #btn-theme, #btn-theme-top').forEach(function (el) {
-  el.addEventListener('click', hideEntryInsight);
+  el.addEventListener('click', function () { hideEntryInsight(); dismissFirstNudge(); });
 });
 if (typeHint) updateTypeHint();
 if (biasCheckRow) updateTypeHint();
@@ -4656,6 +4816,7 @@ loadEntries();
 updateUpgradeUI();
 renderStats();
 renderList();
+maybeShowFirstNudge();
 updateOnlineStateUI();
 initSharing();
 if (typeof window !== 'undefined') {
