@@ -5057,6 +5057,7 @@ function switchToPhase(phase) {
     socialView.classList.remove('hidden');
     switchToSocialTab('share');
     if (typeof renderMicroGoal === 'function') renderMicroGoal();
+    if (typeof supabase !== 'undefined' && typeof fetchSharedStats === 'function') fetchSharedStats();
     if (MODE === 'personal') {
       if (typeof fetchSharedIntentions === 'function') fetchSharedIntentions();
       if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
