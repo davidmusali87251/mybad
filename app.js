@@ -2814,6 +2814,7 @@ function getCurrentViewSource() {
  *  Optional third arg: { source: string, extra: object }. Sends session_id and source when table has those columns. */
 function logStateEvent(kind, value, options) {
   if (!SHARING_ENABLED || !STATE_EVENTS_TABLE || !kind || value == null) return;
+  if (typeof supabase === 'undefined') return;
   try {
     const payload = {
       anonymous_id: getOrCreateAnonId(),
