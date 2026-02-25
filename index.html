@@ -53,11 +53,6 @@
       <div class="app-hero-glow-bottom" aria-hidden="true"></div>
     </header>
 
-    <div class="phase-tabs" id="phase-tabs" role="tablist" aria-label="Personal, Social, or Inside (groups)">
-      <button type="button" class="phase-tab active" role="tab" aria-selected="true" data-phase="personal">Personal</button>
-      <button type="button" class="phase-tab" role="tab" aria-selected="false" data-phase="social">Social</button>
-      <a href="inside.html" class="phase-tab phase-tab--link" title="SlipUp Inside — for group check-ins">Inside</a>
-    </div>
     <div id="personal-view" class="app-view" tabindex="-1">
     <section class="micro-goal-section micro-goal-card" id="micro-goal-section" aria-labelledby="micro-goal-heading" role="region">
       <p class="micro-goal-pause" aria-hidden="true">Before you note — one intention</p>
@@ -72,6 +67,11 @@
         <button type="button" id="btn-share-intention" class="btn-share-intention" title="Add your intention to the shared chart">Share intention</button>
       </div>
     </section>
+    <div class="phase-tabs" id="phase-tabs" role="tablist" aria-label="Personal, Social, or Inside (groups)">
+      <button type="button" class="phase-tab active" role="tab" aria-selected="true" data-phase="personal">Personal</button>
+      <button type="button" class="phase-tab" role="tab" aria-selected="false" data-phase="social">Social</button>
+      <a href="inside.html" class="phase-tab phase-tab--link" title="SlipUp Inside — for group check-ins">Inside</a>
+    </div>
     <section class="add-section" id="main">
       <div class="add-card">
         <label for="mistake-note">What slipped?</label>
@@ -326,8 +326,13 @@
     <div id="social-view" class="app-view hidden">
     <p id="offline-note" class="offline-note hidden" aria-live="polite">Offline. Sharing will return when you're online.</p>
     <div class="social-tab-panel" id="social-tab-share" aria-hidden="false">
+    <div class="phase-tabs" id="phase-tabs-social" role="tablist" aria-label="Personal or Social">
+      <button type="button" class="phase-tab" role="tab" aria-selected="false" data-phase="personal">Personal</button>
+      <button type="button" class="phase-tab active" role="tab" aria-selected="true" data-phase="social">Social</button>
+    </div>
     <div class="social-share-unified social-share-card" id="social-block">
-      <p class="social-share-intro">Share your stats anonymously — no account, no name. Your numbers join the world chart.</p>
+      <h2 class="social-share-title">Not alone in this</h2>
+      <p class="social-share-intro">Share your stats anonymously. No name, no account. Your numbers join the world chart.</p>
 
       <section class="social-share-stats-wrap stats-section--share" aria-label="Your stats for the selected period">
         <div class="stats">

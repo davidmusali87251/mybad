@@ -54,7 +54,7 @@ const addSyncStatus = document.getElementById('add-sync-status');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const typeHint = document.getElementById('type-hint');
 const entryInsightEl = document.getElementById('entry-insight');
-const firstNudgeEl = document.getElementById('first-nudge');
+const firstNudgeEl = document.getElementById('first-nudge') || document.getElementById('first-time-nudge');
 
 const TYPE_PHRASES = {
   avoidable: 'Notice the trigger. How can I reduce repeats?',
@@ -137,7 +137,6 @@ const trendsHighlight = document.getElementById('trends-highlight');
 const autoReflectionEl = document.getElementById('auto-reflection');
 const entryList = document.getElementById('entry-list');
 const emptyState = document.getElementById('empty-state');
-const firstTimeNudge = document.getElementById('first-time-nudge');
 const statsInsightChart = document.getElementById('stats-insight-chart');
 const historyFilters = document.getElementById('history-filters');
 const exportCsvBtn = document.getElementById('btn-export-csv');
@@ -537,6 +536,9 @@ function hideEntryInsight() {
 
 function maybeShowFirstNudge() {
   if (!firstNudgeEl) return;
+  if (!firstNudgeEl.classList.contains('first-nudge')) {
+    firstNudgeEl.classList.add('first-nudge');
+  }
   if (localStorage.getItem(FIRST_NUDGE_SHOWN_KEY) === '1') return;
   if (entries && entries.length === 0) {
     firstNudgeEl.classList.remove('hidden');
@@ -672,6 +674,7 @@ function loadEntries() {
   } catch {
     entries = [];
   }
+  maybeShowFirstNudge();
 }
 function saveEntries() {
   try {
@@ -1399,7 +1402,20 @@ function renderList() {
     emptyState.classList.toggle('hidden', show.length > 0);
     if (emptyState.classList.contains('empty-state-add')) emptyState.disabled = isAtLimit();
   }
-  if (firstTimeNudge) firstTimeNudge.classList.toggle('hidden', entries.length > 0);
+  if (firstNudgeEl) {
+    if (!firstNudgeEl.classList.contains('first-nudge')) {
+      firstNudgeEl.classList.add('first-nudge');
+    }
+    console.log('renderList entries.length:', entries.length);
+    const shouldShow = entries.length === 0 && localStorage.getItem(FIRST_NUDGE_SHOWN_KEY) !== '1';
+    if (shouldShow) {
+      firstNudgeEl.classList.remove('hidden');
+      firstNudgeEl.classList.add('first-nudge--visible');
+    } else {
+      firstNudgeEl.classList.add('hidden');
+      firstNudgeEl.classList.remove('first-nudge--visible');
+    }
+  }
   updateEmptyCopy(show.length, entries.length, currentPeriod);
 }
 
@@ -1415,8 +1431,8 @@ function updateEmptyCopy(showCount, totalCount, period) {
       else emptyState.textContent = 'Quiet month.';
     }
   }
-  if (firstTimeNudge && totalCount === 0) {
-    firstTimeNudge.textContent = 'One line is enough — or tap "I can\'t tell."';
+  if (firstNudgeEl && totalCount === 0) {
+    firstNudgeEl.textContent = 'One line is enough — or tap "I can\'t tell."';
   }
 }
 
@@ -2630,6 +2646,10 @@ function showAddSyncStatus(text, isError) {
 
 function pushEntryToShared(entry) {
   if (!SHARING_ENABLED) return;
+  if (!navigator.onLine) {
+    showAddSyncStatus("Saved locally — will sync when you're online.", false);
+    return;
+  }
   showAddSyncStatus('Syncing to world chart…', false);
   try {
     const now = new Date();
@@ -2674,6 +2694,10 @@ function pushEntryToShared(entry) {
         });
       })
       .catch((err) => {
+        if (!navigator.onLine) {
+          showAddSyncStatus("Saved locally — will sync when you're online.", false);
+          return;
+        }
         const msg = (err && (err.message || err.toString())) || 'Network error';
         showAddSyncStatus('Couldn\'t sync: ' + (msg.length > 50 ? msg.slice(0, 50) + '…' : msg), true);
         if (sharedEntriesError) {
@@ -4606,7 +4630,6 @@ function updateTypeHint() {
   if (addNoteInput) addNoteInput.placeholder = placeholder;
   if (biasCheckRow) biasCheckRow.classList.toggle('hidden', type !== 'observed');
   hideEntryInsight();
-  dismissFirstNudge();
   updateMistakeNoteCharCount();
 }
 
@@ -4652,7 +4675,10 @@ function handleBiasOptionChange(value) {
 
 if (typeInputs && typeInputs.length) {
   typeInputs.forEach(input => {
-    if (input) input.addEventListener('change', updateTypeHint);
+    if (input) input.addEventListener('change', function () {
+      dismissFirstNudge();
+      updateTypeHint();
+    });
   });
 }
 document.querySelectorAll('.mood-btn[data-theme], #btn-theme, #btn-theme-top').forEach(function (el) {
@@ -4817,6 +4843,16 @@ updateUpgradeUI();
 renderStats();
 renderList();
 maybeShowFirstNudge();
+(function () {
+  var el = document.getElementById('first-nudge') || document.getElementById('first-time-nudge');
+  console.log('[SlipUp nudge debug] exists:', !!el, 'id:', el ? el.id : null, 'classes:', el ? el.className : null);
+  if (el) {
+    var s = getComputedStyle(el);
+    console.log('[SlipUp nudge debug] display:', s.display, 'opacity:', s.opacity, 'visibility:', s.visibility);
+  }
+  console.log('[SlipUp nudge debug] nudgeKey:', localStorage.getItem(FIRST_NUDGE_SHOWN_KEY));
+  console.log('[SlipUp nudge debug] entriesRaw:', localStorage.getItem(STORAGE_KEY));
+})();
 updateOnlineStateUI();
 initSharing();
 if (typeof window !== 'undefined') {
