@@ -2759,12 +2759,17 @@ function getOrCreateAnonId() {
   return id;
 }
 
+let _supabaseClient = null;
 function getSupabase() {
   if (!SHARING_ENABLED) {
     throw new Error('Sharing is not enabled (missing Supabase config).');
   }
   if (typeof supabase === 'undefined') {
     throw new Error('Supabase client library did not load.');
+  }
+  if (MODE === 'inside' && typeof window !== 'undefined' && window.SlipUpInsideAuth && typeof window.SlipUpInsideAuth.getClient === 'function') {
+    const authClient = window.SlipUpInsideAuth.getClient();
+    if (authClient) return authClient;
   }
   // Basic format check: URL should be Supabase host, key should be a JWT (eyJ...)
   if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL)) {
@@ -2773,7 +2778,8 @@ function getSupabase() {
   if (!SUPABASE_ANON_KEY.startsWith('eyJ')) {
     throw new Error('Invalid Supabase anon key. Use the anon public key from Supabase → Settings → API (JWT starting with eyJ...). Set in config.js locally or in repo Secrets for deploy.');
   }
-  return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  if (_supabaseClient) return _supabaseClient;
+  _supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
       fetch: (url, opts) => {
         const o = opts || {};
@@ -2784,6 +2790,7 @@ function getSupabase() {
       }
     }
   });
+  return _supabaseClient;
 }
 
 function getOrCreateSessionId() {
