@@ -4380,7 +4380,8 @@ function initSharing() {
   }
   if (btnShare) btnShare.addEventListener('click', shareAnonymously);
   if (btnRefreshFeed) btnRefreshFeed.addEventListener('click', function () { logStateEvent('action', 'refresh_feed'); fetchSharedStats(true); });
-  fetchSharedStats();
+  if (typeof supabase !== 'undefined') fetchSharedStats();
+  else if (SHARING_ENABLED) console.warn('SlipUp: Supabase script did not load (check vendor/supabase.min.js). Sharing disabled for this load.');
   if (SHARING_ENABLED && communityEntriesSection) {
     communityEntriesSection.classList.remove('hidden');
     if (btnRefreshEntries) btnRefreshEntries.addEventListener('click', function () { logStateEvent('action', 'refresh_entries'); fetchSharedEntries(true); });
