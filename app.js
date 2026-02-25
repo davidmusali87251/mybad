@@ -546,6 +546,12 @@ function maybeShowFirstNudge() {
   }
 }
 
+function hideFirstNudge() {
+  if (!firstNudgeEl) return;
+  firstNudgeEl.classList.remove('first-nudge--visible');
+  firstNudgeEl.classList.add('hidden');
+}
+
 function dismissFirstNudge() {
   if (!firstNudgeEl) return;
   firstNudgeEl.classList.remove('first-nudge--visible');
@@ -4579,15 +4585,16 @@ if (addNoteInput) {
     updateAddButtonState();
     updateMistakeNoteCharCount();
     hideEntryInsight();
-    dismissFirstNudge();
+    if (addNoteInput.value.trim().length > 0) dismissFirstNudge();
   });
+  addNoteInput.addEventListener('focus', hideFirstNudge);
   addNoteInput.addEventListener('keyup', updateAddButtonState);
   addNoteInput.addEventListener('paste', () => {
     setTimeout(() => {
       if (addNoteInput.value.length > MISTAKE_NOTE_MAXLEN) addNoteInput.value = addNoteInput.value.slice(0, MISTAKE_NOTE_MAXLEN);
       updateAddButtonState();
       updateMistakeNoteCharCount();
-      dismissFirstNudge();
+      if (addNoteInput.value.trim().length > 0) dismissFirstNudge();
     }, 0);
   });
   updateMistakeNoteCharCount();
