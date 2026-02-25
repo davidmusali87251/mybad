@@ -3,9 +3,11 @@
   "private": true,
   "scripts": {
     "serve": "serve -l 3333",
-    "start": "serve -l 3333"
+    "start": "serve -l 3333",
+    "vendor:supabase": "node -e \"const fs=require('fs');const path=require('path');const p=path.join(process.cwd(),'node_modules','@supabase','supabase-js','dist','umd','supabase.js');const out=path.join(process.cwd(),'vendor','supabase.min.js');if(!fs.existsSync(p)){console.error('Run npm install first.');process.exit(1);}fs.mkdirSync(path.dirname(out),{recursive:true});fs.copyFileSync(p,out);console.log('Copied supabase.js to vendor/supabase.min.js');\""
   },
   "devDependencies": {
+    "@supabase/supabase-js": "2.47.5",
     "serve": "^14.2.4"
   }
 }

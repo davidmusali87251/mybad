@@ -24,11 +24,14 @@
     return true;
   }
 
+  let _authClient = null;
   function getClient() {
     if (!AUTH_ENABLED || typeof supabase === 'undefined') return null;
-    return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    if (_authClient) return _authClient;
+    _authClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: true, autoRefreshToken: true }
     });
+    return _authClient;
   }
 
   /** Check current auth session. Returns { session, user, error } */
