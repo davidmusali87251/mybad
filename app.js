@@ -27,6 +27,8 @@ let currentPhase = 'personal';
 let lastEntry = null;
 let lastShareAt = 0;
 let lastOnlineRefreshAt = 0;
+let worldLinesRange = 'today';
+let hasLoadedWorldLines = false;
 
 // Normalize Supabase URL: trim and remove trailing slash (avoids "Invalid API key" from wrong URL format)
 const SUPABASE_URL = (CONFIG.SUPABASE_URL || '').trim().replace(/\/+$/, '');
@@ -43,7 +45,7 @@ const PAYMENT_LINK_CLICKED_KEY = 'mistake-tracker-payment-link-clicked';
 const THEME_KEY = 'mistake-tracker-theme';
 // Optional extra analytics table (daily_summaries); separate from STATS_TABLE
 const DAILY_SUMMARIES_TABLE = (CONFIG.SUPABASE_DAILY_SUMMARIES_TABLE || '').trim() || 'daily_summaries';
-const PAYMENT_URL = (CONFIG.PAYMENT_URL || '').trim();
+const PAYMENT_URL = (CONFIG.PAYMENT_URL || 'https://www.paypal.com/ncp/payment/H2BQDC9SZ92NN').trim();
 const PAYPAL_CLIENT_ID = (CONFIG.PAYPAL_CLIENT_ID || '').trim();
 const PAYPAL_HOSTED_BUTTON_ID = (CONFIG.PAYPAL_HOSTED_BUTTON_ID || '').trim();
 const PAYPAL_ENABLED = PAYPAL_CLIENT_ID && PAYPAL_HOSTED_BUTTON_ID;
@@ -54,6 +56,7 @@ const addSyncStatus = document.getElementById('add-sync-status');
 const typeInputs = document.querySelectorAll('input[name="mistake-type"]');
 const typeHint = document.getElementById('type-hint');
 const entryInsightEl = document.getElementById('entry-insight');
+const entryWorldLinkEl = document.getElementById('entry-world-link');
 const firstNudgeEl = document.getElementById('first-nudge') || document.getElementById('first-time-nudge');
 
 const TYPE_PHRASES = {
@@ -96,6 +99,9 @@ const ENTRY_INSIGHT_TODAY_KEY = MODE === 'inside' ? 'slipup-latest-entry-insight
 const ENTRY_INSIGHT_RECENT_KEY = MODE === 'inside' ? 'slipup-recent-entry-insights-inside' : 'slipup-recent-entry-insights';
 const FIRST_ENTRY_INSIGHT_SHOWN_KEY = MODE === 'inside' ? 'slipup-inside-first-entry-insight-shown' : 'slipup-first-entry-insight-shown';
 const FIRST_NUDGE_SHOWN_KEY = MODE === 'inside' ? 'slipup-inside-first-nudge-shown' : 'slipup-first-nudge-shown';
+const LAST_WORLD_LINE_SHARE_KEY = MODE === 'inside' ? 'slipup-inside-last-world-line-share-at' : 'slipup-last-world-line-share-at';
+const LAST_WORLD_LINE_REPORT_AT_KEY = 'slipup-last-world-line-report-at';
+const FEEDBACK_EMAIL = (typeof window !== 'undefined' && window.SLIPUP_FEEDBACK_EMAIL) || 'slipup@slipup.io';
 const ENTRY_INSIGHT_RECENT_WINDOW = 5;
 const ENTRY_INSIGHT_THEMES = ['calm', 'focus', 'stressed', 'curious', 'tired'];
 let entryInsightHideTimer = null;
@@ -211,6 +217,13 @@ const btnBuy = document.getElementById('btn-buy');
 const paypalButtonContainer = document.getElementById('paypal-button-container');
 const btnUnlockAfterPay = document.getElementById('btn-unlock-after-pay');
 const btnBuyUnlocked = document.getElementById('btn-buy-unlocked');
+const worldLineInput = document.getElementById('world-line-input');
+const btnWorldLineShare = document.getElementById('btn-world-line-share');
+const btnWorldLinesRefresh = document.getElementById('btn-world-lines-refresh');
+const btnWorldLinesToday = document.getElementById('btn-world-lines-today');
+const btnWorldLinesWeek = document.getElementById('btn-world-lines-week');
+const worldLinesList = document.getElementById('world-lines-list');
+const worldLinesEmpty = document.getElementById('world-lines-empty');
 
 const REFLECTIONS_KEY = MODE === 'inside' ? 'mistake-tracker-reflections-inside' : 'mistake-tracker-reflections';
 const MICRO_GOAL_KEY = MODE === 'inside' ? 'mistake-tracker-micro-goal-inside' : 'mistake-tracker-micro-goal';
@@ -524,6 +537,22 @@ function pickEntryInsight(entry) {
   return poolToUse[Math.floor(Math.random() * poolToUse.length)];
 }
 
+let entryWorldHideTimer = null;
+
+function showEntryWorldLink() {
+  if (!entryWorldLinkEl) return;
+  entryWorldLinkEl.classList.remove('hidden');
+  clearTimeout(entryWorldHideTimer);
+  entryWorldHideTimer = setTimeout(hideEntryWorldLink, 7000);
+}
+
+function hideEntryWorldLink() {
+  if (!entryWorldLinkEl) return;
+  entryWorldLinkEl.classList.add('hidden');
+  clearTimeout(entryWorldHideTimer);
+  entryWorldHideTimer = null;
+}
+
 function hideEntryInsight() {
   if (!entryInsightEl) return;
   if (entryInsightHideTimer) {
@@ -532,6 +561,7 @@ function hideEntryInsight() {
   }
   entryInsightEl.classList.remove('entry-insight--visible');
   entryInsightEl.classList.add('hidden');
+  hideEntryWorldLink();
 }
 
 function maybeShowFirstNudge() {
@@ -615,6 +645,7 @@ function showEntryInsightForEntry(entry) {
       saveLatestEntryInsight(curatedText, 'first');
       renderLatestEntryInsightInReflection();
       entryInsightHideTimer = setTimeout(function () { hideEntryInsight(); }, ENTRY_INSIGHT_HIDE_MS);
+      showEntryWorldLink();
       return;
     }
   } catch (_) {}
@@ -635,6 +666,7 @@ function showEntryInsightForEntry(entry) {
   entryInsightHideTimer = setTimeout(function () {
     hideEntryInsight();
   }, ENTRY_INSIGHT_HIDE_MS);
+  showEntryWorldLink();
 }
 
 // Optional scope for future team/context: "personal" | "observed" | "team". Default "personal".
@@ -947,6 +979,40 @@ function getLocalDayKey(d) {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return y + '-' + m + '-' + day;
+}
+
+function formatLocalISODate(d) {
+  d = d instanceof Date ? d : new Date(d);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function addDaysLocalISODate(isoDate, deltaDays) {
+  const parts = isoDate.split('-').map(Number);
+  const y = parts[0]; const m = parts[1] - 1; const d = parts[2];
+  const dt = new Date(y, m, d);
+  dt.setDate(dt.getDate() + deltaDays);
+  return formatLocalISODate(dt);
+}
+
+function formatWorldLineDayLabel(clientDayIso) {
+  if (!clientDayIso || typeof clientDayIso !== 'string') return '';
+  var todayISO = formatLocalISODate(new Date());
+  if (clientDayIso === todayISO) return 'Today';
+  var yesterdayISO = addDaysLocalISODate(todayISO, -1);
+  if (clientDayIso === yesterdayISO) return 'Yesterday';
+  var parts = clientDayIso.split('-').map(Number);
+  if (parts.length !== 3) return '';
+  var lineDate = new Date(parts[0], parts[1] - 1, parts[2]);
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  lineDate.setHours(0, 0, 0, 0);
+  var diffMs = today - lineDate;
+  var diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays < 2 || diffDays > 14) return '';
+  return diffDays + 'd';
 }
 
 function getStartOfWeek(d) {
@@ -2986,9 +3052,9 @@ function updateOnlineStateUI() {
   }
   prevOnline = online;
   if (offlineNote) offlineNote.classList.toggle('hidden', online);
-  const networkButtons = [btnShare, btnRefreshFeed, btnRefreshEntries, btnRefreshIntentions, btnShareToGroup, btnShareIntention];
+  const networkButtons = [btnShare, btnRefreshFeed, btnRefreshEntries, btnRefreshIntentions, btnShareToGroup, btnShareIntention, btnWorldLineShare, btnWorldLinesRefresh, btnWorldLinesToday, btnWorldLinesWeek];
   networkButtons.forEach(function (el) {
-    setOfflineDisabled(el, !online);
+    if (el) setOfflineDisabled(el, !online);
   });
   if (online && SHARING_ENABLED && currentPhase === 'social') {
     const now = Date.now();
@@ -3109,10 +3175,6 @@ function updateReflectionShareCTA() {
   if (!reflectionShareWrap) return;
   if (!SHARING_ENABLED) return;
   if (MODE !== 'personal') return;
-  if (currentPeriod !== 'day') {
-    reflectionShareWrap.classList.add('hidden');
-    return;
-  }
   const todayKey = getLocalDayKey(new Date());
   if (localStorage.getItem(REFLECTION_SHARE_DISMISSED_DAY_KEY) === todayKey) {
     reflectionShareWrap.classList.add('hidden');
@@ -3122,9 +3184,8 @@ function updateReflectionShareCTA() {
     reflectionShareWrap.classList.add('hidden');
     return;
   }
-  const dayFiltered = filterByPeriod('day');
-  const todayCount = dayFiltered.length;
-  if (todayCount === 0) {
+  const periodFiltered = filterByPeriod(currentPeriod);
+  if (periodFiltered.length === 0) {
     reflectionShareWrap.classList.add('hidden');
     return;
   }
@@ -3645,6 +3706,148 @@ async function fetchSharedEntries(showToastOnSuccess) {
       sharedEntriesEmpty.classList.remove('hidden');
     }
     if (MODE !== 'inside' && typeof renderGlobalPatternsChart === 'function') renderGlobalPatternsChart();
+  }
+}
+
+async function fetchWorldLines(showToastOnSuccess) {
+  if (!SHARING_ENABLED) return;
+  if (!navigator.onLine) return;
+  const sb = getSupabase();
+  if (!sb) return;
+  const todayISO = formatLocalISODate(new Date());
+  const weekStartISO = addDaysLocalISODate(todayISO, -6);
+  let q = sb.from('world_lines').select('id, created_at, mode, type, theme, text, client_day').order('created_at', { ascending: false }).limit(20);
+  if (worldLinesRange === 'today') {
+    q = q.eq('client_day', todayISO);
+  } else {
+    q = q.gte('client_day', weekStartISO);
+  }
+  try {
+    const { data, error } = await q;
+    if (error) return;
+    renderWorldLines(data || []);
+    if (showToastOnSuccess) showToast('Updated.', { duration: 1400 });
+  } catch (_) {}
+}
+
+function renderWorldLines(lines) {
+  if (!worldLinesList || !worldLinesEmpty) return;
+  worldLinesList.innerHTML = '';
+  if (!lines || !lines.length) {
+    worldLinesEmpty.textContent = worldLinesRange === 'today' ? 'Nothing here yet.' : 'Nothing here this week.';
+    worldLinesEmpty.classList.remove('hidden');
+    return;
+  }
+  worldLinesEmpty.classList.add('hidden');
+  lines.forEach(function (line) {
+    const item = document.createElement('div');
+    item.className = 'world-line-item';
+    item.dataset.id = line.id;
+    const p = document.createElement('p');
+    p.className = 'world-line-text';
+    p.textContent = (line.text || '').trim();
+    const report = document.createElement('button');
+    report.type = 'button';
+    report.className = 'world-line-report';
+    report.textContent = 'Report';
+    report.addEventListener('click', function () { reportWorldLine(line.id, report); });
+    item.appendChild(p);
+    if (line.client_day) {
+      var dayLabel = formatWorldLineDayLabel(line.client_day);
+      if (dayLabel) {
+        var dayEl = document.createElement('span');
+        dayEl.className = 'world-line-day';
+        dayEl.textContent = dayLabel;
+        item.appendChild(dayEl);
+      }
+    }
+    item.appendChild(report);
+    worldLinesList.appendChild(item);
+  });
+}
+
+async function reportWorldLine(lineId, reportBtn) {
+  if (!SHARING_ENABLED) return;
+  if (!navigator.onLine) {
+    showToast('Not available right now.', { duration: 1800 });
+    return;
+  }
+  try {
+    var lastReportAt = parseInt(localStorage.getItem(LAST_WORLD_LINE_REPORT_AT_KEY) || '0', 10);
+    if (Date.now() - lastReportAt < 2000) return;
+  } catch (_) {}
+  var sb = getSupabase();
+  if (!sb) return;
+  if (reportBtn) reportBtn.disabled = true;
+  try {
+    var result = await sb.from('world_line_reports').insert([{ line_id: lineId }]);
+    var error = result && result.error;
+    if (error) {
+      if (reportBtn) reportBtn.disabled = false;
+      showToast('Not available right now.', { duration: 1800 });
+      return;
+    }
+    try { localStorage.setItem(LAST_WORLD_LINE_REPORT_AT_KEY, String(Date.now())); } catch (_) {}
+    showToast('Reported.', { duration: 1600 });
+    if (reportBtn) {
+      reportBtn.textContent = 'Reported';
+      setTimeout(function () {
+        reportBtn.textContent = 'Report';
+        reportBtn.disabled = false;
+      }, 1600);
+    }
+  } catch (_) {
+    if (reportBtn) reportBtn.disabled = false;
+    showToast('Not available right now.', { duration: 1800 });
+  }
+}
+
+async function shareWorldLine() {
+  if (!SHARING_ENABLED) return;
+  if (!navigator.onLine) {
+    showToast("Offline. Sharing will return when you're online.", { duration: 2200 });
+    return;
+  }
+  var raw = (worldLineInput && worldLineInput.value ? worldLineInput.value : '');
+  var text = raw.replace(/\s*\n+\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  text = text.substring(0, 90);
+  if (!text) {
+    showToast('One line is enough.', { duration: 1600 });
+    return;
+  }
+  try {
+    var lastAt = parseInt(localStorage.getItem(LAST_WORLD_LINE_SHARE_KEY) || '0', 10);
+    if (Date.now() - lastAt < 5000) {
+      showToast('A few seconds between shares.', { duration: 1600 });
+      return;
+    }
+  } catch (_) {}
+  const todayISO = formatLocalISODate(new Date());
+  var type = typeof getSelectedType === 'function' ? getSelectedType() : 'any';
+  var theme = typeof getCurrentTheme === 'function' ? getCurrentTheme() : 'any';
+  if (type !== 'avoidable' && type !== 'fertile' && type !== 'observed') type = 'any';
+  if (theme !== 'calm' && theme !== 'focus' && theme !== 'stressed' && theme !== 'curious' && theme !== 'tired') theme = 'any';
+  const payload = {
+    mode: MODE === 'inside' ? 'inside' : 'personal',
+    type: type,
+    theme: theme,
+    text: text,
+    client_day: todayISO
+  };
+  const sb = getSupabase();
+  if (!sb) return;
+  try {
+    const { error } = await sb.from('world_lines').insert([payload]);
+    if (error) {
+      showToast('Not available right now.', { duration: 1800 });
+      return;
+    }
+    try { localStorage.setItem(LAST_WORLD_LINE_SHARE_KEY, String(Date.now())); } catch (_) {}
+    worldLineInput.value = '';
+    showToast('Shared.', { duration: 1600 });
+    fetchWorldLines(false);
+  } catch (_) {
+    showToast('Not available right now.', { duration: 1800 });
   }
 }
 
@@ -4407,6 +4610,26 @@ function initSharing() {
         if (addNoteInput) setTimeout(function () { addNoteInput.focus(); }, 300);
       });
     }
+    if (btnWorldLinesRefresh) btnWorldLinesRefresh.addEventListener('click', function () { fetchWorldLines(true); });
+    if (btnWorldLineShare) btnWorldLineShare.addEventListener('click', shareWorldLine);
+    if (btnWorldLinesToday) {
+      btnWorldLinesToday.addEventListener('click', function () {
+        if (worldLinesRange === 'today') return;
+        worldLinesRange = 'today';
+        btnWorldLinesToday.classList.add('world-lines-filter--active');
+        if (btnWorldLinesWeek) btnWorldLinesWeek.classList.remove('world-lines-filter--active');
+        fetchWorldLines(false);
+      });
+    }
+    if (btnWorldLinesWeek) {
+      btnWorldLinesWeek.addEventListener('click', function () {
+        if (worldLinesRange === 'week') return;
+        worldLinesRange = 'week';
+        btnWorldLinesWeek.classList.add('world-lines-filter--active');
+        if (btnWorldLinesToday) btnWorldLinesToday.classList.remove('world-lines-filter--active');
+        fetchWorldLines(false);
+      });
+    }
     if (sharedEntriesEmpty) {
       function goAddFromSharedEmpty() {
         if (!sharedEntriesEmpty.classList.contains('empty-state--clickable')) return;
@@ -4884,6 +5107,22 @@ initReflection();
 initMicroGoal();
 initAddToHomeBanner();
 initReminder();
+function getBuildVersion() {
+  try {
+    var s = document.querySelector('script[src*="app.js"]');
+    var m = s && s.src && s.src.match(/[?&]v=(\d+)/);
+    return m ? m[1] : 'unknown';
+  } catch (_) { return 'unknown'; }
+}
+function openFeedbackEmail() {
+  var v = getBuildVersion();
+  var mode = (typeof MODE === 'string' ? MODE : 'personal');
+  var phase = (typeof currentPhase === 'string' ? currentPhase : '');
+  var subject = 'SlipUp feedback (v' + v + ', ' + mode + ')';
+  var body = 'What stood out?\n\n—\nMode: ' + mode + '\nPhase: ' + phase + '\nOnline: ' + navigator.onLine + '\nPage: ' + location.href + '\nTime: ' + new Date().toString() + '\nUA: ' + navigator.userAgent;
+  var href = 'mailto:' + encodeURIComponent(FEEDBACK_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.location.href = href;
+}
 const btnSettings = document.getElementById('btn-settings');
 const settingsDropdown = document.getElementById('settings-dropdown');
 if (btnSettings && settingsDropdown) {
@@ -4900,6 +5139,17 @@ if (btnSettings && settingsDropdown) {
       btnSettings.setAttribute('aria-expanded', 'false');
       settingsDropdown.setAttribute('aria-hidden', 'true');
     }
+  });
+}
+var btnFeedback = document.getElementById('btn-feedback');
+if (btnFeedback) btnFeedback.addEventListener('click', openFeedbackEmail);
+var btnCopyFeedbackEmail = document.getElementById('btn-copy-feedback-email');
+if (btnCopyFeedbackEmail && navigator.clipboard && navigator.clipboard.writeText) {
+  btnCopyFeedbackEmail.classList.remove('hidden');
+  btnCopyFeedbackEmail.addEventListener('click', function () {
+    navigator.clipboard.writeText(FEEDBACK_EMAIL).then(function () {
+      if (typeof showToast === 'function') showToast('Copied.', { duration: 1600 });
+    });
   });
 }
 if (topBarAdd) {
@@ -5064,6 +5314,13 @@ function switchToPhase(phase) {
       if (typeof fetchSharedEntries === 'function') fetchSharedEntries();
     }
     if (MODE === 'inside' && typeof fetchSharedEntries === 'function') fetchSharedEntries();
+    if (!hasLoadedWorldLines && typeof fetchWorldLines === 'function') {
+      fetchWorldLines(false);
+      hasLoadedWorldLines = true;
+    }
+    if (!navigator.onLine && typeof renderWorldLines === 'function') {
+      renderWorldLines([]);
+    }
     tabs.forEach(function (t) {
       const isActive = t.getAttribute('data-phase') === 'social';
       t.classList.toggle('active', isActive);
@@ -5110,6 +5367,18 @@ function applyHashPhase() {
     });
   });
 })();
+
+if (entryWorldLinkEl) {
+  entryWorldLinkEl.onclick = function () {
+    if (typeof switchToPhase === 'function') switchToPhase('social');
+    location.hash = '#social';
+    setTimeout(function () {
+      var target = document.getElementById('community-section') || document.getElementById('social-view');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+    hideEntryWorldLink();
+  };
+}
 
 function switchToSocialTab(tab) {
   var panelShare = document.getElementById('social-tab-share');

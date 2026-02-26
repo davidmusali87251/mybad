@@ -33,8 +33,8 @@ window.MISTAKE_TRACKER_CONFIG = {
   SUPABASE_STATE_EVENTS_TABLE: '',       // Optional: 'state_events' to log state elements (phase, filters, views, actions) with anonymous_id (run supabase-state-events.sql first)
   SUPABASE_INTENTIONS_TABLE: '',         // Optional: 'shared_intentions' for global intentions chart (run supabase-shared-intentions.sql first)
   SUPABASE_TODAYS_REFLECTIONS_TABLE: '', // Optional: 'todays_reflections' for reflections + stats cloud sync (run supabase-todays-reflections.sql first)
-  // Optional: URL for "Unlock full version" (e.g. Stripe, Gumroad). Leave empty to hide buy link.
-  PAYMENT_URL: '',
+  // Optional: URL for "Unlock full version" (e.g. PayPal NCP link). Leave empty to use default SlipUp PayPal link.
+  PAYMENT_URL: 'https://www.paypal.com/ncp/payment/H2BQDC9SZ92NN',
   // Optional: PayPal hosted button.
   PAYPAL_CLIENT_ID: '',
   PAYPAL_HOSTED_BUTTON_ID: ''

@@ -273,6 +273,32 @@ body.theme-tired::before { background: radial-gradient(ellipse 120% 80% at 50% -
   margin: -0.25rem -0.35rem;
 }
 
+.settings-link {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: inherit;
+  transition: background 0.15s ease;
+}
+.settings-link:hover {
+  background: var(--surface-hover);
+}
+.settings-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-link {
+    transition: none;
+  }
+}
+
 .top-bar-brand {
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -3340,6 +3366,35 @@ body.theme-tired .btn-bias-check {
   opacity: 0;
 }
 
+.entry-world-link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.entry-world-link:hover {
+  color: var(--text);
+}
+.entry-world-link:focus {
+  outline: none;
+}
+.entry-world-link:focus-visible {
+  box-shadow: var(--focus-ring);
+  border-radius: 2px;
+}
+.entry-world-link.hidden {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .entry-insight {
     transition: none;
@@ -3473,73 +3528,83 @@ body.theme-tired .btn-bias-check {
 
 /* Stats section: period tabs + stat cards in one block */
 .stats-section {
-  padding: 1.25rem 1.35rem;
+  padding: 1rem 1.1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   border-left: 4px solid var(--mood-active);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   box-shadow: var(--shadow-sm);
 }
 
-/* Ergonomic text sizes for stats — Personal, Inside, Share: readability and scanability */
+/* Ergonomic text sizes for stats — Personal, Inside, Share: compact and readable */
 .stats-section .stat-foot,
 .stats-section .stat-label,
 .stats-section #stat-count-label,
 .stats-section--share .stat-foot,
 .stats-section--share .stat-label,
 .stats-section--share .stat-label-social {
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  line-height: 1.4;
   opacity: 0.95;
 }
 .stats-section .stat-sublabel,
 .stats-section #stat-exploration-hint,
 .stats-section--share .stat-sublabel,
 .stats-section--share #stat-exploration-hint-social {
-  font-size: 0.84rem;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1.4;
   opacity: 0.95;
 }
 .stats-section .stat-so-what,
 .stats-section #stat-exploration-so-what,
 .stats-section--share .stat-so-what,
 .stats-section--share #stat-exploration-so-what-social {
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  line-height: 1.4;
   opacity: 0.95;
 }
 .stats-section .stat-value,
 .stats-section--share .stat-value {
-  line-height: 1.35;
+  line-height: 1.3;
 }
 .stats-section .stat-card:first-child:not(.secondary) .stat-value,
 .stats-section--share .stat-card:first-child:not(.secondary) .stat-value {
-  font-size: 2.1rem;
-  line-height: 1.3;
+  font-size: 1.9rem;
+  line-height: 1.25;
 }
 .stats-section .stat-card.secondary .stat-value,
 .stats-section .stat-card.stat-exploration .stat-value,
 .stats-section--share .stat-card.secondary .stat-value,
 .stats-section--share .stat-card.stat-exploration .stat-value {
-  font-size: 1.6rem;
-  line-height: 1.35;
+  font-size: 1.4rem;
+  line-height: 1.3;
 }
 
-/* Stats ergonomics: smartphone — compact cards and text for PWA/web/phone */
+/* Stats ergonomics: smartphone — compact cards and text for PWA/web/phone (coherent Personal, Social, Inside) */
 @media (max-width: 480px) {
   .stats-section,
   .stats-section--share {
-    padding: 1rem 1rem;
+    padding: 0.85rem 0.9rem;
   }
   .stats,
+  .stats-section .stats,
   .stats-section--share .stats {
-    gap: 0.55rem;
+    gap: 0.45rem;
+  }
+  .stats-section .stats,
+  .stats-section--share .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stats-section .stats .stat-exploration,
+  .stats-section--share .stats .stat-exploration {
+    grid-column: 1 / -1;
   }
   .stats .stat-card,
+  .stats-section .stats .stat-card,
   .stats-section--share .stats .stat-card {
-    padding: 0.8rem 0.7rem;
-    min-height: 7.5rem;
+    padding: 0.6rem 0.55rem;
+    min-height: 6rem;
   }
   .stats-section .stat-foot,
   .stats-section .stat-label,
@@ -3555,20 +3620,20 @@ body.theme-tired .btn-bias-check {
   .stats-section--share #stat-exploration-hint-social,
   .stats-section--share .stat-so-what,
   .stats-section--share #stat-exploration-so-what-social {
-    font-size: 0.76rem;
-    line-height: 1.4;
+    font-size: 0.7rem;
+    line-height: 1.35;
   }
   .stats-section .stat-card:first-child:not(.secondary) .stat-value,
   .stats-section--share .stat-card:first-child:not(.secondary) .stat-value {
-    font-size: 1.65rem;
+    font-size: 1.45rem;
     line-height: 1.2;
   }
   .stats-section .stat-card.secondary .stat-value,
   .stats-section .stat-card.stat-exploration .stat-value,
   .stats-section--share .stat-card.secondary .stat-value,
   .stats-section--share .stat-card.stat-exploration .stat-value {
-    font-size: 1.35rem;
-    line-height: 1.25;
+    font-size: 1.2rem;
+    line-height: 1.2;
   }
 }
 
@@ -3608,9 +3673,18 @@ body.theme-tired .btn-bias-check {
 .stats {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.85rem;
+  gap: 0.7rem;
   margin: 0;
+  align-items: baseline;
+}
+
+/* Personal & Inside: same-height cards (stretch row) */
+.stats-section .stats {
   align-items: stretch;
+}
+.stats-section .stats .stat-card {
+  align-self: stretch;
+  min-height: 8.25rem;
 }
 
 @media (max-width: 380px) {
@@ -3801,11 +3875,11 @@ body.theme-tired .btn-bias-check {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 10.5rem;
+  min-height: 8.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.1rem 1rem;
+  padding: 0.9rem 0.85rem;
   text-align: center;
   transition: transform 0.15s, box-shadow 0.15s;
   box-shadow: var(--shadow-card);
@@ -3859,7 +3933,7 @@ body.theme-tired .btn-bias-check {
   justify-content: center;
 }
 .stat-card:first-child:not(.secondary) .stat-value {
-  font-size: 2.25rem;
+  font-size: 1.95rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   transition: color 0.2s;
@@ -3875,7 +3949,7 @@ body.theme-tired .btn-bias-check {
 .stat-value {
   display: block;
   font-family: var(--font-mono);
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 500;
   color: var(--accent);
   line-height: 1.2;
@@ -3893,7 +3967,7 @@ body.theme-tired .btn-bias-check {
 
 .stat-card.secondary .stat-value,
 .stat-card.stat-exploration .stat-value {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 600;
 }
 
@@ -3999,12 +4073,12 @@ body.theme-tired .btn-bias-check {
 }
 /* Count card: value centered, foot at bottom (when prominent, not secondary) */
 .stat-card:first-child:not(.secondary) {
-  padding-bottom: 1rem;
+  padding-bottom: 0.75rem;
   justify-content: center;
 }
 .stat-card:first-child:not(.secondary) .stat-foot {
   position: absolute;
-  bottom: 0.65rem;
+  bottom: 0.5rem;
   left: 0;
   right: 0;
   margin-top: 0;
@@ -5803,23 +5877,74 @@ body.theme-tired .btn-bias-check {
 
 /* Stats wrap — SlipUp-style stat cards + period tabs + insight */
 .social-share-stats-wrap.stats-section--share {
-  padding: 1.25rem 1.35rem;
+  padding: 1rem 1.1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   border-left: 4px solid var(--mood-active);
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   box-shadow: var(--shadow-sm);
 }
 
 .social-share-stats-wrap .stats-period-summary {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 
-/* Share stats — match Personal alignment (all cards secondary, same layout) */
+/* Share stats — cards aligned top and same height (stretch grid row) */
 .stats-section--share .stats {
-  gap: 0.85rem;
+  gap: 0.7rem;
   align-items: stretch;
+}
+.stats-section--share .stats .stat-card {
+  align-self: stretch;
+  min-height: 8.25rem;
+}
+
+/* Same alignment for Personal, Social share, and Inside — values in a line, labels centered (web/PWA/iOS) */
+.stats-section .stat-card,
+.stats-section--share .stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  min-width: 0;
+}
+.stats-section .stat-card:first-child:not(.secondary),
+.stats-section--share .stat-card:first-child:not(.secondary) {
+  justify-content: flex-start;
+}
+.stats-section .stat-card .stat-value,
+.stats-section--share .stat-card .stat-value {
+  display: block;
+  margin-bottom: 0.1rem;
+  line-height: 1;
+}
+.stats-section .stat-card .stat-foot,
+.stats-section .stat-card .stat-label,
+.stats-section .stat-card .stat-sublabel,
+.stats-section--share .stat-card .stat-foot,
+.stats-section--share .stat-card .stat-label,
+.stats-section--share .stat-card .stat-sublabel {
+  display: block;
+  width: 100%;
+  text-align: center;
+  word-break: break-word;
+}
+.stats-section .stat-card.secondary .stat-label,
+.stats-section .stat-card.stat-exploration .stat-label,
+.stats-section--share .stat-card.secondary .stat-label,
+.stats-section--share .stat-card.stat-exploration .stat-label {
+  margin-top: 0.15rem;
+}
+.stats-section .stat-card .stat-sublabel,
+.stats-section--share .stat-card .stat-sublabel {
+  margin-top: 0.1rem;
+}
+.stats-section .stat-card .stat-so-what,
+.stats-section--share .stat-card .stat-so-what {
+  margin-top: 0.25rem;
+  text-align: center;
 }
 
 /* To-share card — prominent "ready" moment */
@@ -6638,6 +6763,145 @@ body.theme-tired .btn-bias-check {
 }
 .btn-refresh-subtle:active {
   opacity: 0.92;
+}
+
+/* World Lines (Social) — short anonymous lines */
+.world-lines {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.world-lines__head {
+  margin-bottom: 0.75rem;
+}
+.world-lines__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.2rem;
+  color: var(--text);
+}
+.world-lines__sub,
+.world-lines__note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+.world-lines__sub { margin: 0; }
+.world-lines__composer {
+  margin-bottom: 0.75rem;
+}
+.world-lines__composer textarea {
+  width: 100%;
+  min-height: 2.5em;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.4rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: none;
+  box-sizing: border-box;
+}
+.world-lines__composer textarea::placeholder {
+  color: var(--text-muted);
+}
+.world-lines__composer textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+.world-lines__composer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.world-lines__note { margin: 0; }
+.btn-share-subtle {
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-family: var(--font-sans);
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn-share-subtle:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+.btn-share-subtle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.btn-share-subtle:active { opacity: 0.92; }
+.world-lines__controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.world-lines-filter {
+  background: transparent;
+  border: 0;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.world-lines-filter:hover { color: var(--text); }
+.world-lines-filter--active { color: var(--text); background: var(--surface-hover); }
+.world-lines-filter:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 999px; }
+.world-lines__list { margin: 0; padding: 0; list-style: none; }
+.world-line-item {
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--border);
+}
+.world-line-item:first-child { border-top: none; }
+.world-line-text { margin: 0; font-size: 0.9rem; line-height: 1.4; color: var(--text); }
+.world-line-day {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+.world-line-report {
+  margin-top: 0.25rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.world-line-report:hover { color: var(--text); }
+.world-line-report:disabled { opacity: 0.7; cursor: default; }
+.world-line-report:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 10px; }
+.world-lines .muted {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-lines-filter { transition: none; }
+  .btn-share-subtle { transition: none; }
 }
 
 .community-metrics-chart {

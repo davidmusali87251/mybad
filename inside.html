@@ -9,7 +9,7 @@
   <title>SlipUp Inside — Group check‑ins</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=114">
+  <link rel="stylesheet" href="styles.css?v=115">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -30,6 +30,8 @@
       <button type="button" id="btn-invite-members" class="setting-row btn-setting" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0.5rem 0;">Invite members</button>
       <button type="button" id="btn-manage-group" class="setting-row btn-setting" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;font:inherit;color:inherit;padding:0.5rem 0;">Manage group</button>
       <button type="button" id="btn-sign-out" class="setting-row" style="display:block;width:100%;margin-top:0.5rem;font-size:0.9rem;color:var(--text-muted);background:none;border:none;cursor:pointer;text-align:left;padding:0;">Sign out</button>
+      <button type="button" id="btn-feedback" class="settings-link" title="Send a note">Feedback</button>
+      <button type="button" id="btn-copy-feedback-email" class="settings-link hidden" title="Copy support email">Copy feedback email</button>
     </div>
     <div class="top-bar-actions">
       <button type="button" id="top-bar-slipups" class="top-bar-slipups" title="Group shared moments — heat, shift, support" aria-label="Group moments: 0">🌍 0</button>
@@ -192,6 +194,7 @@
         <p class="type-hint" id="type-hint">Notice what raised the heat, and what cooled it down.</p>
         <p class="entry-insight hidden" id="entry-insight" aria-live="polite"></p>
         <p class="first-nudge hidden" id="first-nudge" aria-live="polite">Not a judge. A mirror.</p>
+        <button type="button" class="entry-world-link hidden" id="entry-world-link">See others</button>
 
         <div class="bias-check-row hidden" id="bias-check-row">
           <button type="button" id="btn-bias-check" class="btn-bias-check">Bias Check</button>
@@ -427,6 +430,26 @@
           <div class="community-world-card">
             <div class="global-count-chart-wrap" id="global-count-chart" aria-label="Group count of shared moments by type" aria-hidden="true"></div>
           </div>
+          <section id="world-lines" class="world-lines">
+            <div class="world-lines__head">
+              <h3 class="world-lines__title">Not alone in this</h3>
+              <p class="world-lines__sub">Share a line anonymously. No name, no account.</p>
+            </div>
+            <div class="world-lines__composer">
+              <textarea id="world-line-input" maxlength="90" rows="2" placeholder="One line. Just what stood out."></textarea>
+              <div class="world-lines__composer-row">
+                <button type="button" id="btn-world-line-share" class="btn-share-subtle">Share line</button>
+                <span class="world-lines__note">Anonymous. No account.</span>
+              </div>
+            </div>
+            <div class="world-lines__controls">
+              <button type="button" id="btn-world-lines-refresh" class="btn-refresh-subtle">Refresh</button>
+              <button type="button" id="btn-world-lines-today" class="world-lines-filter world-lines-filter--active">Today</button>
+              <button type="button" id="btn-world-lines-week" class="world-lines-filter">Week</button>
+            </div>
+            <div id="world-lines-list" class="world-lines__list" aria-live="polite"></div>
+            <p id="world-lines-empty" class="muted hidden">Nothing here yet.</p>
+          </section>
           <div class="community-browse" aria-label="Filter and browse shared moments">
             <div class="community-browse-actions">
               <button type="button" id="btn-shared-entries-toggle" class="chip chip--limit" title="Limit shown entries" aria-label="Show last 10 entries">Last 10</button>
@@ -496,9 +519,9 @@
     window.MISTAKE_TRACKER_CONFIG = window.MISTAKE_TRACKER_CONFIG || {};
     window.SLIPUP_MODE = 'inside';
   </script>
-  <script src="config.js?v=114"></script>
+  <script src="config.js?v=115"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.5/dist/umd/supabase.min.js"></script>
-  <script src="inside-auth.js?v=114"></script>
+  <script src="inside-auth.js?v=115"></script>
   <script>
     (function() {
       var Auth = window.SlipUpInsideAuth;
@@ -687,8 +710,8 @@
       })();
     })();
   </script>
-  <script src="entryInsightsData.js?v=114"></script>
-  <script src="app.js?v=114"></script>
+  <script src="entryInsightsData.js?v=115"></script>
+  <script src="app.js?v=115"></script>
   <script>
     (function() {
       var THEME_KEY = 'mistake-tracker-theme';
